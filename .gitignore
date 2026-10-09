@@ -1,0 +1,5 @@
+.env
+.env.*
+*.pem
+mcp.json
+.DS_Store

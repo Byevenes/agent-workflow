@@ -15,5 +15,5 @@ Single-context layout: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `
 ## Who does what
 
 - `agents/coordinator.md` routes. It does not implement.
-- `agents/implementer.md` builds from a spec already written.
-- Start a non-trivial change with the `route-work` skill.
+- `agents/implementer.md` builds the task. Small has no spec. Medium and large build from one.
+- Start a change with the `route-work` skill. It picks the size.

@@ -18,6 +18,6 @@ The git repo is the source of truth. A clone plus `scripts/link.sh` points the u
 
 ## How work moves
 
-Define with Matt Pocock (`grill-with-docs`, then `to-spec`). Implement with pstack (`poteto-mode`). Close with `retro`. Herdr holds a Cursor CLI pane and an OpenCode pane. Grok bots sit on the outer loop: Engineer Lead splits work, Dr Eggbot designs bots, Think-a-bot is recorded in `docs/grok-roster.md`.
+`skills/route-work` classifies the change first. Small work skips the spec and the review agent. Medium and large use Matt Pocock before code (`grill-with-docs`, `to-spec`, and `to-tickets` when the work is large) and pstack during code (`poteto-mode`). One `code-reviewer` reads medium and large diffs. `security-auditor` is only for a sensitive boundary. The map is in `docs/workflow.md`.
 
-The skill that encodes that order is `skills/route-work`. The agent that delegates, and does not implement, is `agents/coordinator.md`.
+Grok bots sit on the outer loop: Engineer Lead splits work, Dr Eggbot designs bots, Think-a-bot is recorded in `docs/grok-roster.md`. The agent that delegates, and does not implement, is `agents/coordinator.md`.

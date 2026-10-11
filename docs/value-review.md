@@ -21,7 +21,7 @@ Nothing here is deleted. Other repos may still name these files. `route-work` do
 - `review-risk`, `review-readability`, `review-reliability`, `review-resilience`, `review-refuter`, and `judgment-day`.
 - `sdd-explore` through `sdd-verify`, `tech-lead`, and `senior-code-engineer`. Definition is `grill-with-docs` and `to-spec`. `prd-td-coherence` runs only when a PRD and a design already exist.
 - `test-engineer`, unless the user asks for a test strategy. The change's tests come from pstack's `tdd` inside `poteto-mode`.
-- `security-auditor` on anything that is not critical. `security-and-hardening` runs during implementation when the change touches input, a session, auth, permissions, personal data, payments, or a new integration.
+- `security-auditor` on anything that is not critical. `security-and-hardening` runs during implementation when the change touches input, a session, auth, permissions, personal data, payments, a new secret or credential, or a new integration.
 
 `code-review` and `code-review-and-quality` both stay installed. Only the second is on this path, and only through `code-reviewer`.
 

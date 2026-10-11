@@ -4,7 +4,7 @@ Recorded while publishing this repo. Nothing in this list was deleted.
 
 ## tdd name collision
 
-`~/.agents/skills/tdd` is now Matt Pocock's skill. The installer replaced the folder that was already there. No copy of the previous skill was found under OpenCode. Cursor's `~/.cursor/skills` did not have a `tdd` folder, so the previous text is gone. This repo does not restore it. The Matt skill is the one `docs/testing.md` points at.
+`~/.agents/skills/tdd` is now Matt Pocock's skill. The installer replaced the folder that was already there. No copy of the previous skill was found under OpenCode. Cursor's `~/.cursor/skills` did not have a `tdd` folder, so the previous text is gone. This repo does not restore it. Matt's `tdd` stays installed. This path does not call it. `docs/testing.md` points at pstack's `tdd` (`pstack-tdd` on OpenCode when the plain name is Matt's).
 
 `code-review` arrived with Matt's set. The longer review skill already installed is `code-review-and-quality`. Both stay.
 
@@ -16,7 +16,7 @@ Matt's `to-spec` and `to-tickets` overlap the SDD skills already in `~/.cursor/s
 
 Nothing here is deleted. Other repos may still name these files. `route-work` does not call them.
 
-- Matt's `code-review`. It repeats the spec axis and opens two subagents. `code-reviewer` loads `code-review-and-quality` once, on medium and large.
+- Matt's `code-review`. It repeats the spec axis and opens two subagents. `code-reviewer` loads `code-review-and-quality` once, on medium, large, and critical.
 - `interrogate`, unless the user asks for a contested design.
 - `review-risk`, `review-readability`, `review-reliability`, `review-resilience`, `review-refuter`, and `judgment-day`.
 - `sdd-explore` through `sdd-verify`, `tech-lead`, and `senior-code-engineer`. Definition is `grill-with-docs` and `to-spec`. `prd-td-coherence` runs only when a PRD and a design already exist.

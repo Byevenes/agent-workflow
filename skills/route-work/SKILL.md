@@ -15,7 +15,7 @@ Size follows risk, not file count. Auth, permissions, personal data, payments, o
 - **Small.** One clear area, one session, no sensitive boundary. Example: change a button.
 - **Medium.** Several pieces or unclear edges, still one session, and none of the boundaries above.
 - **Large.** Several slices, or more than one session, and none of the boundaries above.
-- **Critical.** Any of those boundaries, short or long. Run the medium or large path that fits the rest of the change, then `security-auditor`. A short auth change is critical. A several-file personal-data change is critical.
+- **Critical.** Any of those boundaries, short or long. Follow the Critical sequence below. Do not reuse the medium or large stop checks. A short auth change is critical. A several-file personal-data change is critical.
 
 If the size is unclear, treat it as the higher one.
 
@@ -34,9 +34,10 @@ If the size is unclear, treat it as the higher one.
 3. Call `prd-td-coherence` only when a PRD and a design already exist.
 4. Read a PRD, Figma, or Stitch reference only when one already exists.
 5. Hand the spec to `implementer`. `poteto-mode` implements, with pstack's `tdd`. On OpenCode that skill is `pstack-tdd` when the plain `tdd` name is Matt's.
-6. Call `security-and-hardening` only inside that implementation, and only when the change touches input or a session that is not one of the critical boundaries. If it touches auth, permissions, personal data, payments, or a new integration, stop and treat the change as critical.
-7. After the check passes, hand the diff to `code-reviewer`. That agent loads `code-review-and-quality`. Do not also call Matt's `code-review`.
-8. Call `retro` once.
+6. If the change touches auth, permissions, personal data, payments, or a new integration, and it was not already classified critical, stop and treat it as critical. Do not stop when it is already critical.
+7. Call `security-and-hardening` inside that implementation when the change touches input, a session, auth, permissions, personal data, payments, or a new integration.
+8. After the check passes, hand the diff to `code-reviewer`. That agent loads `code-review-and-quality`. Do not also call Matt's `code-review`.
+9. Call `retro` once.
 
 ## Large
 
@@ -44,7 +45,7 @@ If the size is unclear, treat it as the higher one.
 2. Call `to-spec`, then `to-tickets`.
 3. Call `prd-td-coherence` only when a PRD and a design already exist. Do not call `tech-lead`.
 4. Stop for a human gate before code.
-5. If the change touches auth, permissions, personal data, payments, or a new integration, stop and treat it as critical before any slice is implemented.
+5. If the change touches auth, permissions, personal data, payments, or a new integration, and it was not already classified critical, stop and treat it as critical before any slice is implemented. Do not stop when it is already critical.
 6. Hand each slice to `implementer` with `poteto-mode` and pstack's `tdd`.
 7. After the slices pass, call `blast-radius`, then `code-reviewer` with `code-review-and-quality`. Do not call Matt's `code-review`.
 8. Call `retro` once.
@@ -52,7 +53,18 @@ If the size is unclear, treat it as the higher one.
 
 ## Critical
 
-Auth, permissions, personal data, payments, or a new integration is this size at any file count. Run the medium or large path that fits, including `to-spec` before code and `security-and-hardening` during implementation. Add `security-auditor` after `code-reviewer`. `code-reviewer` may also ask for `security-auditor` when a finding needs that pass. Do not run `security-auditor` on a small change.
+Auth, permissions, personal data, payments, or a new integration is this size at any file count. Do not re-enter the medium or large stop checks. Continue this sequence:
+
+1. Call `grill-with-docs`. If it does not fit one session, call `wayfinder` as well.
+2. Call `to-spec`. If it does not fit one session, call `to-tickets` and stop for a human gate before code.
+3. Call `prd-td-coherence` only when a PRD and a design already exist. Do not call `tech-lead`.
+4. Hand the spec to `implementer`. `poteto-mode` implements, with pstack's `tdd`, and calls `security-and-hardening`. On OpenCode that skill is `pstack-tdd` when the plain `tdd` name is Matt's.
+5. If it did not fit one session, call `blast-radius` after the slices pass.
+6. Hand the diff to `code-reviewer`. That agent loads `code-review-and-quality`. Do not also call Matt's `code-review`.
+7. Call `security-auditor` after that review. `code-reviewer` may also ask for this pass.
+8. Call `retro` once.
+
+Do not run `security-auditor` on a small change.
 
 ## Never on this path
 

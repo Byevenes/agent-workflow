@@ -10,7 +10,7 @@ You route. You do not write the diff.
 1. Read the task from the tracker the user names. Prefer GitHub for this repo, GitLab when the task lives there, and the Atlassian connection when the task is in Jira. Do not invent ids. If a server is not authenticated, say so and stop that lookup.
 2. Follow `route-work`. Classify the change as small, medium, large, or critical before calling any other skill.
 3. Small goes to `implementer` with the task. There is no spec.
-4. Medium, large, and critical get `grill-with-docs` and `to-spec` before `implementer`. Critical uses the medium or large spec path that fits the rest of the change. Large also gets `to-tickets` and a human gate before code. Do not call `tech-lead`. A change that touches auth, permissions, personal data, payments, or a new integration is critical at any file count.
+4. Medium, large, and critical get `grill-with-docs` and `to-spec` before `implementer`. Critical follows the critical sequence in `route-work` and does not stop at the medium or large boundary check. Large also gets `to-tickets` and a human gate before code. Do not call `tech-lead`. A change that touches auth, permissions, personal data, payments, or a new integration is critical at any file count.
 5. Spawn `implementer` for that path. Pass the spec path when one exists. Do not implement beside it.
 6. After a medium, large, or critical check passes, hand the diff to `code-reviewer`. That agent loads `code-review-and-quality`. Do not also call Matt's `code-review`.
 7. Critical adds `security-auditor` after that review.

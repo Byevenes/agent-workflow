@@ -13,7 +13,7 @@ Herdr is a later check that a Cursor CLI pane and an OpenCode pane can sit toget
 - **Small.** One clear area, one session, no sensitive boundary. `grill-me` only if a decision is open. Then `poteto-mode`. A focused test if behavior changes. No spec. No PRD, Figma, or Stitch unless the user points at one. No `code-reviewer`, no `security-auditor`.
 - **Medium.** Several pieces, one session, and none of the critical boundaries. `grill-with-docs`, then `to-spec`. `prd-td-coherence` only when a PRD and a design already exist. `poteto-mode` with pstack's `tdd`. `code-reviewer` loads `code-review-and-quality` once. `retro` once. Read a visual reference only when one exists.
 - **Large.** Several slices or more than one session, and none of the critical boundaries. `grill-with-docs` or `wayfinder`, then `to-spec` and `to-tickets`. A human gate before code. Slices go to `implementer`. Then `blast-radius`, the same `code-reviewer`, and `retro`.
-- **Critical.** Auth, permissions, personal data, payments, or a new integration, at any file count. The medium or large path that fits, including a spec, plus `security-auditor`.
+- **Critical.** Auth, permissions, personal data, payments, or a new integration, at any file count. Its own sequence: `grill-with-docs`, `to-spec`, `poteto-mode` with `security-and-hardening`, `code-reviewer`, then `security-auditor`. It does not stop at the medium or large boundary check.
 
 ## Examples
 
@@ -21,7 +21,7 @@ A button label change is small. The task is already clear, so `grill-me` is skip
 
 A one-session feature with two states and an unclear empty case is medium. `grill-with-docs` settles the empty case, `to-spec` writes it down, `poteto-mode` builds it, and `code-reviewer` reads the diff.
 
-A change that stores a new personal-data field is critical whether it is a few lines or several files. It takes the medium or large path that fits, including a spec, then `security-auditor`.
+A change that stores a new personal-data field is critical whether it is a few lines or several files. It follows the critical sequence: a spec, `poteto-mode`, `code-reviewer`, then `security-auditor`.
 
 ## Not loaded
 

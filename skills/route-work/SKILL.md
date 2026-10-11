@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Do not implement in this skill. Classify, then call the other skills. Do not load a skill this file does not name for the chosen size.
 
-Size follows risk, not file count. Auth, permissions, personal data, payments, or a new integration is critical at any file count. It is never small and it is never left on medium or large.
+Size follows risk, not file count. Auth, permissions, personal data, payments, a new secret or credential, or a new integration is critical at any file count. It is never small and it is never left on medium or large.
 
 ## Classify
 
@@ -34,8 +34,8 @@ If the size is unclear, treat it as the higher one.
 3. Call `prd-td-coherence` only when a PRD and a design already exist.
 4. Read a PRD, Figma, or Stitch reference only when one already exists.
 5. Hand the spec to `implementer`. `poteto-mode` implements, with pstack's `tdd`. On OpenCode that skill is `pstack-tdd` when the plain `tdd` name is Matt's.
-6. If the change touches auth, permissions, personal data, payments, or a new integration, and it was not already classified critical, stop and treat it as critical. Do not stop when it is already critical.
-7. Call `security-and-hardening` inside that implementation when the change touches input, a session, auth, permissions, personal data, payments, or a new integration.
+6. If the change touches auth, permissions, personal data, payments, a new secret or credential, or a new integration, and it was not already classified critical, stop and treat it as critical. Do not stop when it is already critical.
+7. Call `security-and-hardening` inside that implementation when the change touches input, a session, auth, permissions, personal data, payments, a new secret or credential, or a new integration.
 8. After the check passes, hand the diff to `code-reviewer`. That agent loads `code-review-and-quality`. Do not also call Matt's `code-review`.
 9. Call `retro` once.
 
@@ -45,7 +45,7 @@ If the size is unclear, treat it as the higher one.
 2. Call `to-spec`, then `to-tickets`.
 3. Call `prd-td-coherence` only when a PRD and a design already exist. Do not call `tech-lead`.
 4. Stop for a human gate before code.
-5. If the change touches auth, permissions, personal data, payments, or a new integration, and it was not already classified critical, stop and treat it as critical before any slice is implemented. Do not stop when it is already critical.
+5. If the change touches auth, permissions, personal data, payments, a new secret or credential, or a new integration, and it was not already classified critical, stop and treat it as critical before any slice is implemented. Do not stop when it is already critical.
 6. Hand each slice to `implementer` with `poteto-mode` and pstack's `tdd`.
 7. After the slices pass, call `blast-radius`, then `code-reviewer` with `code-review-and-quality`. Do not call Matt's `code-review`.
 8. Call `retro` once.
@@ -53,7 +53,7 @@ If the size is unclear, treat it as the higher one.
 
 ## Critical
 
-Auth, permissions, personal data, payments, or a new integration is this size at any file count. Do not re-enter the medium or large stop checks. Continue this sequence:
+Auth, permissions, personal data, payments, a new secret or credential, or a new integration is this size at any file count. Do not re-enter the medium or large stop checks. Continue this sequence:
 
 1. Call `grill-with-docs`. If it does not fit one session, call `wayfinder` as well.
 2. Call `to-spec`. If it does not fit one session, call `to-tickets` and stop for a human gate before code.

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Retro check: did sessions use route-work, launch implementer, and load poteto-mode?
-# Usage: scripts/route-audit.sh [project-filter] [days]
+# Usage: scripts/route-audit.sh [project-filter] [days]   e.g. scripts/route-audit.sh myproject 7
 # Reads Cursor transcripts under ~/.cursor/projects. Prints counts only.
 set -eu
 filter=${1:-}

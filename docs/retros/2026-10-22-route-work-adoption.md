@@ -1,4 +1,4 @@
-# Retro 2026-10-22: route-work in a client project
+# Retro 2026-10-22: route-work adoption in a client project
 
 ## What happened
 

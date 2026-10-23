@@ -18,6 +18,6 @@ The git repo is the source of truth. A clone plus `scripts/link.sh` points the u
 
 ## How work moves
 
-`skills/route-work` classifies the change first. Small work skips the spec and the review agent. Medium, large, and critical use Matt Pocock before code (`grill-with-docs`, `to-spec`, and `to-tickets` when the work is large) and pstack during code (`poteto-mode`). One `code-reviewer` reads medium, large, and critical diffs. Critical then adds `security-auditor`. The map is in `docs/workflow.md`.
+`rules/route-work.mdc` is always applied, so every new session starts with `skills/route-work`. It classifies the change (small, medium, large, critical), runs Matt Pocock's planning skills for that size, and launches the `implementer` subagent, which loads `poteto-mode` before writing code. Medium and up add `code-reviewer`; critical adds `security-auditor`; every run ends with a `route-work check` block. The map is in `docs/software-factory.md`; `scripts/route-audit.sh` counts whether it really happened.
 
 Grok bots sit on the outer loop: Engineer Lead splits work, Dr Eggbot designs bots, Think-a-bot is recorded in `docs/grok-roster.md`. The agent that delegates, and does not implement, is `agents/coordinator.md`.

@@ -1,0 +1,15 @@
+---
+description: Default orchestrator. Every coding task starts with route-work.
+alwaysApply: true
+---
+
+# Route work by default
+
+For any task that edits code, config, or docs in a repo, before editing anything:
+
+1. Read `~/.cursor/skills/route-work/SKILL.md` and follow it.
+2. Print `route-work: <size> — <reason>` first.
+3. Code is written only by the `implementer` subagent (Task tool), which loads `poteto-mode`. Do not edit in the parent chat.
+4. End with the `route-work check` block.
+
+Skip this only for questions, reviews, or research with no edits, or when the user says "sin route-work".

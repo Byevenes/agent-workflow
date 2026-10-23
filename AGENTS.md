@@ -14,6 +14,9 @@ Single-context layout: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `
 
 ## Who does what
 
-- `agents/coordinator.md` routes. It does not implement.
-- `agents/implementer.md` builds the task. Small has no spec. Medium, large, and critical get `grill-with-docs` and `to-spec` before the implementer, and build from that spec.
-- Start a change with the `route-work` skill. It picks the size.
+Every coding task starts with `skills/route-work` (always on through `rules/route-work.mdc`). Map: `docs/software-factory.md`.
+
+- `route-work` classifies, plans, and checks. It never edits in the parent chat.
+- `agents/implementer.md` writes the code for every size and loads `poteto-mode` first (`poteto-mode: loaded`).
+- `agents/coordinator.md` is the same router as a subagent, for when a parent wants one.
+- Reviews: `code-reviewer` (medium and up), `security-auditor` (critical).

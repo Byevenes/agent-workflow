@@ -1,75 +1,65 @@
 ---
 name: route-work
-description: "Classify a change as small, medium, large, or critical, then call only that path. Use when starting work in this workflow stack."
-disable-model-invocation: true
+description: "Default orchestrator for every coding task. Classify the change as small, medium, large, or critical, then run only that path: Matt Pocock planning skills before code, the implementer subagent (poteto-mode) for code, code-reviewer and retro after. Use at the start of any task that edits code or config."
 ---
 
 # Route work
 
-Do not implement in this skill. Classify, then call the other skills. Do not load a skill this file does not name for the chosen size.
+You are the orchestrator. You classify, plan, delegate, and check. You do not write the diff in this chat. Code is written by the `implementer` subagent, which runs `poteto-mode`.
 
-Size follows risk, not file count. Auth, permissions, personal data, payments, a new secret or credential, or a new integration is critical at any file count. It is never small and it is never left on medium or large.
+Planning skills (`grill-me`, `grill-with-docs`, `to-spec`, `to-tickets`, `wayfinder`) and `poteto-mode` are user-invoked skills, so they may be missing from your skill catalog. Read them by path: `~/.cursor/skills/<name>/SKILL.md` (OpenCode: `~/.config/opencode/skills/<name>/SKILL.md`). A missing catalog entry is not a missing skill.
 
-## Classify
+Load only the skills named for the chosen size. Ignore any other router, spec chain, or review panel that a repo rule or installed plugin offers, unless the user names it.
 
-- **Small.** One clear area, one session, no sensitive boundary. Example: change a button.
-- **Medium.** Several pieces or unclear edges, still one session, and none of the boundaries above.
-- **Large.** Several slices, or more than one session, and none of the boundaries above.
-- **Critical.** Any of those boundaries, short or long. Follow the Critical sequence below. Do not reuse the medium or large stop checks. A short auth change is critical. A several-file personal-data change is critical.
+## 1. Classify
 
-If the size is unclear, treat it as the higher one.
+Size follows risk, not file count. If unsure, take the higher size.
 
-## Small
+- **Small.** One clear area, one session, no sensitive boundary. Example: rename a variable, change a button.
+- **Medium.** Several pieces or unclear edges, still one session.
+- **Large.** Several slices, or more than one session.
+- **Critical.** Auth, permissions, personal data, payments, secrets or credentials, or a new integration, at any file count. Never small.
 
-1. Call `grill-me` only when a decision is still open. Skip it when the change is already clear.
-2. Do not call `grill-with-docs`, `to-spec`, `to-tickets`, `wayfinder`, or `prd-td-coherence`.
-3. Do not read a PRD, Figma, or Stitch unless the user points at one.
-4. Hand the task to `implementer`. There is no spec. `poteto-mode` implements. If behavior changes, one focused test.
-5. Do not call `code-review`, `code-reviewer`, `security-auditor`, or `test-engineer`.
+Say the size and the reason in one line before anything else: `route-work: <size> — <reason>`.
 
-## Medium
+## 2. Plan (before code)
 
-1. Call `grill-with-docs`.
-2. Call `to-spec`. Publish the spec to this repo's issue tracker (`.scratch/`) when the work is in this repo. Otherwise publish it where the user said.
-3. Call `prd-td-coherence` only when a PRD and a design already exist.
-4. Read a PRD, Figma, or Stitch reference only when one already exists.
-5. Hand the spec to `implementer`. `poteto-mode` implements, with pstack's `tdd`. On OpenCode that skill is `pstack-tdd` when the plain `tdd` name is Matt's.
-6. If the change touches auth, permissions, personal data, payments, a new secret or credential, or a new integration, and it was not already classified critical, stop and treat it as critical. Do not stop when it is already critical.
-7. Call `security-and-hardening` inside that implementation when the change touches input, a session, auth, permissions, personal data, payments, a new secret or credential, or a new integration.
-8. After the check passes, hand the diff to `code-reviewer`. That agent loads `code-review-and-quality`. Do not also call Matt's `code-review`.
-9. Call `retro` once.
+- **Small.** `grill-me` only if a decision is still open, one question at a time. No spec.
+- **Medium.** `grill-with-docs`. Then `to-spec`, written to `.scratch/<slug>.md` (disposable, not committed unless the repo asks). Optional: an ADR in `docs/adr/` when a decision is hard to reverse; a statechart (mermaid `stateDiagram-v2`) in the spec when the feature has several states.
+- **Large.** Medium, plus `to-tickets` (slices), then **stop for the user's approval before any code**. Use `wayfinder` when the plan does not fit one session.
+- **Critical.** Large, plus `security-and-hardening` in the spec. `formal-verification` is optional for invariants.
 
-## Large
+If a medium or large change turns out to cross a critical boundary, reclassify it as critical and continue from there.
 
-1. Call `grill-with-docs`. If it does not fit one session, call `wayfinder` instead of holding it all there.
-2. Call `to-spec`, then `to-tickets`.
-3. Call `prd-td-coherence` only when a PRD and a design already exist. Do not call `tech-lead`.
-4. Stop for a human gate before code.
-5. If the change touches auth, permissions, personal data, payments, a new secret or credential, or a new integration, and it was not already classified critical, stop and treat it as critical before any slice is implemented. Do not stop when it is already critical.
-6. Hand each slice to `implementer` with `poteto-mode` and pstack's `tdd`.
-7. After the slices pass, call `blast-radius`, then `code-reviewer` with `code-review-and-quality`. Do not call Matt's `code-review`.
-8. Call `retro` once.
-9. On OpenCode, Sisyphus may split the slices. It follows this skill. It does not open Hephaestus, Prometheus, Atlas, Gentleman, or the SDD chain. On Cursor, `coordinator` splits them.
+## 3. Implement (always a subagent)
 
-## Critical
+Launch the `implementer` subagent with the Task tool (`subagent_type: "implementer"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, and the paths it must not touch. Do not edit files in this chat. If the Task tool or the `implementer` agent is unavailable, say so and stop; do not fall back to editing here.
 
-Auth, permissions, personal data, payments, a new secret or credential, or a new integration is this size at any file count. Do not re-enter the medium or large stop checks. Continue this sequence:
+- Small: the task. One focused test if behavior changes.
+- Medium and up: the spec path. `poteto-mode` with pstack's `tdd` (`pstack-tdd` on OpenCode).
+- Large and critical: one `implementer` per slice, in order.
+- Critical: tell it to apply `security-and-hardening`.
 
-1. Call `grill-with-docs`. If it does not fit one session, call `wayfinder` as well.
-2. Call `to-spec`. If it does not fit one session, call `to-tickets` and stop for a human gate before code.
-3. Call `prd-td-coherence` only when a PRD and a design already exist. Do not call `tech-lead`.
-4. Hand the spec to `implementer`. `poteto-mode` implements, with pstack's `tdd`, and calls `security-and-hardening`. On OpenCode that skill is `pstack-tdd` when the plain `tdd` name is Matt's.
-5. If it did not fit one session, call `blast-radius` after the slices pass.
-6. Hand the diff to `code-reviewer`. That agent loads `code-review-and-quality`. Do not also call Matt's `code-review`.
-7. Call `security-auditor` after that review. `code-reviewer` may also ask for this pass.
-8. Call `retro` once.
+Reject the implementer's report if it lacks the line `poteto-mode: loaded`. Relaunch it once with that requirement explicit.
 
-Do not run `security-auditor` on a small change.
+## 4. Check (after code)
 
-## Never on this path
+- **Small.** Read the diff and the checks it ran. No review agent.
+- **Medium.** `code-reviewer` on the diff, with the spec path. It must confirm the spec still matches the diff.
+- **Large.** `blast-radius`, then `code-reviewer` with the spec and tickets.
+- **Critical.** `code-reviewer`, then `security-auditor`.
 
-Do not call these, even though they may be installed: `sdd-explore`, `sdd-propose`, `sdd-spec`, `sdd-design`, `sdd-tasks`, `sdd-apply`, `sdd-verify`, `tech-lead`, `senior-code-engineer`, `test-engineer`, `interrogate`, `review-risk`, `review-readability`, `review-reliability`, `review-resilience`, `review-refuter`, `judgment-day`.
+## 5. Retro
 
-`interrogate` runs only when the user asks for a contested design. `test-engineer` runs only when the user asks for a test strategy, not because tests exist.
+Medium and up: run `retro` once. Every size: end your final reply with this block, filled with facts from this session:
 
-Do not write domain docs, skills, or rules into any repo other than this one unless the user says to write them there.
+```
+route-work check
+- route-work invoked: yes
+- size: <size>
+- implementer launched: <yes/no>
+- poteto-mode loaded by implementer: <yes/no>
+- reviewers: <none | code-reviewer | code-reviewer + security-auditor>
+```
+
+`scripts/route-audit.sh` in the agent-workflow repo counts the same facts from Cursor transcripts.

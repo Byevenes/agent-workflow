@@ -31,6 +31,10 @@ link_force "$ROOT/skills/route-work" "$HOME_DIR/.cursor/skills/route-work"
 link_force "$ROOT/skills/route-work" "$HOME_DIR/.config/opencode/skills/route-work"
 link_new "$ROOT/skills/route-work" "$HOME_DIR/.agents/skills/route-work"
 
+# Always-on entry: every new session starts with route-work.
+link_force "$ROOT/rules/route-work.mdc" "$HOME_DIR/.cursor/rules/route-work.mdc"
+link_force "$ROOT/rules/route-work.mdc" "$HOME_DIR/.config/opencode/route-work.md"
+
 # Agents published from this repo. Never replace a file that is already there
 # unless it is already a symlink we own.
 for agent in coordinator implementer; do

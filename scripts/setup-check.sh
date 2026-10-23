@@ -38,6 +38,10 @@ check_link "$HOME/.cursor/plugins/cache/cursor-public/pstack"
 check_link "$ROOT/skills/route-work/SKILL.md"
 check_link "$HOME/.cursor/rules/route-work.mdc"
 check_link "$HOME/.cursor/agents/implementer.md"
+check_link "$HOME/.cursor/agents/code-reviewer.md"
+check_link "$HOME/.config/opencode/agents/code-reviewer.md"
+check_link "$HOME/.config/opencode/agents/route-work.md"
+if grep -q '"default_agent": "route-work"' "$HOME/.config/opencode/opencode.json" 2>/dev/null; then echo "ok opencode default_agent route-work"; else echo "todo opencode: set \"default_agent\": \"route-work\""; fi
 if grep -q "route-work.md" "$HOME/.config/opencode/opencode.json" 2>/dev/null; then echo "ok opencode instructions route-work"; else echo "todo opencode: add ~/.config/opencode/route-work.md to \"instructions\" in opencode.json"; fi
 
 if [ -n "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]; then

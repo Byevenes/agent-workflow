@@ -37,7 +37,7 @@ link_force "$ROOT/rules/route-work.mdc" "$HOME_DIR/.config/opencode/route-work.m
 
 # Agents published from this repo. Never replace a file that is already there
 # unless it is already a symlink we own.
-for agent in coordinator implementer; do
+for agent in coordinator implementer code-reviewer; do
   src="$ROOT/agents/$agent.md"
   for dest in \
     "$HOME_DIR/.cursor/agents/$agent.md" \
@@ -48,10 +48,13 @@ for agent in coordinator implementer; do
       ln -sfn "$src" "$dest"
       echo "link $dest"
     else
-      echo "keep $dest"
+      echo "keep $dest (regular file; back it up and remove it to link)"
     fi
   done
 done
+
+# OpenCode-only primary agent: the default orchestrator.
+link_force "$ROOT/agents/opencode/route-work.md" "$HOME_DIR/.config/opencode/agents/route-work.md"
 
 # Matt skills already installed under ~/.agents/skills: mirror any that
 # are missing from the Cursor and OpenCode skill folders.

@@ -1,8 +1,8 @@
-# Retro 2026-10-22: route-work in AFP Modelo
+# Retro 2026-10-22: route-work adoption in a client project
 
 ## What happened
 
-Batch of UI bugs on one branch. Of 547 Cursor sessions in that repo, 4 asked for `route-work`; none launched `poteto-agent`. All four edited in the parent chat after labeling the task Small.
+Batch of UI bugs on one branch. In hundreds of Cursor sessions on that project, only a handful asked for `route-work`; none launched `poteto-agent`. All of them edited in the parent chat after labeling the task Small.
 
 ## Root cause
 

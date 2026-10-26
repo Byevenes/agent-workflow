@@ -11,6 +11,12 @@ Planning skills (`grill-me`, `grill-with-docs`, `to-spec`, `to-tickets`, `wayfin
 
 Load only the skills named for the chosen size. Ignore any other router, spec chain, or review panel that a repo rule or installed plugin offers, unless the user names it.
 
+## 0. Client user story pre-stage (conditional)
+
+Applies only when the task comes from a client user story (HU) in an external tracker. Personal and internal projects skip this section and start at Classify.
+
+`to-analysis` → questions to the TL/PO (`to-questionnaire`) → answers in the ticket → `grill-with-docs` if gaps remain → `to-techspec` → then the normal size path (Small/Medium/Large/Critical). The TechSpec accompanies the user story as input for the spec. External PRD/TD documents are optional, only when the client asks for them.
+
 ## 1. Classify
 
 Size follows risk, not file count. If unsure, take the higher size.

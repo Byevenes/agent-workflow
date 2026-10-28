@@ -8,7 +8,7 @@ alwaysApply: true
 For any task that edits code, config, or docs in a repo, before editing anything:
 
 1. Read `~/.cursor/skills/route-work/SKILL.md` and follow it.
-2. Print `route-work: <size> — <reason>` first.
+2. Print `route-work: <size>, <full|partial> verifiable — <reason>` first. Full: automated checks must run green before done. Partial: the final report lists what was not verified automatically and how to check it by hand, and it needs explicit human review before done.
 3. Code is written only by the `implementer` subagent (Task tool), which loads `poteto-mode`. Do not edit in the parent chat.
 4. End with the `route-work check` block.
 

@@ -1,11 +1,11 @@
 ---
 name: route-work
-description: "Default orchestrator for every coding task. Classify the change as small, medium, large, or critical, then run only that path: Matt Pocock planning skills before code, the implementer subagent (poteto-mode) for code, code-reviewer and retro after. Use at the start of any task that edits code or config."
+description: "Default orchestrator for every coding task. Classify the change as small, medium, large, or critical, then run only that path: Matt Pocock planning skills before code, the implementer subagent (poteto-mode) for code, or that same flow on the inline trigger in section 3, code-reviewer and retro after. Use at the start of any task that edits code or config."
 ---
 
 # Route work
 
-You are the orchestrator. You classify, plan, delegate, and check. You do not write the diff in this chat. Code is written by the `implementer` subagent, which runs `poteto-mode`.
+You are the orchestrator. You classify, plan, delegate, and check. Code is written by the `implementer` subagent, which runs `poteto-mode`. Run inline when the Task tool is absent, or its subagent list does not include implementer, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists implementer, you must launch it. Otherwise you do not write the diff in this chat.
 
 Planning skills (`grill-me`, `grill-with-docs`, `to-spec`, `to-tickets`, `wayfinder`) and `poteto-mode` are user-invoked skills, so they may be missing from your skill catalog. Read them by path: `~/.cursor/skills/<name>/SKILL.md` (OpenCode: `~/.config/opencode/skills/<name>/SKILL.md`). A missing catalog entry is not a missing skill.
 
@@ -42,18 +42,24 @@ Say the size, verifiability, and reason in one line before anything else: `route
 
 If a medium or large change turns out to cross a critical boundary, reclassify it as critical and continue from there.
 
-## 3. Implement (always a subagent)
+## 3. Implement (subagent, or inline)
 
-Launch the `implementer` subagent with the Task tool (`subagent_type: "implementer"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, and the paths it must not touch. Do not edit files in this chat. If the Task tool or the `implementer` agent is unavailable, say so and stop; do not fall back to editing here.
+Launch the `implementer` subagent with the Task tool (`subagent_type: "implementer"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, and the paths it must not touch. Do not edit files in this chat on that path.
+
+Run inline when the Task tool is absent, or its subagent list does not include implementer, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists implementer, you must launch it.
+
+Inline: read `poteto-mode` by the path in the intro and follow it. Load the skills for this size (`tdd`, `pstack-tdd` on OpenCode, `security-and-hardening` on critical). Emit the implementer report lines (`poteto-mode: loaded`, `size:`, `checks:`) and the route-work check block. Set `implementer launched: no (inline: <reason>)`.
 
 - Small: the task. One focused test if behavior changes.
 - Medium and up: the spec path. `poteto-mode` with pstack's `tdd` (`pstack-tdd` on OpenCode).
-- Large and critical: one `implementer` per slice, in order.
-- Critical: tell it to apply `security-and-hardening`.
+- Large and critical: one `implementer` per slice, in order. Inline: those slices here, in order.
+- Critical: tell it to apply `security-and-hardening`. Inline: apply it here.
 
-Reject the implementer's report if it lacks the line `poteto-mode: loaded`. Relaunch it once with that requirement explicit.
+On the subagent path, reject the report if it lacks the line `poteto-mode: loaded`. Relaunch it once with that requirement explicit. On the inline path, include that line in this session's report.
 
 ## 4. Check (after code)
+
+When section 3 ran inline, this pass is a second author pass, not the code-reviewer role. Do not launch a reviewer subagent on that path. Set `reviewers: inline self-check`.
 
 - **Small.** Read the diff and the checks it ran. No review agent.
 - **Medium.** `code-reviewer` on the diff, with the spec path. It must confirm the spec still matches the diff.
@@ -70,9 +76,9 @@ route-work check
 - size: <size>
 - verifiable: <full|partial>
 - not verified automatically: <none | item → how to check by hand>
-- implementer launched: <yes/no>
-- poteto-mode loaded by implementer: <yes/no>
-- reviewers: <none | code-reviewer | code-reviewer + security-auditor>
+- implementer launched: <yes | no (inline: <reason>)>
+- poteto-mode loaded: <yes/no> (<implementer | inline>)
+- reviewers: <none | code-reviewer | code-reviewer + security-auditor | inline self-check>
 ```
 
 `scripts/route-audit.sh` in the agent-workflow repo counts most of the same facts (not verifiability) from Cursor transcripts.

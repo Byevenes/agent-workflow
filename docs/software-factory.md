@@ -14,10 +14,10 @@ flowchart TD
   cPlan --> gate
   sPlan --> impl
   mPlan --> impl
-  gate --> impl[implementer subagent via Task]
-  impl --> pm[loads poteto-mode SKILL.md → reports poteto-mode: loaded]
+  gate --> impl[implementer via Task or inline]
+  impl --> pm[implementer or inline session loads poteto-mode SKILL.md → reports poteto-mode: loaded]
   pm --> tdd[pstack tdd · project checks]
-  tdd -->|Small| done[Parent reads diff and checks]
+  tdd -->|Small| done[Parent or inline session reads diff and checks]
   tdd -->|Medium| cr[code-reviewer: spec still matches diff]
   tdd -->|Large| br[blast-radius] --> cr
   tdd -->|Critical| cr2[code-reviewer] --> sa[security-auditor]
@@ -27,6 +27,8 @@ flowchart TD
   retro --> check
   check --> audit[scripts/route-audit.sh counts it from transcripts]
 ```
+
+Run inline when the Task tool is absent, or its subagent list does not include implementer, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists implementer, you must launch it. That `impl` step then runs in the same session. The check block records `implementer launched: no (inline: <reason>)`. `scripts/route-audit.sh` counts delegated launches only; inline runs show as not launched.
 
 ## Where it is wired
 

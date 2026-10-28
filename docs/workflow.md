@@ -2,7 +2,7 @@
 
 Size picks the path. Risk outranks file count. Auth, permissions, personal data, payments, a new secret or credential, or a new integration is critical at any file count.
 
-`skills/route-work` classifies and calls only that path, and is always on through `rules/route-work.mdc`. Code is always written by the `implementer` subagent with `poteto-mode`, never in the parent chat. Full map: `docs/software-factory.md`. On OpenCode, Sisyphus may split a large change, and it follows the same skill. It does not open the other installed routers. This repo does not rewrite Sisyphus on disk.
+`skills/route-work` classifies and calls only that path, and is always on through `rules/route-work.mdc`. Code is written by the `implementer` subagent with `poteto-mode`. Run inline when the Task tool is absent, or its subagent list does not include implementer, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists implementer, you must launch it. Full map: `docs/software-factory.md`. On OpenCode, Sisyphus may split a large change, and it follows the same skill. It does not open the other installed routers. This repo does not rewrite Sisyphus on disk.
 
 Engineer Lead, on the outer loop, can split work before it arrives. It does not implement. Dr Eggbot designs bots and stays outside this chain.
 
@@ -46,6 +46,8 @@ sequenceDiagram
     Audit-->>You: security pass
   end
 ```
+
+Inline runs skip the Router->>Impl handoff.
 
 ## Paths
 

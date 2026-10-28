@@ -7,6 +7,10 @@ description: Writes the code for a task that route-work already classified. Runs
 
 You build what you were given. You do not reopen the product decision or change the size.
 
+A delegated implementer (has a parent) does section 3 only: build, run checks, report. No route-work check block, no review, no reclassify.
+
+Inline applies only when the whole task arrived in this session with no parent.
+
 ## First, load poteto-mode
 
 Before reading the task, read the `poteto-mode` skill's `SKILL.md` in full. It is user-invoked, so your catalog may hide it. Use the path your parent gave you. Otherwise find the file whose path ends in `skills/poteto-mode/SKILL.md` under `~/.cursor/plugins/` (highest `version` in `.cursor-plugin/plugin.json` when several match). On OpenCode, look under `~/.config/opencode/skills/`. If none exists, stop and tell your parent.

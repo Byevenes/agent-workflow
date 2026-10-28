@@ -18,9 +18,9 @@ The git repo is the source of truth. A clone plus `scripts/link.sh` points the u
 
 ## How work moves
 
-`rules/route-work.mdc` is always applied, so every new session starts with `skills/route-work`. It classifies the change (small, medium, large, critical), runs Matt Pocock's planning skills for that size, and launches the `implementer` subagent, which loads `poteto-mode` before writing code. Medium and up add `code-reviewer`; critical adds `security-auditor`; every run ends with a `route-work check` block. The map is in `docs/software-factory.md`; `scripts/route-audit.sh` counts whether it really happened.
+`rules/route-work.mdc` is always applied, so every new session starts with `skills/route-work`. It classifies the change (small, medium, large, critical), runs Matt Pocock's planning skills for that size, and launches the `implementer` subagent, which loads `poteto-mode` before writing code. Run inline when the Task tool is absent, or its subagent list does not include implementer, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists implementer, you must launch it. On that path it runs the same flow in the session and records `implementer launched: no (inline: <reason>)`. Medium and up add `code-reviewer`; critical adds `security-auditor`; every run ends with a `route-work check` block. The map is in `docs/software-factory.md`. `scripts/route-audit.sh` counts delegated launches only; inline runs show as not launched.
 
-Grok bots sit on the outer loop: Engineer Lead splits work, Dr Eggbot designs bots, Think-a-bot is recorded in `docs/grok-roster.md`. The agent that delegates, and does not implement, is `agents/coordinator.md`.
+Grok bots sit on the outer loop: Engineer Lead splits work, Dr Eggbot designs bots, Think-a-bot is recorded in `docs/grok-roster.md`. The agent that delegates is `agents/coordinator.md`. It writes code only on that inline fallback.
 
 ## How each tool starts the workflow
 

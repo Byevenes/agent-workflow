@@ -9,7 +9,7 @@ For any task that edits code, config, or docs in a repo, before editing anything
 
 1. Read `~/.cursor/skills/route-work/SKILL.md` and follow it.
 2. Print `route-work: <size>, <full|partial> verifiable — <reason>` first. Full: automated checks must run green before done. Partial: the final report lists what was not verified automatically and how to check it by hand, and it needs explicit human review before done.
-3. Code is written only by the `implementer` subagent (Task tool), which loads `poteto-mode`. Do not edit in the parent chat.
+3. Code is written by the `implementer` subagent (Task tool), which loads `poteto-mode`. Run inline when the Task tool is absent, or its subagent list does not include implementer, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists implementer, you must launch it. On that path, run the flow in this session (poteto-mode and the skills for the size) and record `implementer launched: no (inline: <reason>)`. Otherwise do not edit in the parent chat.
 4. End with the `route-work check` block.
 
 Skip this only for questions, reviews, or research with no edits, or when the user says "sin route-work".

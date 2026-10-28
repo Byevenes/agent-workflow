@@ -5,7 +5,7 @@ How one task moves through this setup, from intake to retro. `skills/route-work/
 ```mermaid
 flowchart TD
   task[Task in a new session] --> rule[rules/route-work.mdc always on]
-  rule --> rw[route-work classifies: route-work: size — reason]
+  rule --> rw[route-work classifies: route-work: size, verifiability — reason]
   rw -->|Small| sPlan[grill-me only if a decision is open]
   rw -->|Medium| mPlan[grill-with-docs → to-spec in .scratch/ · optional ADR / statechart]
   rw -->|Large| lPlan[Medium + to-tickets · wayfinder if multi-session]

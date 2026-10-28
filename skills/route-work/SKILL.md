@@ -26,7 +26,12 @@ Size follows risk, not file count. If unsure, take the higher size.
 - **Large.** Several slices, or more than one session.
 - **Critical.** Auth, permissions, personal data, payments, secrets or credentials, or a new integration, at any file count. Never small.
 
-Say the size and the reason in one line before anything else: `route-work: <size> — <reason>`.
+Besides size, record verifiability, with the reason.
+
+- **Full.** The repo's automated checks (tests, type checks, lint, others it has) prove it is done. They must run green before done.
+- **Partial.** Pixel-perfect UI, copy or visual changes, behavior depending on external systems or data not available locally, or manual flows. The final report lists exactly what could not be verified automatically and how to check each item by hand. The task cannot be marked done without explicit human review.
+
+Say the size, verifiability, and reason in one line before anything else: `route-work: <size>, <full|partial> verifiable — <reason>`.
 
 ## 2. Plan (before code)
 
@@ -63,9 +68,11 @@ Medium and up: run `retro` once. Every size: end your final reply with this bloc
 route-work check
 - route-work invoked: yes
 - size: <size>
+- verifiable: <full|partial>
+- not verified automatically: <none | item → how to check by hand>
 - implementer launched: <yes/no>
 - poteto-mode loaded by implementer: <yes/no>
 - reviewers: <none | code-reviewer | code-reviewer + security-auditor>
 ```
 
-`scripts/route-audit.sh` in the agent-workflow repo counts the same facts from Cursor transcripts.
+`scripts/route-audit.sh` in the agent-workflow repo counts most of the same facts (not verifiability) from Cursor transcripts.

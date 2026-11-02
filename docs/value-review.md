@@ -14,16 +14,16 @@ Matt's `to-spec` and `to-tickets` overlap the SDD skills already in `~/.cursor/s
 
 ## What this flow does not load
 
-Nothing here is deleted. Other repos may still name these files. `route-work` does not call them.
+Nothing here is deleted. Other repos may still name these files. `zstack` does not call them.
 
-- Matt's `code-review`. It repeats the spec axis and opens two subagents. `code-reviewer` loads `code-review-and-quality` once, on medium, large, and critical.
+- Matt's `code-review`. It repeats the spec axis and opens two subagents. `zsensei` loads `code-review-and-quality` once, on medium, large, and critical.
 - `interrogate`, unless the user asks for a contested design.
 - `review-risk`, `review-readability`, `review-reliability`, `review-resilience`, `review-refuter`, and `judgment-day`.
 - `sdd-explore` through `sdd-verify`, `tech-lead`, and `senior-code-engineer`. Definition is `grill-with-docs` and `to-spec`. `prd-td-coherence` runs only when a PRD and a design already exist.
 - `test-engineer`, unless the user asks for a test strategy. The change's tests come from pstack's `tdd` inside `poteto-mode`.
 - `security-auditor` on anything that is not critical. `security-and-hardening` runs during implementation when the change touches input, a session, auth, permissions, personal data, payments, a new secret or credential, or a new integration.
 
-`code-review` and `code-review-and-quality` both stay installed. Only the second is on this path, and only through `code-reviewer`.
+`code-review` and `code-review-and-quality` both stay installed. Only the second is on this path, and only through `zsensei`.
 
 ## Browsers
 
@@ -31,7 +31,7 @@ Nothing here is deleted. Other repos may still name these files. `route-work` do
 
 ## OpenCode agents
 
-Sisyphus, Hephaestus, Prometheus, Atlas, and Gentleman stay. This repo only adds `coordinator` and `implementer` when those names are free.
+Sisyphus, Hephaestus, Prometheus, Atlas, and Gentleman stay. This repo only adds `zigl` and `zninja` when those names are free.
 
 ## Models
 

@@ -7,3 +7,8 @@
 - **Outer loop**: Grok bots that read tasks and hand them inward. They do not replace the local panes.
 - **Pane**: one terminal inside Herdr. One pane is Cursor CLI. Another is OpenCode.
 - **Issue tracker**: for this repo, markdown files under `.scratch/`. Not the host's issue product.
+- **zStack**: the whole flow, from intake to retro (`skills/zstack`). `route-work` is its alias until 2026-12-01.
+- **zIGL**: the router role that classifies, plans and checks (`agents/zigl.md`, and the zstack skill itself).
+- **zNinja**: the implementer subagent (`agents/zninja.md`).
+- **zSensei**: the reviewer subagent (`agents/zsensei.md`).
+- **zHunter, zGuard**: reserved names, no role yet.

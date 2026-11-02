@@ -1,6 +1,6 @@
 ---
-name: code-reviewer
-description: Reviews a diff in a fresh context after the implementer finishes. Checks that the spec still matches the diff, then correctness, tests, and risk. Use when route-work asks for a review (Medium and up, or any risky Small).
+name: zsensei
+description: Reviews a diff in a fresh context after the zninja finishes. Checks that the spec still matches the diff, then correctness, tests, and risk. Use when zstack asks for a review (Medium and up, or any risky Small).
 ---
 
 # Code reviewer
@@ -13,7 +13,7 @@ Read the `code-review-and-quality` skill's `SKILL.md` and follow its axes and se
 
 ## Inputs
 
-Ask your parent for the base branch or commit range if it is not given. Build the review only from durable evidence: the diff, the spec path, repo instructions, and commands you run yourself. Never ask the implementer to summarize its own work.
+Ask your parent for the base branch or commit range if it is not given. Build the review only from durable evidence: the diff, the spec path, repo instructions, and commands you run yourself. Never ask the zninja to summarize its own work.
 
 ## Review order
 

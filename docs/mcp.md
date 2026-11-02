@@ -28,6 +28,6 @@ OpenCode has the same set except Figma cloud.
 
 `agent-browser` stays. Playwright is the extra check for screens. The value review compares them. Neither is removed here.
 
-The coordinator uses GitHub, GitLab, and Atlassian. The implementer uses Playwright, and Postgres only when the spec touches the database.
+zIGL uses GitHub, GitLab, and Atlassian. zNinja uses Playwright, and Postgres only when the spec touches the database.
 
 If a variable is unset, that server does not start. The script says which variable is missing and does not print the value.

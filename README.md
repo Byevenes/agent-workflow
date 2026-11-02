@@ -33,3 +33,7 @@ Grok bots sit on the outer loop: Engineer Lead splits work, Dr Eggbot designs bo
 | Any other harness | read `rules/zstack.mdc` first |
 
 Subagents: `zninja` (loads `poteto-mode`) and `zsensei` (checks the spec still matches the diff). The OpenCode agents default to free OpenCode Zen models.
+
+## Checks
+
+`scripts/check.sh` keeps the copies aligned (inline-trigger sentence, client `--force` rule, no SDD/tech-lead/test-engineer, no old role names), enforces the no-comments rule in scripts, and runs `shellcheck` when installed. `scripts/link.sh` sets `core.hooksPath` to `.githooks`, so it runs on pre-commit and pre-push; `.github/workflows/check.yml` runs it in CI. Script docs: `docs/scripts.md`.

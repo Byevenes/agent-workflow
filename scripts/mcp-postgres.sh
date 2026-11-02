@@ -1,5 +1,4 @@
 #!/bin/sh
-# Start the Postgres MCP server. The URL stays in the environment.
 set -eu
 if [ -z "${POSTGRES_URL:-}" ]; then
   echo "POSTGRES_URL is not set" >&2

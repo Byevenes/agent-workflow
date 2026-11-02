@@ -1,5 +1,4 @@
 #!/bin/sh
-# Report whether the local setup resolves. Never print secret values.
 set -eu
 
 fail=0
@@ -18,7 +17,7 @@ need herdr
 need opencode
 need cursor-agent
 
-ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+ROOT=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
 
 check_link() {
   path=$1

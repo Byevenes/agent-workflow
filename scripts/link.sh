@@ -1,9 +1,7 @@
 #!/bin/sh
-# Point user-level Cursor and OpenCode folders at this repo.
-# Adds new directories under ~/.agents/skills only when that name is absent.
 set -eu
 
-ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+ROOT=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
 HOME_DIR=${HOME:?}
 
 link_new() {
@@ -26,7 +24,6 @@ link_force() {
   echo "link $dest"
 }
 
-# Skills published from this repo.
 link_force "$ROOT/skills/zstack" "$HOME_DIR/.cursor/skills/zstack"
 link_force "$ROOT/skills/zstack" "$HOME_DIR/.config/opencode/skills/zstack"
 link_new "$ROOT/skills/zstack" "$HOME_DIR/.agents/skills/zstack"
@@ -48,12 +45,9 @@ done
 
 git -C "$ROOT" config core.hooksPath .githooks
 
-# Always-on entry: every new session starts with zstack.
 link_force "$ROOT/rules/zstack.mdc" "$HOME_DIR/.cursor/rules/zstack.mdc"
 link_force "$ROOT/rules/zstack.mdc" "$HOME_DIR/.config/opencode/zstack.md"
 
-# Agents published from this repo. Never replace a file that is already there
-# unless it is already a symlink we own.
 for agent in zigl zninja zsensei; do
   src="$ROOT/agents/$agent.md"
   for dest in \
@@ -70,11 +64,8 @@ for agent in zigl zninja zsensei; do
   done
 done
 
-# OpenCode-only primary agent: the default orchestrator.
 link_force "$ROOT/agents/opencode/zstack.md" "$HOME_DIR/.config/opencode/agents/zstack.md"
 
-# Matt skills already installed under ~/.agents/skills: mirror any that
-# are missing from the Cursor and OpenCode skill folders.
 if [ -d "$HOME_DIR/.agents/skills" ]; then
   for src in "$HOME_DIR/.agents/skills"/*; do
     [ -d "$src" ] || continue
@@ -84,8 +75,6 @@ if [ -d "$HOME_DIR/.agents/skills" ]; then
   done
 fi
 
-# pstack skills live in the Cursor plugin cache. Link them into OpenCode
-# under pstack-<name> when the plain name is already taken.
 pstack_skills=$(find "$HOME_DIR/.cursor/plugins/cache/cursor-public/pstack" -type f -path '*/skills/*/SKILL.md' -exec dirname {} \; 2>/dev/null || true)
 for src in $pstack_skills; do
   name=$(basename "$src")

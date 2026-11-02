@@ -32,6 +32,12 @@ check_link() {
 
 check_link "$HOME/.cursor/skills/zstack"
 check_link "$HOME/.cursor/skills/route-work"
+for s in grill-me to-spec to-tickets tdd; do
+  f="$HOME/.cursor/skills/$s/SKILL.md"
+  if [ ! -f "$f" ]; then echo "missing skill $s"
+  elif grep -q '^disable-model-invocation: *true' "$f"; then echo "todo $s: remove disable-model-invocation"
+  else echo "ok $s model-invocable"; fi
+done
 check_link "$HOME/.config/opencode/skills/zstack"
 check_link "$HOME/.cursor/agents/zigl.md"
 check_link "$HOME/.config/opencode/agents/zigl.md"

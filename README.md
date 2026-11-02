@@ -18,18 +18,22 @@ The git repo is the source of truth. A clone plus `scripts/link.sh` points the u
 
 ## How work moves
 
-`rules/route-work.mdc` is always applied, so every new session starts with `skills/route-work`. It classifies the change (small, medium, large, critical), runs Matt Pocock's planning skills for that size, and launches the `implementer` subagent, which loads `poteto-mode` before writing code. Run inline when the Task tool is absent, or its subagent list does not include implementer, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists implementer, you must launch it. On that path it runs the same flow in the session and records `implementer launched: no (inline: <reason>)`. Medium and up add `code-reviewer`; critical adds `security-auditor`; every run ends with a `route-work check` block. The map is in `docs/software-factory.md`. `scripts/route-audit.sh` counts delegated launches only; inline runs show as not launched.
+`rules/zstack.mdc` is always applied, so every new session starts with `skills/zstack`. It classifies the change (small, medium, large, critical), runs Matt Pocock's planning skills for that size, and launches the `zninja` subagent, which loads `poteto-mode` before writing code. Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. On that path it runs the same flow in the session and records `zninja launched: no (inline: <reason>)`. Medium and up add `zsensei`; critical adds `security-auditor`; every run ends with a `zstack check` block. The map is in `docs/software-factory.md`. `scripts/route-audit.sh` counts delegated launches only; inline runs show as not launched.
 
-Grok bots sit on the outer loop: Engineer Lead splits work, Dr Eggbot designs bots, Think-a-bot is recorded in `docs/grok-roster.md`. The agent that delegates is `agents/coordinator.md`. It writes code only on that inline fallback.
+Grok bots sit on the outer loop: Engineer Lead splits work, Dr Eggbot designs bots, Think-a-bot is recorded in `docs/grok-roster.md`. The agent that delegates is `agents/zigl.md`. It writes code only on that inline fallback.
 
 ## How each tool starts the workflow
 
 | Tool | Entry point |
 | --- | --- |
-| Cursor (IDE and `agent` CLI) | `~/.cursor/rules/route-work.mdc`, always applied |
-| OpenCode | `default_agent: "route-work"` (`agents/opencode/route-work.md`) plus `~/.config/opencode/route-work.md` in `instructions` |
-| OpenCode Sisyphus (oh-my-openagent) | `prompt_append` that points to `route-work.md`; the global `instructions` also apply |
+| Cursor (IDE and `agent` CLI) | `~/.cursor/rules/zstack.mdc`, always applied |
+| OpenCode | `default_agent: "zstack"` (`agents/opencode/zstack.md`) plus `~/.config/opencode/zstack.md` in `instructions` |
+| OpenCode Sisyphus (oh-my-openagent) | `prompt_append` that points to `zstack.md`; the global `instructions` also apply |
 | Grok Bot | delegates code to the Cursor `agent` CLI, so the Cursor rule applies |
-| Any other harness | read `rules/route-work.mdc` first |
+| Any other harness | read `rules/zstack.mdc` first |
 
-Subagents: `implementer` (loads `poteto-mode`) and `code-reviewer` (checks the spec still matches the diff). The OpenCode agents default to free OpenCode Zen models.
+Subagents: `zninja` (loads `poteto-mode`) and `zsensei` (checks the spec still matches the diff). The OpenCode agents default to free OpenCode Zen models.
+
+## Checks
+
+`scripts/check.sh` keeps the copies aligned (inline-trigger sentence, client `--force` rule, no SDD/tech-lead/test-engineer, no old role names), enforces the no-comments rule in scripts, and runs `shellcheck` when installed. `scripts/link.sh` sets `core.hooksPath` to `.githooks`, so it runs on pre-commit and pre-push; `.github/workflows/check.yml` runs it in CI. Script docs: `docs/scripts.md`.

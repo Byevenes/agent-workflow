@@ -1,5 +1,4 @@
 #!/bin/sh
-# Start the GitLab MCP server. The token stays in the environment.
 set -eu
 if [ -z "${GITLAB_PERSONAL_ACCESS_TOKEN:-}" ]; then
   echo "GITLAB_PERSONAL_ACCESS_TOKEN is not set" >&2

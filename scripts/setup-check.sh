@@ -1,5 +1,4 @@
 #!/bin/sh
-# Report whether the local setup resolves. Never print secret values.
 set -eu
 
 fail=0
@@ -18,7 +17,7 @@ need herdr
 need opencode
 need cursor-agent
 
-ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+ROOT=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
 
 check_link() {
   path=$1
@@ -30,19 +29,26 @@ check_link() {
   fi
 }
 
+check_link "$HOME/.cursor/skills/zstack"
 check_link "$HOME/.cursor/skills/route-work"
-check_link "$HOME/.config/opencode/skills/route-work"
-check_link "$HOME/.cursor/agents/coordinator.md"
-check_link "$HOME/.config/opencode/agents/coordinator.md"
+for s in grill-me to-spec to-tickets tdd; do
+  f="$HOME/.cursor/skills/$s/SKILL.md"
+  if [ ! -f "$f" ]; then echo "missing skill $s"
+  elif grep -q '^disable-model-invocation: *true' "$f"; then echo "todo $s: remove disable-model-invocation"
+  else echo "ok $s model-invocable"; fi
+done
+check_link "$HOME/.config/opencode/skills/zstack"
+check_link "$HOME/.cursor/agents/zigl.md"
+check_link "$HOME/.config/opencode/agents/zigl.md"
 check_link "$HOME/.cursor/plugins/cache/cursor-public/pstack"
-check_link "$ROOT/skills/route-work/SKILL.md"
-check_link "$HOME/.cursor/rules/route-work.mdc"
-check_link "$HOME/.cursor/agents/implementer.md"
-check_link "$HOME/.cursor/agents/code-reviewer.md"
-check_link "$HOME/.config/opencode/agents/code-reviewer.md"
-check_link "$HOME/.config/opencode/agents/route-work.md"
-if grep -q '"default_agent": "route-work"' "$HOME/.config/opencode/opencode.json" 2>/dev/null; then echo "ok opencode default_agent route-work"; else echo "todo opencode: set \"default_agent\": \"route-work\""; fi
-if grep -q "route-work.md" "$HOME/.config/opencode/opencode.json" 2>/dev/null; then echo "ok opencode instructions route-work"; else echo "todo opencode: add ~/.config/opencode/route-work.md to \"instructions\" in opencode.json"; fi
+check_link "$ROOT/skills/zstack/SKILL.md"
+check_link "$HOME/.cursor/rules/zstack.mdc"
+check_link "$HOME/.cursor/agents/zninja.md"
+check_link "$HOME/.cursor/agents/zsensei.md"
+check_link "$HOME/.config/opencode/agents/zsensei.md"
+check_link "$HOME/.config/opencode/agents/zstack.md"
+if grep -q '"default_agent": "zstack"' "$HOME/.config/opencode/opencode.json" 2>/dev/null; then echo "ok opencode default_agent zstack"; else echo "todo opencode: set \"default_agent\": \"zstack\""; fi
+if grep -q "zstack.md" "$HOME/.config/opencode/opencode.json" 2>/dev/null; then echo "ok opencode instructions zstack"; else echo "todo opencode: add ~/.config/opencode/zstack.md to \"instructions\" in opencode.json"; fi
 
 if [ -n "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]; then
   echo "ok env GITHUB_PERSONAL_ACCESS_TOKEN"

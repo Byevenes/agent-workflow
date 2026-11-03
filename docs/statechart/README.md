@@ -33,3 +33,7 @@ The model checks the skill text, not the agent's behavior or the code. It drifts
 ## Run again
 
 Load pstack's `/statechart` and run it on `ZStack.tla` with `--config ZStackTextOnly.cfg` (or `ZStack.cfg`) `--view view.mjs --out <new folder>`. Needs Java 11+ and `tla2tools.jar` v1.7.4; without mise, set `TLA2TOOLS` and `JAVA`. CI (`.github/workflows/tla.yml`) runs plain TLC on `ZStackTextOnly.cfg` and must pass.
+
+## With client-guard installed (`ZStackHooked.cfg`)
+
+`BarrierClientPublish = TRUE` models `hooks/client-guard/pre-push` installed in every client repo: no branch reaches a client remote, so no client PR can open. TLC (272 states): `ClientNeverPublishes` and `NoDeadlock` hold; the other five rules still break exactly as in `ZStack.cfg`. CI checks `ClientNeverPublishes` with this config. It holds only after Brayan installs the hook, and `--no-verify` or `CLIENT_PUSH_OK=brayan` bypass it. `BarrierMerge` stays FALSE while the agent's token is Brayan's admin account.

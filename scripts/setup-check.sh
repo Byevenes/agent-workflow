@@ -59,4 +59,20 @@ for v in GITHUB_PERSONAL_ACCESS_TOKEN GITLAB_PERSONAL_ACCESS_TOKEN POSTGRES_URL;
   else echo "optional env $v (unset; not needed, keeps client data out of OpenCode)"; fi
 done
 
+n=0; m=0
+for d in "$HOME"/Sites/tinet/Clients/*/ "$HOME"/Sites/tinet/Clients/*/*/ "$HOME"/Sites/tinet/Clients/*/*/*/; do
+  [ -d "$d/.git" ] || continue
+  n=$((n + 1))
+  hp=$(git -C "$d" rev-parse --git-path hooks/pre-push 2>/dev/null || true)
+  case $hp in /*) ;; *) hp="$d/$hp" ;; esac
+  if [ -f "$hp" ] && grep -q client-guard "$hp"; then m=$((m + 1)); fi
+done
+if [ "$n" -eq 0 ]; then echo "ok client-guard: no client repos found"
+elif [ "$m" -eq "$n" ]; then echo "ok client-guard: pre-push in $m/$n client repos"
+else echo "todo client-guard: pre-push in $m/$n client repos (Brayan installs: see docs/architecture.md)"; fi
+login=$(gh api user -q .login 2>/dev/null || true)
+if [ -z "$login" ]; then echo "warn merge-guard: gh not logged in, cannot check the agent identity"
+elif [ "$login" = Byevenes ]; then echo "todo merge-guard: gh acts as Byevenes (admin); only text stops the agent from merging"
+else echo "ok merge-guard: gh acts as $login, not the repo admin"; fi
+
 exit "$fail"

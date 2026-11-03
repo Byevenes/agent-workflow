@@ -31,12 +31,17 @@ check_link() {
 
 check_link "$HOME/.cursor/skills/zstack"
 check_link "$HOME/.cursor/skills/route-work"
-for s in grill-me to-spec to-tickets tdd; do
-  f="$HOME/.cursor/skills/$s/SKILL.md"
-  if [ ! -f "$f" ]; then echo "missing skill $s"
-  elif grep -q '^disable-model-invocation: *true' "$f"; then echo "todo $s: remove disable-model-invocation"
-  else echo "ok $s model-invocable"; fi
+for pair in zgrill:grill-me zgrill:grill-with-docs zspec:to-spec ztickets:to-tickets; do
+  w=${pair%%:*}
+  m=${pair#*:}
+  if [ ! -f "$HOME/.cursor/skills/$w/SKILL.md" ]; then echo "missing wrapper $w (run scripts/link.sh)"; fail=1
+  elif [ ! -f "$HOME/.agents/skills/$m/SKILL.md" ]; then echo "warn $m: Matt skill missing; $w will ask for /$m by hand"
+  else echo "ok $m: invoked via $w"; fi
 done
+f="$HOME/.cursor/skills/tdd/SKILL.md"
+if [ ! -f "$f" ]; then echo "missing skill tdd"
+elif grep -q '^disable-model-invocation: *true' "$f"; then echo "todo tdd: remove disable-model-invocation"
+else echo "ok tdd model-invocable"; fi
 check_link "$HOME/.config/opencode/skills/zstack"
 check_link "$HOME/.cursor/agents/zigl.md"
 check_link "$HOME/.config/opencode/agents/zigl.md"
@@ -50,22 +55,9 @@ check_link "$HOME/.config/opencode/agents/zstack.md"
 if grep -q '"default_agent": "zstack"' "$HOME/.config/opencode/opencode.json" 2>/dev/null; then echo "ok opencode default_agent zstack"; else echo "todo opencode: set \"default_agent\": \"zstack\""; fi
 if grep -q "zstack.md" "$HOME/.config/opencode/opencode.json" 2>/dev/null; then echo "ok opencode instructions zstack"; else echo "todo opencode: add ~/.config/opencode/zstack.md to \"instructions\" in opencode.json"; fi
 
-if [ -n "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]; then
-  echo "ok env GITHUB_PERSONAL_ACCESS_TOKEN"
-else
-  echo "missing env GITHUB_PERSONAL_ACCESS_TOKEN"
-fi
-
-if [ -n "${GITLAB_PERSONAL_ACCESS_TOKEN:-}" ]; then
-  echo "ok env GITLAB_PERSONAL_ACCESS_TOKEN"
-else
-  echo "missing env GITLAB_PERSONAL_ACCESS_TOKEN"
-fi
-
-if [ -n "${POSTGRES_URL:-}" ]; then
-  echo "ok env POSTGRES_URL"
-else
-  echo "missing env POSTGRES_URL"
-fi
+for v in GITHUB_PERSONAL_ACCESS_TOKEN GITLAB_PERSONAL_ACCESS_TOKEN POSTGRES_URL; do
+  if [ -n "$(printenv "$v" || true)" ]; then echo "ok env $v"
+  else echo "optional env $v (unset; not needed, keeps client data out of OpenCode)"; fi
+done
 
 exit "$fail"

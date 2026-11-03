@@ -6,9 +6,9 @@ How one task moves through this setup, from intake to retro. `skills/zstack/SKIL
 flowchart TD
   task[Task in a new session] --> rule[rules/zstack.mdc always on]
   rule --> rw[zstack classifies: zstack: size, verifiability — reason]
-  rw -->|Small| sPlan[grill-me only if a decision is open]
-  rw -->|Medium| mPlan[grill-with-docs → to-spec in .scratch/ · optional ADR / statechart]
-  rw -->|Large| lPlan[Medium + to-tickets · wayfinder if multi-session]
+  rw -->|Small| sPlan[zgrill only if a decision is open]
+  rw -->|Medium| mPlan[zgrill → zspec in .scratch/ · optional ADR / statechart]
+  rw -->|Large| lPlan[Medium + ztickets · wayfinder if multi-session]
   rw -->|Critical| cPlan[Large + security-and-hardening · formal-verification optional]
   lPlan --> gate{{User approval before code}}
   cPlan --> gate

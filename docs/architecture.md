@@ -74,4 +74,4 @@ flowchart LR
 
 ## Verified statechart
 
-`docs/statechart/` holds a TLA+ model of this flow, checked with TLC via pstack's `/statechart` (decision #23 pilot). It shows three rule breaks in the skill text: inline edits without a reason, inline Medium+ work reaching a PR with only a self-check, and automerge by the agent. See [docs/statechart/README.md](statechart/README.md) and [chart.mmd](statechart/chart.mmd).
+`docs/statechart/` holds a TLA+ model of this flow, checked with TLC via pstack's `/statechart` (decision #23). With option B every rule holds when the agent obeys the skill text; with no barriers (today) each rule breaks, so all six hold by text, not by a blocking hook. CI job `tla` reruns TLC when the skill or the model changes. See [docs/statechart/README.md](statechart/README.md) and [chart.mmd](statechart/chart.mmd).

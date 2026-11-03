@@ -67,7 +67,7 @@ On the subagent path, reject the report if it lacks the line `poteto-mode: loade
 
 ## 4. Check (after code)
 
-When section 3 ran inline, this pass is a second author pass, not the zsensei role. Do not launch a reviewer subagent on that path. Set `reviewers: inline self-check`.
+Review follows the size, not the path (decision: option B). On the inline path, Small gets a second author pass (`reviewers: inline self-check`). Medium, Large and Critical inline work still gets `zsensei` exactly as below. If zsensei cannot be launched, set `reviewers: none (zsensei unavailable: <reason>)` and do not open the PR until Brayan reviews it.
 
 - **Small.** Read the diff and the checks it ran. No review agent.
 - **Medium.** `zsensei` on the diff, with the spec path. It must confirm the spec still matches the diff.
@@ -82,7 +82,7 @@ Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each r
 
 Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (`~/Sites/tinet/Clients/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it.
 
-Merge: automerge only in personal repos and only for a pure, reversible refactor with green checks and a clean zSensei pass. Anything irreversible needs Brayan. Client repos: never `--force`, no commit, push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval.
+Merge: only Brayan merges, and only on his explicit order, in every repo. Never merge, enable auto-merge, or merge a PR yourself as a shortcut. Client repos: never `--force`, no commit, push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval.
 
 Retro (decisions #29, #30): run `zretro` at the end of every Medium, Large or Critical task, on a Small task that had an error, and every time the user corrects you. It asks first what code or structure change would have made the mistake impossible (domain model, type, test, lint or check.sh guard), prefers that over a new rule, and removes any rule text the fix replaces. Client repos: a `.scratch/` proposal only. Every size: end your final reply with this block, filled with facts from this session:
 
@@ -94,7 +94,7 @@ zstack check
 - not verified automatically: <none | item → how to check by hand>
 - zninja launched: <yes | no (inline: <reason>)>
 - poteto-mode loaded: <yes/no> (<zninja | inline>)
-- reviewers: <none | zsensei | zsensei + security-auditor | inline self-check>
+- reviewers: <none | zsensei | zsensei + security-auditor | inline self-check (small only)>
 ```
 
-`scripts/route-audit.sh` in this repo (Byevenes/agent-workflow) counts most of the same facts (not verifiability) from Cursor transcripts.
+Before reporting done, run `scripts/route-audit.sh` from this repo (Byevenes/agent-workflow). It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, or a Medium+ session edited without zsensei. A non-zero exit is a retro input, not something to explain away.

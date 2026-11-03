@@ -11,6 +11,7 @@ Read `~/.agents/skills/retro/SKILL.md` and follow it, with these overrides:
 - Pick the fix in this order: a domain model or module boundary (one owner, a deep module with a small interface, a clear name in `GLOSSARY.md`), then a type that makes the bad state unrepresentable, then a behavior test, then a lint, hook or `scripts/check.sh` guard whose error names the fix. Prove it fails on the real mistake from this session.
 - Rule or skill text is the last resort. Write `no structural fix because <reason>` before you add one.
 - When a barrier replaces a sentence in a skill, rule or AGENTS.md, delete the sentence in the same change.
+- Start from `scripts/route-audit.sh` (agent-workflow): every inline edit without a reason and every Medium+ edit without zsensei is a mistake to retro.
 - Present the candidates ranked, as Matt's retro says. The user picks.
 - Personal repos: implement the picked barriers in the same PR or a follow-up PR.
 - Client repos: write the proposal to `.scratch/retro-<date>.md` only. Brayan approves before anything changes.

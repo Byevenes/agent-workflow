@@ -31,5 +31,19 @@ for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/
 done
 rm -rf "$tmp"
 
+ra=$(mktemp -d)
+mkdir -p "$ra/p/agent-transcripts"
+printf '%s\n' 'zstack: small, full verifiable' '"name":"Write"' 'zninja launched: no (inline: Task tool absent)' > "$ra/p/agent-transcripts/ok.jsonl"
+ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null || bad "route-audit: fails on a clean fixture"
+printf '%s\n' 'zstack: small, full verifiable' '"name":"Write"' > "$ra/p/agent-transcripts/noreason.jsonl"
+if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: passes an inline edit without a reason"; fi
+rm "$ra/p/agent-transcripts/noreason.jsonl"
+printf '%s\n' 'zstack: medium, full verifiable' '"name":"Write"' 'zninja launched: no (inline: Task tool absent)' > "$ra/p/agent-transcripts/norev.jsonl"
+if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: passes a medium edit without zsensei"; fi
+rm "$ra/p/agent-transcripts/norev.jsonl"
+printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"text","text":"Clasificación **Medium** (zstack): dos piezas."}]}}' '{"type":"tool_use","name":"Write"}' '{"text":"zninja launched: no (inline: Task tool absent)"}' > "$ra/p/agent-transcripts/real.jsonl"
+if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: misses a real-format Medium transcript without zsensei"; fi
+rm -rf "$ra"
+
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

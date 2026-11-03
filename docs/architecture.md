@@ -75,3 +75,12 @@ flowchart LR
 ## Verified statechart
 
 `docs/statechart/` holds a TLA+ model of this flow, checked with TLC via pstack's `/statechart` (decision #23). With option B every rule holds when the agent obeys the skill text; with no barriers (today) each rule breaks, so all six hold by text, not by a blocking hook. CI job `tla` reruns TLC when the skill or the model changes. See [docs/statechart/README.md](statechart/README.md) and [chart.mmd](statechart/chart.mmd).
+
+## Hard barriers (opt-in)
+
+| Barrier | What blocks | Install (Brayan) | Bypass |
+|---|---|---|---|
+| `hooks/client-guard/pre-push` | `git push` from any repo under `~/Sites/tinet/Clients/` or to a remote matching `CLIENT_GUARD_HOSTS` (default `bitbucket.org gitlab.`) | In each client repo: `cp ~/Sites/personal/agent-workflow/hooks/client-guard/pre-push "$(git rev-parse --git-path hooks)/pre-push"` (repos with husky or a local `core.hooksPath`: add it there instead) | `CLIENT_PUSH_OK=brayan git push`, or `--no-verify` |
+| Agent identity for merges | Nothing yet: the agent's GitHub token is Brayan's admin account | Give the agent its own GitHub identity (machine user or GitHub App) with write access; add a ruleset on `main` with **Restrict updates** and bypass list = repository admin (Brayan) | Brayan's account |
+
+`scripts/setup-check.sh` reports both (`client-guard`, `merge-guard`). Agents never install the hook in client repos nor touch global git config.

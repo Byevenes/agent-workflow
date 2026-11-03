@@ -15,12 +15,12 @@ if grep -rnE 'SDD|sdd-|tech-lead|test-engineer' skills/zstack rules agents; then
 
 if grep -rnE '"subagent_type": *"(implementer|code-reviewer)"|`(implementer|code-reviewer|coordinator)`' skills/zstack rules agents README.md AGENTS.md docs/software-factory.md docs/workflow.md; then bad "old role names in live copies"; fi
 
-for f in scripts/*.sh .githooks/*; do
+for f in scripts/*.sh .githooks/* hooks/client-guard/*; do
   sh -n "$f" || bad "$f: syntax"
   if awk 'NR>1 && /^[[:space:]]*#/ && !/https?:\/\/|SPDX|[Ll]icense/' "$f" | grep -q .; then bad "$f: comment without issue/RFC link or license"; fi
 done
 
-if command -v shellcheck >/dev/null 2>&1; then shellcheck -e SC2016 scripts/*.sh .githooks/* || bad shellcheck; else bad "shellcheck missing (brew install shellcheck)"; fi
+if command -v shellcheck >/dev/null 2>&1; then shellcheck -e SC2016 scripts/*.sh .githooks/* hooks/client-guard/* || bad shellcheck; else bad "shellcheck missing (brew install shellcheck)"; fi
 
 if [ "$(date +%Y%m%d)" -ge 20261201 ] && { [ -e skills/route-work ] || grep -q route-work scripts/link.sh; }; then bad "route-work alias expired 2026-12-01: delete skills/route-work and its link.sh lines"; fi
 
@@ -44,6 +44,16 @@ rm "$ra/p/agent-transcripts/norev.jsonl"
 printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"text","text":"Clasificación **Medium** (zstack): dos piezas."}]}}' '{"type":"tool_use","name":"Write"}' '{"text":"zninja launched: no (inline: Task tool absent)"}' > "$ra/p/agent-transcripts/real.jsonl"
 if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: misses a real-format Medium transcript without zsensei"; fi
 rm -rf "$ra"
+
+cg=$(mktemp -d)
+git init -q "$cg/r"
+(cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/Byevenes/x.git >/dev/null) || bad "client-guard: blocks a personal GitHub push"
+if (cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-push" origin git@bitbucket.org:client/x.git >/dev/null); then bad "client-guard: allows a bitbucket push"; fi
+mkdir -p "$cg/Sites/tinet/Clients/c"
+git init -q "$cg/Sites/tinet/Clients/c/r"
+if (cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/c/x.git >/dev/null); then bad "client-guard: allows a push under Sites/tinet/Clients"; fi
+(cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-push" origin x >/dev/null) || bad "client-guard: ignores CLIENT_PUSH_OK=brayan"
+rm -rf "$cg"
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

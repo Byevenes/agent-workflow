@@ -71,3 +71,7 @@ flowchart LR
   setup[setup-check.sh: links, wrappers, optional env] -.-> edit
   audit[route-audit.sh: zninja vs inline counts] -.-> retro[zretro]
 ```
+
+## Verified statechart
+
+`docs/statechart/` holds a TLA+ model of this flow, checked with TLC via pstack's `/statechart` (decision #23 pilot). It shows three rule breaks in the skill text: inline edits without a reason, inline Medium+ work reaching a PR with only a self-check, and automerge by the agent. See [docs/statechart/README.md](statechart/README.md) and [chart.mmd](statechart/chart.mmd).

@@ -19,6 +19,8 @@ OpenCode has the same set except Figma cloud.
 
 ## Added in this cut
 
+These env vars are optional. `setup-check` lists them as `optional`, not as failures; leave them unset unless a local-token MCP is needed (decision #10).
+
 | Server | How it starts | Variable |
 | --- | --- | --- |
 | GitHub | Remote `https://api.githubcopilot.com/mcp/` | `GITHUB_PERSONAL_ACCESS_TOKEN` |

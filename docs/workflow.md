@@ -14,8 +14,8 @@ Herdr is a later check that a Cursor CLI pane and an OpenCode pane can sit toget
 flowchart TD
   intake[Intake] --> size{Size by risk}
   size -->|one area, no sensitive boundary| smallPath[zninja with poteto-mode and a focused test]
-  size -->|several pieces, one session| medPath[grill-with-docs then to-spec then poteto-mode then one zsensei]
-  size -->|several slices or more than one session| largePath[wayfinder to-spec to-tickets then slices then one zsensei]
+  size -->|several pieces, one session| medPath[zgrill then zspec then poteto-mode then one zsensei]
+  size -->|several slices or more than one session| largePath[wayfinder zspec ztickets then slices then one zsensei]
   size -->|sensitive boundary| critPath[spec then poteto-mode then zsensei then security-auditor]
 ```
 
@@ -34,12 +34,12 @@ sequenceDiagram
     Router->>Impl: task, no spec
     Impl-->>You: change and a focused test
   else Medium or large
-    Router->>Router: grill-with-docs and to-spec
+    Router->>Router: zgrill and zspec
     Router->>Impl: spec
     Impl-->>Review: diff
     Review-->>You: one review
   else Critical
-    Router->>Router: grill-with-docs and to-spec
+    Router->>Router: zgrill and zspec
     Router->>Impl: spec plus security-and-hardening
     Impl-->>Review: diff
     Review->>Audit: after the review
@@ -51,10 +51,10 @@ Inline runs skip the Router->>Impl handoff.
 
 ## Paths
 
-- **Small.** One clear area, one session, no sensitive boundary. `grill-me` only if a decision is open. Then `zninja` with `poteto-mode`. A focused test if behavior changes. No spec. No PRD, Figma, or Stitch unless the user points at one. No `zsensei`, no `security-auditor`.
-- **Medium.** Several pieces, one session, and none of the critical boundaries. `grill-with-docs`, then `to-spec`. `prd-td-coherence` only when a PRD and a design already exist. `poteto-mode` with pstack's `tdd`. `zsensei` loads `code-review-and-quality` once. `retro` once. Read a visual reference only when one exists.
-- **Large.** Several slices or more than one session, and none of the critical boundaries. `grill-with-docs` or `wayfinder`, then `to-spec` and `to-tickets`. A human gate before code. Slices go to `zninja`. Then `blast-radius`, the same `zsensei`, and `retro`.
-- **Critical.** Auth, permissions, personal data, payments, a new secret or credential, or a new integration, at any file count. Its own sequence: `grill-with-docs`, `to-spec`, `poteto-mode` with `security-and-hardening`, `zsensei`, then `security-auditor`. It does not stop at the medium or large boundary check.
+- **Small.** One clear area, one session, no sensitive boundary. `zgrill` (grill-me) only if a decision is open. Then `zninja` with `poteto-mode`. A focused test if behavior changes. No spec. No PRD, Figma, or Stitch unless the user points at one. No `zsensei`, no `security-auditor`.
+- **Medium.** Several pieces, one session, and none of the critical boundaries. `zgrill` (grill-with-docs), then `zspec` (to-spec). `prd-td-coherence` only when a PRD and a design already exist. `poteto-mode` with pstack's `tdd`. `zsensei` loads `code-review-and-quality` once. `retro` once. Read a visual reference only when one exists.
+- **Large.** Several slices or more than one session, and none of the critical boundaries. `zgrill` or `wayfinder`, then `zspec` and `ztickets`. A human gate before code. Slices go to `zninja`. Then `blast-radius`, the same `zsensei`, and `retro`.
+- **Critical.** Auth, permissions, personal data, payments, a new secret or credential, or a new integration, at any file count. Its own sequence: `zgrill`, `zspec`, `poteto-mode` with `security-and-hardening`, `zsensei`, then `security-auditor`. It does not stop at the medium or large boundary check.
 
 ## Examples
 

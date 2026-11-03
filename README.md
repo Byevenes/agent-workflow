@@ -11,7 +11,7 @@ The git repo is the source of truth. A clone plus `scripts/link.sh` points the u
 3. Install [Matt Pocock's skills](https://github.com/mattpocock/skills) globally for Cursor and OpenCode. The pin is in `docs/upstream.md`.
 4. Install the Cursor plugin `pstack` (already the user-level plugin on the machine that published this repo) and `cursor-team-kit`.
 5. Install Herdr and its OpenCode and Cursor integrations. See `docs/workflow.md`.
-6. Export tokens only in the environment, never in git: `GITHUB_PERSONAL_ACCESS_TOKEN`, `GITLAB_PERSONAL_ACCESS_TOKEN`, `POSTGRES_URL`.
+6. Optional, only for local-token MCPs (mostly OpenCode; leave unset so client data stays out of OpenCode, decision #10). Export tokens only in the environment, never in git: `GITHUB_PERSONAL_ACCESS_TOKEN`, `GITLAB_PERSONAL_ACCESS_TOKEN`, `POSTGRES_URL`.
 7. Run `scripts/link.sh`, then `scripts/setup-check.sh`.
 
 `scripts/setup-check.sh` prints command names and symlink status. It does not print secret values.

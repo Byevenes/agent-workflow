@@ -29,7 +29,7 @@ flowchart LR
 
 ## 2. Task flow
 
-`rules/zstack.mdc` is always on, so each session starts in zStack as zIGL. zIGL classifies the size and loads only that path. Matt's planning skills keep `disable-model-invocation`, so zStack calls them through wrappers that read Matt's file and add our rules. zNinja writes the code with poteto-mode; zIGL works inline only on the trigger in section 3 of the skill, and records the reason. zSensei reviews Medium and up. zretro ends in a barrier, and zpr writes the PR body.
+`rules/zstack.mdc` is always on, so each session starts in zStack as zIGL. zIGL classifies the size and loads only that path. Matt's planning skills keep `disable-model-invocation`, so zStack calls them through wrappers that read Matt's file and add our rules. zNinja writes the code with poteto-mode; zIGL works inline only on Small, on the trigger in section 3 of the skill, and records the reason; Medium and up always go to zNinja (route-audit fails `medium+ inline`). zSensei reviews Medium and up. zretro ends in a barrier, and zpr writes the PR body.
 
 ```mermaid
 flowchart TD
@@ -40,7 +40,7 @@ flowchart TD
   zigl -->|Critical| c[Large path plus security-and-hardening]
   s & m & l & c --> impl{Task tool lists zninja?}
   impl -->|yes| zn[zNinja subagent, poteto-mode]
-  impl -->|no, reason stated| inl[inline: poteto-mode in this session]
+  impl -->|no, Small only, reason stated| inl[inline: poteto-mode in this session]
   zn & inl --> rev{Medium or up?}
   rev -->|yes| zs[zSensei review; Critical adds security-auditor]
   rev -->|no| ck

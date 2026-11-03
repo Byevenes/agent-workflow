@@ -54,20 +54,20 @@ If a medium or large change turns out to cross a critical boundary, reclassify i
 
 Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, and the paths it must not touch. Do not edit files in this chat on that path.
 
-Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it.
+Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Medium, Large and Critical: code is written by zNinja; inline only in Small with `inline: <razón>` (if zninja cannot launch on Medium+, stop and tell Brayan).
 
 Inline: read `poteto-mode` by the path in the intro and follow it. Load the skills for this size (`tdd`, `pstack-tdd` on OpenCode, `security-and-hardening` on critical). Emit the zninja report lines (`poteto-mode: loaded`, `size:`, `checks:`) and the zstack check block. Set `zninja launched: no (inline: <reason>)`.
 
 - Small: the task. One focused test if behavior changes.
 - Medium and up: the spec path. `poteto-mode` with pstack's `tdd` (`pstack-tdd` on OpenCode).
-- Large and critical: a new `zninja` per slice, in order, each in a fresh context. Inline: those slices here, in order.
+- Large and critical: a new `zninja` per slice, in order, each in a fresh context.
 - Critical: tell it to apply `security-and-hardening`. Inline: apply it here.
 
 On the subagent path, reject the report if it lacks the line `poteto-mode: loaded`. Relaunch it once with that requirement explicit. On the inline path, include that line in this session's report.
 
 ## 4. Check (after code)
 
-Review follows the size, not the path (decision: option B). On the inline path, Small gets a second author pass (`reviewers: inline self-check`). Medium, Large and Critical inline work still gets `zsensei` exactly as below. If zsensei cannot be launched, set `reviewers: none (zsensei unavailable: <reason>)` and do not open the PR until Brayan reviews it.
+Review follows the size, not the path (decision: option B). On the inline path, Small gets a second author pass (`reviewers: inline self-check`). Medium, Large and Critical (always zNinja) get `zsensei` exactly as below. If zsensei cannot be launched, set `reviewers: none (zsensei unavailable: <reason>)` and do not open the PR until Brayan reviews it.
 
 - **Small.** Read the diff and the checks it ran. No review agent.
 - **Medium.** `zsensei` on the diff, with the spec path. It must confirm the spec still matches the diff.
@@ -97,4 +97,4 @@ zstack check
 - reviewers: <none | zsensei | zsensei + security-auditor | inline self-check (small only)>
 ```
 
-Before reporting done, run `scripts/route-audit.sh` from this repo (Byevenes/agent-workflow). It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, or a Medium+ session edited without zsensei. A non-zero exit is a retro input, not something to explain away.
+Before reporting done, run `scripts/route-audit.sh` from this repo (Byevenes/agent-workflow). It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, a Medium+ session edited without zsensei, or a Medium+ session edited without launching zninja (`medium+ inline`). A non-zero exit is a retro input, not something to explain away.

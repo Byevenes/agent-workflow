@@ -6,7 +6,7 @@
 \* with the barrier TRUE holds by text until that barrier exists.
 EXTENDS TLC
 
-CONSTANTS BarrierClassify, BarrierApproval, BarrierInlineReason, BarrierReview,
+CONSTANTS BarrierClassify, BarrierApproval, BarrierInlineReason, BarrierInlineSize, BarrierReview,
           BarrierClientPublish, BarrierMerge
 
 Sizes == {"small", "medium", "large", "critical"}
@@ -36,13 +36,14 @@ Code(how) == impl' = how /\ edited' = TRUE /\ phase' = "implemented"
   /\ UNCHANGED <<size, repo, reviewer, approved, published, mergedBy>>
 
 LaunchZninja == ReadyToCode /\ Code("zninja")
-EditInlineWithReason == ReadyToCode /\ Code("inline_reason")
+EditInlineWithReason == ReadyToCode /\ size = "small" /\ Code("inline_reason")
 
 AgentEditsBeforeClassify == ~BarrierClassify /\ phase = "requested" /\ edited' = TRUE
   /\ UNCHANGED <<phase, size, repo, impl, reviewer, approved, published, mergedBy>>
 AgentEditsBeforeApproval == ~BarrierApproval /\ phase = "planned" /\ size \in {"large", "critical"}
   /\ Code("zninja")
 AgentEditsInlineNoReason == ~BarrierInlineReason /\ ReadyToCode /\ Code("inline_noreason")
+AgentEditsInlineMediumUp == ~BarrierInlineSize /\ ReadyToCode /\ size /= "small" /\ Code("inline_reason")
 
 \* Option B: review follows the size on both paths.
 Review == phase = "implemented" /\ phase' = "reviewed"
@@ -75,7 +76,7 @@ AgentMerges == ~BarrierMerge /\ phase = "pr_open" /\ mergedBy' = "agent" /\ phas
 Done == phase \in {"merged", "draft_ready"} /\ UNCHANGED vars
 
 Next == Classify \/ Plan \/ BrayanApprovesPlan \/ LaunchZninja \/ EditInlineWithReason
-     \/ AgentEditsBeforeClassify \/ AgentEditsBeforeApproval \/ AgentEditsInlineNoReason
+     \/ AgentEditsBeforeClassify \/ AgentEditsBeforeApproval \/ AgentEditsInlineNoReason \/ AgentEditsInlineMediumUp
      \/ Review \/ AgentSkipsReview \/ ChecksAndRetro \/ OpenPR \/ DraftForBrayan
      \/ AgentPublishesClientPR \/ BrayanMerges \/ AgentMerges \/ Done
 
@@ -84,6 +85,7 @@ Spec == Init /\ [][Next]_vars
 NoEditBeforeClassify == edited => size /= "none"
 BigNeedsApproval == (edited /\ size \in {"large", "critical"}) => approved
 EditNeedsZninjaOrReason == edited => impl \in {"none", "zninja", "inline_reason"}
+MediumUpByZninja == (edited /\ impl = "inline_reason") => size = "small"
 MediumUpIndependentReview ==
   (phase \in {"pr_open", "merged", "draft_ready"} /\ size /= "small") => reviewer = "zsensei"
 ClientNeverPublishes == repo = "client" => ~published

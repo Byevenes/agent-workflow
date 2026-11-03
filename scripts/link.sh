@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX
 
 ROOT=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
 HOME_DIR=${HOME:?}

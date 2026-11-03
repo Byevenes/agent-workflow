@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX
 cd "$(dirname "$0")/.."
 fail=0
 bad() { echo "FAIL $*"; fail=1; }
@@ -61,7 +62,6 @@ printf '%s\n' '{"text":"zstack: **Large**, partial verifiable — migración"}' 
 ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh | grep -q 'size undetected (no classification line): 0' || bad "route-audit: misses a canonical line with bold size"
 rm -rf "$ra"
 
-unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_OBJECT_DIRECTORY
 cg=$(mktemp -d)
 git init -q "$cg/r"
 (cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/Byevenes/x.git >/dev/null) || bad "client-guard: blocks a personal GitHub push"
@@ -108,6 +108,22 @@ mkdir -p "$oh/.config/opencode/agents"
 printf -- '---\nmodel: opencode/big-pickle\n---\n' > "$oh/.config/opencode/agents/zninja.md"
 HOME=$oh CLIENTS_ROOT=$ci sh scripts/setup-check.sh 2>/dev/null | grep -q '^fail opencode zninja' || bad "setup-check: passes an opencode/* model on zninja"
 rm -rf "$ci" "$oh"
+
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh; do
+  sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
+done
+if [ -z "${CHECK_NESTED:-}" ]; then
+  hk=$(mktemp -d)
+  git init -q "$hk/p"
+  git -C "$hk/p" -c user.name=t -c user.email=t@t commit -q --allow-empty -m x
+  git -C "$hk/p" remote add origin https://example.invalid/p.git
+  git -C "$hk/p" worktree add -q "$hk/w" -b w 2>/dev/null
+  before=$(git -C "$hk/p" config --local --list | sort)
+  GIT_DIR="$hk/p/.git/worktrees/w" GIT_INDEX_FILE="$hk/p/.git/worktrees/w/index" CHECK_NESTED=1 sh scripts/check.sh >/dev/null 2>&1 || bad "check.sh fails when run with a hook's GIT_DIR"
+  after=$(git -C "$hk/p" config --local --list | sort)
+  [ "$before" = "$after" ] || bad "check.sh under a hook's GIT_DIR changed the parent repo config: $(printf '%s\n' "$after" | grep -vxF "$before" | tr '\n' ' ')"
+  rm -rf "$hk"
+fi
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

@@ -17,7 +17,9 @@ Load only the skills named for the chosen size. Ignore any other router, spec ch
 
 Applies only when the task comes from a client user story (HU) in an external tracker. Personal and internal projects skip this section and start at Classify.
 
-`to-analysis` → questions to the TL/PO (`to-questionnaire`) → answers in the ticket → `grill-with-docs` if gaps remain → `to-techspec` → then the normal size path (Small/Medium/Large/Critical). The TechSpec accompanies the user story as input for the spec. External PRD/TD documents are optional, only when the client asks for them.
+`to-analysis` → questions to the TL/PO (`to-questionnaire`) → Brayan pastes the answers in `.scratch/answers.md` (Jira and Confluence are read-only: never comment, edit or transition) → `grill-with-docs` if gaps remain → `to-techspec` → then the normal size path (Small/Medium/Large/Critical). The TechSpec accompanies the user story as input for the spec. External PRD/TD documents are optional, only when the client asks for them.
+
+If `to-analysis`, `to-questionnaire` or `to-techspec` is missing, stop and tell Brayan (`scripts/setup-check.sh` reports them). Attachments: Brayan downloads them by hand into the task folder; read them there, never fetch them with API tokens. Client work happens in a Forge worktree that Brayan approved (`forge`; if it is not on the PATH, `~/Sites/tinet/tinet-cli/bin/forge`).
 
 ## 1. Classify
 
@@ -80,7 +82,7 @@ Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each r
 
 ## 5. Deliver and retro
 
-Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (`~/Sites/tinet/Clients/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it.
+Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (`~/Sites/tinet/Clients/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it. Before writing to `.scratch/` in a client worktree, add `.scratch/` to `$(git rev-parse --git-path info/exclude)` so it never shows in `git status` (`scripts/setup-check.sh` reports it).
 
 Merge: only Brayan merges, and only on his explicit order, in every repo. Never merge, enable auto-merge, or merge a PR yourself as a shortcut. Client repos: never `--force`, no commit, push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval.
 

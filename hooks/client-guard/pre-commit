@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+remote_url=$(git remote get-url origin 2>/dev/null || true)
+top=$(cd "$(git rev-parse --show-toplevel)" && pwd -P)
+home=$(cd "$HOME" && pwd -P)
+hosts=${CLIENT_GUARD_HOSTS:-bitbucket.org gitlab.}
+hit=""
+case $top in "$home"/Sites/tinet/Clients/*) hit="path $top" ;; esac
+for h in $hosts; do
+  case $remote_url in *"$h"*) hit="${hit:+$hit, }remote $remote_url" ;; esac
+done
+[ -z "$hit" ] && exit 0
+if [ "${CLIENT_PUSH_OK:-}" = "brayan" ]; then echo "client-guard: commit allowed by CLIENT_PUSH_OK=brayan ($hit)"; exit 0; fi
+echo "client-guard: blocked commit in a client repo ($hit)."
+echo "Agents never commit in client repos. Brayan: CLIENT_PUSH_OK=brayan git commit"
+exit 1

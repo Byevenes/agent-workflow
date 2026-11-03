@@ -4,7 +4,7 @@ How this repo is wired and how a task moves through zStack. `skills/zstack/SKILL
 
 ## 1. Repo to user folders
 
-`scripts/link.sh` symlinks the repo into the folders Cursor and OpenCode read. It is idempotent, removes old links that point into this repo (route-work rule, implementer, code-reviewer, coordinator), sets `core.hooksPath` to `.githooks`, and mirrors Matt's skills from `~/.agents/skills` and pstack skills when the name is free.
+`scripts/link.sh` symlinks the repo into the folders Cursor and OpenCode read. It is idempotent, removes old links that point into this repo (route-work rule, implementer, code-reviewer, coordinator), sets `core.hooksPath` to `.githooks`, removes broken symlinks (only symlinks, never real folders) in `~/.cursor/skills` and `~/.config/opencode/skills`, and mirrors Matt's skills from `~/.agents/skills` and pstack skills when the name is free.
 
 ```mermaid
 flowchart LR
@@ -29,7 +29,7 @@ flowchart LR
 
 ## 2. Task flow
 
-`rules/zstack.mdc` is always on, so each session starts in zStack as zIGL. zIGL classifies the size and loads only that path. Matt's planning skills keep `disable-model-invocation`, so zStack calls them through wrappers that read Matt's file and add our rules. zNinja writes the code with poteto-mode; zIGL works inline only on Small, on the trigger in section 3 of the skill, and records the reason; Medium and up always go to zNinja (route-audit fails `medium+ inline`). zSensei reviews Medium and up. zretro ends in a barrier, and zpr writes the PR body.
+`rules/zstack.mdc` is always on, so each session starts in zStack as zIGL. zIGL classifies the size and loads only that path. Matt's planning skills keep `disable-model-invocation`, so zStack calls them through wrappers that read Matt's file and add our rules. zNinja writes the code with poteto-mode; zIGL works inline only on Small, on the trigger in section 3 of the skill, and records the reason; Medium and up always go to zNinja (route-audit fails `medium+ inline`). zSensei reviews Medium and up. Client user stories start with section 0 of the skill: Jira and Confluence read-only, answers in `.scratch/answers.md`, attachments downloaded by hand into the task folder, work in a Forge worktree Brayan approved, `.scratch/` in `info/exclude`, and never `opencode/*` models. zretro ends in a barrier, and zpr writes the PR body.
 
 ```mermaid
 flowchart TD
@@ -81,6 +81,7 @@ flowchart LR
 | Barrier | What blocks | Install (Brayan) | Bypass |
 |---|---|---|---|
 | `hooks/client-guard/pre-push` | `git push` from any repo under `~/Sites/tinet/Clients/` or to a remote matching `CLIENT_GUARD_HOSTS` (default `bitbucket.org gitlab.`) | In each client repo: `cp ~/Sites/personal/agent-workflow/hooks/client-guard/pre-push "$(git rev-parse --git-path hooks)/pre-push"` (repos with husky or a local `core.hooksPath`: add it there instead) | `CLIENT_PUSH_OK=brayan git push`, or `--no-verify` |
+| `hooks/client-guard/pre-commit` | `git commit` in the same repos (path under `~/Sites/tinet/Clients/` or an `origin` matching `CLIENT_GUARD_HOSTS`) | Same as pre-push, file `pre-commit`. Husky repos (`core.hooksPath=.husky`, the 4 Confuturo widgets): add `~/Sites/personal/agent-workflow/hooks/client-guard/pre-commit` as a line in a local, untracked `.husky/pre-commit` only if Brayan wants it; never commit it to the client repo | `CLIENT_PUSH_OK=brayan git commit`, or `--no-verify` |
 | Agent identity for merges | Nothing yet: the agent's GitHub token is Brayan's admin account | Give the agent its own GitHub identity (machine user or GitHub App) with write access; add a ruleset on `main` with **Restrict updates** and bypass list = repository admin (Brayan) | Brayan's account |
 
-`scripts/setup-check.sh` reports both (`client-guard`, `merge-guard`). Agents never install the hook in client repos nor touch global git config.
+`scripts/setup-check.sh` reports them (`client-guard`, `client-guard pre-commit`, `merge-guard`, `scratch-exclude`, `client identity`). Confuturo repos fail unless the effective `user.email` is `brayan.yevenes@tinet.cl`; other clients warn when it is not `@tinet.cl` (`@tenpo.cl` in Tenpo). Agents never install the hook in client repos nor touch global git config.

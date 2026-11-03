@@ -47,6 +47,13 @@ do
   esac
 done
 
+for dir in "$HOME_DIR/.cursor/skills" "$HOME_DIR/.config/opencode/skills"; do
+  [ -d "$dir" ] || continue
+  for l in "$dir"/*; do
+    if [ -L "$l" ] && [ ! -e "$l" ]; then rm "$l"; echo "unlink broken $l"; fi
+  done
+done
+
 git -C "$ROOT" config core.hooksPath .githooks
 
 link_force "$ROOT/rules/zstack.mdc" "$HOME_DIR/.cursor/rules/zstack.mdc"

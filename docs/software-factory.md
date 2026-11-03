@@ -28,7 +28,7 @@ flowchart TD
   check --> audit[scripts/route-audit.sh counts it from transcripts]
 ```
 
-Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. That `impl` step then runs in the same session. The check block records `zninja launched: no (inline: <reason>)`. `scripts/route-audit.sh` counts delegated launches only; inline runs show as not launched.
+The inline trigger is in section 3 of `skills/zstack/SKILL.md`. That `impl` step then runs in the same session. The check block records `zninja launched: no (inline: <reason>)`. `scripts/route-audit.sh` counts delegated launches only; inline runs show as not launched.
 
 ## Where it is wired
 

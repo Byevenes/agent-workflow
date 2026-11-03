@@ -10,7 +10,7 @@ Recorded while publishing this repo. Nothing in this list was deleted.
 
 ## Overlap
 
-Matt's `to-spec` and `to-tickets` overlap the SDD skills already in `~/.cursor/skills` (`sdd-spec`, `sdd-tasks`, and the rest of that set). The files stay. `skills/route-work` does not call the SDD chain. It calls Matt's skills before code, and only the ones the size needs.
+Matt's `to-spec` and `to-tickets` overlap the SDD skills already in `~/.cursor/skills` (`sdd-spec`, `sdd-tasks`, and the rest of that set). The files stay. `skills/zstack` does not call the SDD chain. It calls Matt's skills before code, and only the ones the size needs.
 
 ## What this flow does not load
 

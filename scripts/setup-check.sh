@@ -13,7 +13,6 @@ need() {
 }
 
 need gh
-need herdr
 need opencode
 need cursor-agent
 
@@ -31,7 +30,7 @@ check_link() {
 
 check_link "$HOME/.cursor/skills/zstack"
 check_link "$HOME/.cursor/skills/route-work"
-for pair in zgrill:grill-me zgrill:grill-with-docs zspec:to-spec ztickets:to-tickets; do
+for pair in zgrill:grill-me zgrill:grill-with-docs zspec:to-spec ztickets:to-tickets zpr:pr zretro:retro; do
   w=${pair%%:*}
   m=${pair#*:}
   if [ ! -f "$HOME/.cursor/skills/$w/SKILL.md" ]; then echo "missing wrapper $w (run scripts/link.sh)"; fail=1

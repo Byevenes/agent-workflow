@@ -2,11 +2,9 @@
 
 Size picks the path. Risk outranks file count. Auth, permissions, personal data, payments, a new secret or credential, or a new integration is critical at any file count.
 
-`skills/zstack` classifies and calls only that path, and is always on through `rules/zstack.mdc`. Code is written by the `zninja` subagent with `poteto-mode`. Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Full map: `docs/software-factory.md`. On OpenCode, Sisyphus may split a large change, and it follows the same skill. It does not open the other installed routers. This repo does not rewrite Sisyphus on disk.
+`skills/zstack` classifies and calls only that path, and is always on through `rules/zstack.mdc`. Code is written by the `zninja` subagent with `poteto-mode`. The inline trigger is in section 3 of `skills/zstack/SKILL.md`. Full map: `docs/software-factory.md`. On OpenCode, Sisyphus may split a large change, and it follows the same skill. It does not open the other installed routers. This repo does not rewrite Sisyphus on disk.
 
 Engineer Lead, on the outer loop, can split work before it arrives. It does not implement. Dr Eggbot designs bots and stays outside this chain.
-
-Herdr is a later check that a Cursor CLI pane and an OpenCode pane can sit together. This path does not open panes.
 
 ## How a change moves
 
@@ -52,8 +50,8 @@ Inline runs skip the Router->>Impl handoff.
 ## Paths
 
 - **Small.** One clear area, one session, no sensitive boundary. `zgrill` (grill-me) only if a decision is open. Then `zninja` with `poteto-mode`. A focused test if behavior changes. No spec. No PRD, Figma, or Stitch unless the user points at one. No `zsensei`, no `security-auditor`.
-- **Medium.** Several pieces, one session, and none of the critical boundaries. `zgrill` (grill-with-docs), then `zspec` (to-spec). `prd-td-coherence` only when a PRD and a design already exist. `poteto-mode` with pstack's `tdd`. `zsensei` loads `code-review-and-quality` once. `retro` once. Read a visual reference only when one exists.
-- **Large.** Several slices or more than one session, and none of the critical boundaries. `zgrill` or `wayfinder`, then `zspec` and `ztickets`. A human gate before code. Slices go to `zninja`. Then `blast-radius`, the same `zsensei`, and `retro`.
+- **Medium.** Several pieces, one session, and none of the critical boundaries. `zgrill` (grill-with-docs), then `zspec` (to-spec). `prd-td-coherence` only when a PRD and a design already exist. `poteto-mode` with pstack's `tdd`. `zsensei` loads `code-review-and-quality` once. `zretro` once. Read a visual reference only when one exists.
+- **Large.** Several slices or more than one session, and none of the critical boundaries. `zgrill` or `wayfinder`, then `zspec` and `ztickets`. A human gate before code. Slices go to `zninja`. Then `blast-radius`, the same `zsensei`, and `zretro`.
 - **Critical.** Auth, permissions, personal data, payments, a new secret or credential, or a new integration, at any file count. Its own sequence: `zgrill`, `zspec`, `poteto-mode` with `security-and-hardening`, `zsensei`, then `security-auditor`. It does not stop at the medium or large boundary check.
 
 ## Examples

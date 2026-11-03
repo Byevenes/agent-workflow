@@ -42,10 +42,10 @@ Si aún no hay respuestas del TL/PO, no generes la TechSpec: propone primero `to
 9. Seguridad.
 10. Atributos de calidad: tabla `Atributo | Restricción o métrica | Implementación` (rendimiento, testing, disponibilidad).
 11. Ambientes y despliegue.
-12. Plan de pruebas, enlazando el KDB de testing del cliente (niveles, versiones, qué es unit y qué es integración). Declara la costura principal de prueba (la más alta posible, idealmente una) y describe los demás casos sobre ella.
+12. Plan de pruebas (niveles, versiones, qué es unit y qué es integración). En uso interno, enlaza la guía de testing del proyecto; en un documento que se entrega a terceros, descríbela sin nombrarla ni enlazarla. Declara la costura principal de prueba (la más alta posible, idealmente una) y describe los demás casos sobre ella.
 13. Criterios de verificación técnicos (ver "Criterios").
 14. Pendientes: tabla `ID | Pendiente | Dueño | Bloquea` con valores `bloquea TechSpec`, `bloquea PRD`, `bloquea implementación` o `no bloquea`.
-15. Insumos para el PRD: qué debe tomar el PRD tal cual de esta TechSpec.
+15. Insumos para el PRD (solo uso interno): qué debe tomar el PRD tal cual de esta TechSpec. En un documento que se entrega a terceros, se omite; los Criterios de verificación (§13) cubren lo comprobable.
 
 Secciones opcionales, antes del Registro de cambios:
 
@@ -57,7 +57,7 @@ Secciones opcionales, antes del Registro de cambios:
 
 ## Neutralidad
 
-La TechSpec es una sola versión que puede salir del equipo tal cual.
+La TechSpec es una sola versión que puede salir del equipo tal cual. Antes de escribir, fija el destino: **uso interno** o **entrega a terceros**. Las reglas de abajo aplican siempre; en entrega a terceros, además, las secciones y enlaces marcados como "solo uso interno" se omiten, y en Pendientes el valor `bloquea PRD` se escribe `bloquea especificación funcional`. Así el barrido no choca con la Salida.
 
 - Sin nombres de personas, autores ni roles internos. El autor es "Equipo de desarrollo".
 - Sin herramientas internas, asistentes, agentes, skills, IDEs ni bases de conocimiento internas.

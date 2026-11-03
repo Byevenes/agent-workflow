@@ -27,7 +27,7 @@ if [ "$(date +%Y%m%d)" -ge 20261201 ] && { [ -e skills/route-work ] || grep -q r
 tmp=$(mktemp -d)
 HOME=$tmp scripts/link.sh >/dev/null
 for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
-  [ -L "$tmp/$p" ] && [ -e "$tmp/$p" ] || bad "link.sh smoke: $p not linked"
+  if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done
 rm -rf "$tmp"
 

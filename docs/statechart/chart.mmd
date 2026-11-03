@@ -1,0 +1,130 @@
+---
+title: "zStack workflow (agent-workflow @ d447961)"
+---
+stateDiagram-v2
+  state "Legend" as legend {
+    lg0: plan
+    lg1: code
+    lg2: deliver
+    lg3: Breaks EditNeedsZninjaOrReason or MediumUpIndependentReview or OnlyBrayanMerges
+    lg4: Breaks MediumUpIndependentReview in some cases
+    lg5: Path to the EditNeedsZninjaOrReason or MediumUpIndependentReview or OnlyBrayanMerges bug
+  }
+  class lg0 blue
+  class lg1 orange
+  class lg2 teal
+  class lg3 breaks
+  class lg4 mayBreak
+  class lg5 bugPath
+  s0: Request received
+  s1: Classified (size printed)
+  s2: Planned (.scratch spec)
+  s3: Plan approved by Brayan
+  s4: Code written, inline, no reason
+  s5: Code written, inline, reason recorded
+  s6: Code written, by zNinja
+  s7: Reviewed, inline, no reason, self-check only
+  s8: Reviewed, inline, reason recorded, self-check only
+  s9: Reviewed, by zNinja, diff read
+  s10: Reviewed, by zNinja, zSensei
+  s11: Checks green + retro, inline, no reason, self-check only
+  s12: Checks green + retro, inline, reason recorded, self-check only
+  s13: Checks green + retro, by zNinja, diff read
+  s14: Checks green + retro, by zNinja, zSensei
+  s15: Client: PR body drafted in .scratch, inline, no reason, self-check only
+  s16: Client: PR body drafted in .scratch, inline, reason recorded, self-check only
+  s17: Client: PR body drafted in .scratch, by zNinja, diff read
+  s18: Client: PR body drafted in .scratch, by zNinja, zSensei
+  s19: PR open (zpr body), inline, no reason, self-check only
+  s20: PR open (zpr body), inline, reason recorded, self-check only
+  s21: PR open (zpr body), by zNinja, diff read
+  s22: PR open (zpr body), by zNinja, zSensei
+  s23: Merged, inline, no reason, self-check only, by Brayan
+  s24: Merged, inline, reason recorded, self-check only, by Brayan
+  s25: Merged, by zNinja, diff read, by Brayan
+  s26: Merged, by zNinja, zSensei, by the agent
+  s27: Merged, by zNinja, zSensei, by Brayan
+  [*] --> s0
+  s0 --> s1: zStack classifies the task
+  s1 --> s2: zgrill / zspec / ztickets plan it
+  s2 --> s3: Brayan approves the plan [Large or Critical]
+  s2 --> s4: the agent codes inline without a reason
+  s2 --> s5: the agent codes inline and writes the reason
+  s2 --> s6: zNinja writes the code
+  s3 --> s4: the agent codes inline without a reason
+  s3 --> s5: the agent codes inline and writes the reason
+  s3 --> s6: zNinja writes the code
+  s4 --> s7: the change is reviewed
+  s5 --> s8: the change is reviewed
+  s6 --> s10: the change is reviewed
+  s6 --> s9: the change is reviewed
+  s7 --> s11: pre-commit, CI and zretro pass
+  s8 --> s12: pre-commit, CI and zretro pass
+  s9 --> s13: pre-commit, CI and zretro pass
+  s10 --> s14: pre-commit, CI and zretro pass
+  s11 --> s15: zpr drafts the body [client repo]
+  s12 --> s16: zpr drafts the body [client repo]
+  s13 --> s17: zpr drafts the body [client repo]
+  s14 --> s18: zpr drafts the body [client repo]
+  s11 --> s19: zpr opens the PR [personal repo]
+  s12 --> s20: zpr opens the PR [personal repo]
+  s13 --> s21: zpr opens the PR [personal repo]
+  s14 --> s22: zpr opens the PR [personal repo]
+  s19 --> s23: Brayan merges
+  s20 --> s24: Brayan merges
+  s21 --> s25: Brayan merges
+  s22 --> s26: the agent automerges [pure refactor]
+  s22 --> s27: Brayan merges
+  classDef breaks fill:#ffecee,stroke:#e72e3b,stroke-width:2.5px,color:#cd2834
+  classDef mayBreak fill:#fff3e6,stroke:#e8730c,stroke-width:2.5px,color:#b85a06
+  class s0 blue
+  class s0 bugPath
+  class s1 blue
+  class s1 bugPath
+  class s2 blue
+  class s2 bugPath
+  class s3 blue
+  class s4 orange
+  class s4 breaks
+  class s4 bugPath
+  class s5 orange
+  class s5 bugPath
+  class s6 orange
+  class s6 bugPath
+  class s7 orange
+  class s7 breaks
+  class s8 orange
+  class s8 bugPath
+  class s9 orange
+  class s10 orange
+  class s10 bugPath
+  class s11 teal
+  class s11 breaks
+  class s12 teal
+  class s12 bugPath
+  class s13 teal
+  class s14 teal
+  class s14 bugPath
+  class s15 teal
+  class s15 breaks
+  class s16 teal
+  class s16 mayBreak
+  class s17 teal
+  class s18 teal
+  class s19 teal
+  class s19 breaks
+  class s20 teal
+  class s20 mayBreak
+  class s20 bugPath
+  class s21 teal
+  class s22 teal
+  class s22 bugPath
+  class s23 teal
+  class s23 breaks
+  class s24 teal
+  class s24 mayBreak
+  class s25 teal
+  class s26 teal
+  class s26 breaks
+  class s26 bugPath
+  class s27 teal

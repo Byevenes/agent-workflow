@@ -4,7 +4,7 @@ filter=${1:-}
 days=${2:-7}
 base="${ROUTE_AUDIT_BASE:-$HOME/.cursor/projects}"
 files=$(find "$base" -path "*${filter}*" -path '*agent-transcripts*' -name '*.jsonl' -not -path '*/subagents/*' -mtime "-$days" 2>/dev/null || true)
-total=0; rw=0; impl=0; pm=0; pa=0; why=0; nowhy=0; noedit=0; norev=0; nosize=0; legacy=0
+total=0; rw=0; impl=0; pm=0; pa=0; why=0; nowhy=0; noedit=0; norev=0; mupinline=0; nosize=0; legacy=0
 canonre='(zstack|route-work): *[*]*(small|medium|large|critical)[*]*, *(full|partial) verifiable'
 sizere='((zstack|route-work)[: (]+[*]*|size: *[*]*|clasific[a-z]* (como )?[*]*|clasificaci.n:? *[*]*|classif[a-z]* (as )?[*]*)(small|medium|large|critical)'
 for f in $files; do
@@ -21,7 +21,9 @@ for f in $files; do
   fi
   if grep -Eq '"name":"(StrReplace|Write|Edit|MultiEdit|EditNotebook|Delete)"' "$f"; then
     case $size in
-      medium|large|critical) grep -q '"subagent_type":"zsensei"' "$f" || norev=$((norev + 1)) ;;
+      medium|large|critical)
+        grep -q '"subagent_type":"zsensei"' "$f" || norev=$((norev + 1))
+        grep -Eq '"subagent_type":"(zninja|implementer)"' "$f" || mupinline=$((mupinline + 1)) ;;
       *) ;;
     esac
   fi
@@ -39,8 +41,9 @@ echo "  no edits: $noedit"
 echo "poteto-mode loaded (zninja or inline): $pm"
 echo "poteto-agent delegates: $pa"
 echo "medium+ edited without zsensei: $norev"
+echo "medium+ inline (edited without zninja): $mupinline"
 echo "size undetected (no classification line): $nosize"
 echo "size in a legacy format (not the canonical zstack line): $legacy"
-if [ "$nowhy" -gt 0 ] || [ "$norev" -gt 0 ] || [ "$nosize" -gt 0 ]; then
-  echo "route-audit: FAIL (inline edits without a reason, medium+ without zsensei, or size undetected)"; exit 1
+if [ "$nowhy" -gt 0 ] || [ "$norev" -gt 0 ] || [ "$mupinline" -gt 0 ] || [ "$nosize" -gt 0 ]; then
+  echo "route-audit: FAIL (inline edits without a reason, medium+ without zsensei, medium+ inline, or size undetected)"; exit 1
 fi

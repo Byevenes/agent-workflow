@@ -14,6 +14,9 @@ Read `~/.agents/skills/pr/SKILL.md` and follow it (Summary visual, Evidence, Mer
 5. `## Merge Danger`: door, blast radius, and how to roll back.
 6. `## Left out`: follow-ups and known gaps.
 
-Write in the repo's language. Never paste secrets, tokens or client data. In client repos, the body is a draft for the user; do not open the PR or MR yourself.
+Write in the repo's language. Never paste secrets, tokens or client data.
+
+- Personal repos: use this for every PR. CI fails a body without `## Why`, `## Summary` and `## Merge Danger`.
+- Client repos (`~/Sites/tinet/Clients/**`, GitLab client MRs): write a suggested body to `.scratch/pr-body.md` for Brayan. Never post it or open the PR or MR yourself.
 
 If Matt's file does not exist, use the six sections above on their own.

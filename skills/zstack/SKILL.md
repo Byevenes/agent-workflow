@@ -80,11 +80,11 @@ Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each r
 
 ## 5. Deliver and retro
 
-Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description: use the `zpr` skill.
+Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (`~/Sites/tinet/Clients/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it.
 
 Merge: automerge only in personal repos and only for a pure, reversible refactor with green checks and a clean zSensei pass. Anything irreversible needs Brayan. Client repos: never `--force`, no commit, push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval.
 
-Medium and up: run `retro` once. Every retro ends by turning the main error into a lint or a test with the `correct` skill. Client repos: a local proposal only. Every size: end your final reply with this block, filled with facts from this session:
+Retro (decisions #29, #30): run `zretro` at the end of every Medium, Large or Critical task, on a Small task that had an error, and every time the user corrects you. It ends in a barrier (lint, hook, test, type or check.sh guard) or `no barrier possible because <reason>`. Client repos: a `.scratch/` proposal only. Every size: end your final reply with this block, filled with facts from this session:
 
 ```
 zstack check

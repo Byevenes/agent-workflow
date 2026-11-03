@@ -37,12 +37,12 @@ flowchart TD
   zigl -->|Small| s[zgrill only if a decision is open]
   zigl -->|Medium| m[zgrill, then zspec in .scratch/]
   zigl -->|Large| l[zgrill or wayfinder, zspec, ztickets, human gate]
-  zigl -->|Critical| c[Large path plus security-auditor]
+  zigl -->|Critical| c[Large path plus security-and-hardening]
   s & m & l & c --> impl{Task tool lists zninja?}
   impl -->|yes| zn[zNinja subagent, poteto-mode]
   impl -->|no, reason stated| inl[inline: poteto-mode in this session]
   zn & inl --> rev{Medium or up?}
-  rev -->|yes| zs[zSensei review]
+  rev -->|yes| zs[zSensei review; Critical adds security-auditor]
   rev -->|no| ck
   zs --> retro[zretro]
   retro --> bar[barrier: hook, lint, test, type, check.sh guard]

@@ -10,13 +10,9 @@ MCP already configured: Figma, Figma Desktop, Atlassian, codegraph, context7, en
 
 ## OpenCode
 
-Oh My OpenAgent is configured. Agents present include Sisyphus, Hephaestus, Prometheus, Atlas, and Gentleman, plus the shared engineering agents. This repo adds `coordinator` and `implementer` by symlink. It does not remove the others.
+Oh My OpenAgent is configured. Agents present include Sisyphus, Hephaestus, Prometheus, Atlas, and Gentleman, plus the shared engineering agents. This repo adds `zigl`, `zninja` and `zsensei` by symlink. It does not remove the others.
 
 MCP already configured: Atlassian, codegraph, context7, engram, Figma Desktop, stitch, agent-browser. Figma cloud is not in this OpenCode config.
-
-## Herdr and the terminal
-
-Herdr `0.9.3` is on the PATH. Integrations for OpenCode and Cursor CLI are installed. cmux stays installed. Herdr runs inside it.
 
 ## Shared skills folder
 

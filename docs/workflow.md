@@ -2,11 +2,9 @@
 
 Size picks the path. Risk outranks file count. Auth, permissions, personal data, payments, a new secret or credential, or a new integration is critical at any file count.
 
-`skills/zstack` classifies and calls only that path, and is always on through `rules/zstack.mdc`. Code is written by the `zninja` subagent with `poteto-mode`. Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Full map: `docs/software-factory.md`. On OpenCode, Sisyphus may split a large change, and it follows the same skill. It does not open the other installed routers. This repo does not rewrite Sisyphus on disk.
+`skills/zstack` classifies and calls only that path, and is always on through `rules/zstack.mdc`. Code is written by the `zninja` subagent with `poteto-mode`. The inline trigger is in section 3 of `skills/zstack/SKILL.md`. Full map: `docs/software-factory.md`. On OpenCode, Sisyphus may split a large change, and it follows the same skill. It does not open the other installed routers. This repo does not rewrite Sisyphus on disk.
 
 Engineer Lead, on the outer loop, can split work before it arrives. It does not implement. Dr Eggbot designs bots and stays outside this chain.
-
-Herdr is a later check that a Cursor CLI pane and an OpenCode pane can sit together. This path does not open panes.
 
 ## How a change moves
 

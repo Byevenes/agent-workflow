@@ -13,7 +13,6 @@ need() {
 }
 
 need gh
-need herdr
 need opencode
 need cursor-agent
 

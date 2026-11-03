@@ -7,7 +7,6 @@ Measured when this repo was first published.
 | Matt Pocock skills | `mattpocock/skills` @ `49dd158d1076134a641b33efb035946536778336` |
 | pstack | Cursor plugin `0.15.15`, already installed. Not forked. |
 | cursor-team-kit | `1.2.0`, copied into the local Cursor plugins folder from `cursor/plugins`. |
-| Herdr | `0.9.3` |
 
 Install Matt again with:
 

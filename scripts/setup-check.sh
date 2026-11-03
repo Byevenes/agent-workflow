@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX
 
 fail=0
 
@@ -28,6 +29,7 @@ check_link() {
   fi
 }
 
+if [ "$(git -C "$ROOT" config --bool core.bare 2>/dev/null || true)" = true ]; then echo "fail agent-workflow: core.bare=true (a fixture wrote to this repo; git -C $ROOT config core.bare false)"; fail=1; fi
 check_link "$HOME/.cursor/skills/zstack"
 check_link "$HOME/.cursor/skills/route-work"
 for pair in zgrill:grill-me zgrill:grill-with-docs zspec:to-spec ztickets:to-tickets zpr:pr zretro:retro; do

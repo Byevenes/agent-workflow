@@ -25,7 +25,12 @@ if command -v shellcheck >/dev/null 2>&1; then shellcheck -e SC2016 scripts/*.sh
 if [ "$(date +%Y%m%d)" -ge 20261201 ] && { [ -e skills/route-work ] || grep -q route-work scripts/link.sh; }; then bad "route-work alias expired 2026-12-01: delete skills/route-work and its link.sh lines"; fi
 
 tmp=$(mktemp -d)
+mkdir -p "$tmp/.cursor/skills/realdir" "$tmp/.config/opencode/skills"
+ln -s "$tmp/nowhere" "$tmp/.cursor/skills/broken"
+ln -s "$tmp/nowhere" "$tmp/.config/opencode/skills/broken"
 HOME=$tmp scripts/link.sh >/dev/null
+if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/broken" ]; then bad "link.sh: keeps a broken skill symlink"; fi
+[ -d "$tmp/.cursor/skills/realdir" ] || bad "link.sh: removed a real skill folder"
 for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done
@@ -56,6 +61,7 @@ printf '%s\n' '{"text":"zstack: **Large**, partial verifiable — migración"}' 
 ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh | grep -q 'size undetected (no classification line): 0' || bad "route-audit: misses a canonical line with bold size"
 rm -rf "$ra"
 
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_OBJECT_DIRECTORY
 cg=$(mktemp -d)
 git init -q "$cg/r"
 (cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/Byevenes/x.git >/dev/null) || bad "client-guard: blocks a personal GitHub push"
@@ -64,9 +70,13 @@ mkdir -p "$cg/Sites/tinet/Clients/c"
 git init -q "$cg/Sites/tinet/Clients/c/r"
 if (cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/c/x.git >/dev/null); then bad "client-guard: allows a push under Sites/tinet/Clients"; fi
 (cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-push" origin x >/dev/null) || bad "client-guard: ignores CLIENT_PUSH_OK=brayan"
+(cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null) || bad "client-guard pre-commit: blocks a personal repo"
+if (cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null); then bad "client-guard pre-commit: allows a commit under Sites/tinet/Clients"; fi
+git -C "$cg/r" remote add origin git@gitlab.com:client/x.git
+if (cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null); then bad "client-guard pre-commit: allows a commit with a gitlab origin"; fi
+(cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null) || bad "client-guard pre-commit: ignores CLIENT_PUSH_OK=brayan"
 rm -rf "$cg"
 
-unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_OBJECT_DIRECTORY
 cr=$(mktemp -d)
 mk() { git init -q "$cr/$1"; }
 mk a/back/repos/r1
@@ -76,9 +86,28 @@ git -C "$cr/b/front/repos/h" config core.hooksPath .husky
 git -C "$cr/a/back/repos/r1" -c user.name=t -c user.email=t@t commit -q --allow-empty -m x
 git -C "$cr/a/back/repos/r1" worktree add -q "$cr/a/back/worktrees/r1/w" -b w 2>/dev/null
 for r in a/back/repos/r1 a/back/repos/r2; do printf '#!/bin/sh\n# client-guard\n' > "$cr/$r/.git/hooks/pre-push"; done
-out=$(CLIENTS_ROOT=$cr sh scripts/setup-check.sh 2>/dev/null | grep client-guard)
+out=$(CLIENTS_ROOT=$cr sh scripts/setup-check.sh 2>/dev/null | grep "client-guard: pre-push")
 [ "$out" = "ok client-guard: pre-push in 2/3 client repos, skipped (husky) 1" ] || bad "setup-check client-guard count: $out"
 rm -rf "$cr"
+
+ci=$(mktemp -d)
+git init -q "$ci/confuturo/back/repos/c"
+git -C "$ci/confuturo/back/repos/c" config user.email someone@gmail.com
+git init -q "$ci/other/back/repos/o"
+git -C "$ci/other/back/repos/o" config user.email someone@gmail.com
+printf '.scratch/\n' >> "$ci/other/back/repos/o/.git/info/exclude"
+out=$(CLIENTS_ROOT=$ci sh scripts/setup-check.sh 2>/dev/null || true)
+echo "$out" | grep -q "^fail client identity: $ci/confuturo/back/repos/c" || bad "setup-check: passes a Confuturo repo with a non-Tinet email"
+echo "$out" | grep -q "^warn client identity: $ci/other/back/repos/o" || bad "setup-check: does not warn on a non-Tinet email outside Confuturo"
+echo "$out" | grep -q "^fail client identity: $ci/other" && bad "setup-check: fails a non-Confuturo client on identity"
+echo "$out" | grep -q "scratch-exclude: .scratch/ in info/exclude in 1/2" || bad "setup-check: scratch-exclude count wrong"
+git -C "$ci/confuturo/back/repos/c" config user.email brayan.yevenes@tinet.cl
+CLIENTS_ROOT=$ci sh scripts/setup-check.sh 2>/dev/null | grep -q '^fail client identity: .*confuturo' && bad "setup-check: fails a Confuturo repo with brayan.yevenes@tinet.cl"
+oh=$(mktemp -d)
+mkdir -p "$oh/.config/opencode/agents"
+printf -- '---\nmodel: opencode/big-pickle\n---\n' > "$oh/.config/opencode/agents/zninja.md"
+HOME=$oh CLIENTS_ROOT=$ci sh scripts/setup-check.sh 2>/dev/null | grep -q '^fail opencode zninja' || bad "setup-check: passes an opencode/* model on zninja"
+rm -rf "$ci" "$oh"
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

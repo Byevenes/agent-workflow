@@ -84,7 +84,7 @@ Delivery report: **summary**, **evidence** (what ran and its real result), **wha
 
 Merge: automerge only in personal repos and only for a pure, reversible refactor with green checks and a clean zSensei pass. Anything irreversible needs Brayan. Client repos: never `--force`, no commit, push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval.
 
-Retro (decisions #29, #30): run `zretro` at the end of every Medium, Large or Critical task, on a Small task that had an error, and every time the user corrects you. It ends in a barrier (lint, hook, test, type or check.sh guard) or `no barrier possible because <reason>`. Client repos: a `.scratch/` proposal only. Every size: end your final reply with this block, filled with facts from this session:
+Retro (decisions #29, #30): run `zretro` at the end of every Medium, Large or Critical task, on a Small task that had an error, and every time the user corrects you. It asks first what code or structure change would have made the mistake impossible (domain model, type, test, lint or check.sh guard), prefers that over a new rule, and removes any rule text the fix replaces. Client repos: a `.scratch/` proposal only. Every size: end your final reply with this block, filled with facts from this session:
 
 ```
 zstack check

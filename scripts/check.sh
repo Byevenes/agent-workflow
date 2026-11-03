@@ -62,7 +62,7 @@ mk a/back/repos/r1
 mk a/back/repos/r2
 mk b/front/repos/h
 git -C "$cr/b/front/repos/h" config core.hooksPath .husky
-git -C "$cr/a/back/repos/r1" commit -q --allow-empty -m x
+git -C "$cr/a/back/repos/r1" -c user.name=t -c user.email=t@t commit -q --allow-empty -m x
 git -C "$cr/a/back/repos/r1" worktree add -q "$cr/a/back/worktrees/r1/w" -b w 2>/dev/null
 for r in a/back/repos/r1 a/back/repos/r2; do printf '#!/bin/sh\n# client-guard\n' > "$cr/$r/.git/hooks/pre-push"; done
 out=$(CLIENTS_ROOT=$cr sh scripts/setup-check.sh 2>/dev/null | grep client-guard)

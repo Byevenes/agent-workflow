@@ -35,7 +35,7 @@ Besides size, record verifiability, with the reason.
 - **Full.** The repo's automated checks (tests, type checks, lint, others it has) prove it is done. They must run green before done.
 - **Partial.** Pixel-perfect UI, copy or visual changes, behavior depending on external systems or data not available locally, or manual flows. The final report lists exactly what could not be verified automatically and how to check each item by hand. The task cannot be marked done without explicit human review.
 
-Say the size, verifiability, and reason in one line before anything else: `zstack: <size>, <full|partial> verifiable — <reason>`. The old prefix `route-work:` is still accepted until 2026-12-01.
+Say the size, verifiability, and reason in one line before anything else: `zstack: <size>, <full|partial> verifiable — <reason>`, size one of Small, Medium, Large, Critical. `route-audit.sh` fails a session without it. The old prefix `route-work:` is still accepted until 2026-12-01.
 
 ## 2. Plan (before code)
 

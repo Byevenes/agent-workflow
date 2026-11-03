@@ -43,6 +43,12 @@ if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit
 rm "$ra/p/agent-transcripts/norev.jsonl"
 printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"text","text":"Clasificación **Medium** (zstack): dos piezas."}]}}' '{"type":"tool_use","name":"Write"}' '{"text":"zninja launched: no (inline: Task tool absent)"}' > "$ra/p/agent-transcripts/real.jsonl"
 if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: misses a real-format Medium transcript without zsensei"; fi
+rm "$ra/p/agent-transcripts/real.jsonl"
+printf '%s\n' 'using zstack skill' 'zninja launched: no (inline: Task tool absent)' > "$ra/p/agent-transcripts/nosize.jsonl"
+if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: passes a zstack session with no classification line"; fi
+rm "$ra/p/agent-transcripts/nosize.jsonl"
+printf '%s\n' '{"text":"zstack: **Large**, partial verifiable — migración"}' > "$ra/p/agent-transcripts/canon.jsonl"
+ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh | grep -q 'size undetected (no classification line): 0' || bad "route-audit: misses a canonical line with bold size"
 rm -rf "$ra"
 
 cg=$(mktemp -d)

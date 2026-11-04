@@ -21,6 +21,7 @@ You are the chat that runs the poteto-mode playbook. Spawn `poteto-agent` delega
 
 1. Small: read the task. Medium and up: read the spec path. If a required spec is missing, stop and send the work back.
 2. Use pstack's `tdd` for behavior (`pstack-tdd` on OpenCode when `tdd` is Matt Pocock's).
+2b. Client task: read every KDB path your parent passed (`kdb:` line) before writing code and follow them. If a KDB conflicts with the TechSpec or spec, stop and report both passages (file + section); never pick one yourself. No paths on a client task: stop and ask for them.
 3. Apply `security-and-hardening` when the change touches input, a session, auth, permissions, personal data, payments, secrets, or a new integration.
 4. Run the project's own checks (tests, type-check, lint; Playwright for a screen). Never print secrets.
 5. Do not commit, push, or review your own diff unless the parent said to. Reviews belong to zstack.
@@ -33,6 +34,7 @@ Start the report with these lines, then the summary:
 poteto-mode: loaded <absolute path of SKILL.md>
 size: <size from parent>
 checks: <command> → <real result>, one per line
+kdb: <paths followed | none (not a client task)>
 ```
 
 Do not claim a check you did not run.

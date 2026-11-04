@@ -106,6 +106,8 @@ if [ "$n" -gt 0 ]; then
   echo "info client-guard pre-commit: $pc/$n client repos (Brayan installs: see docs/architecture.md)"
   echo "info scratch-exclude: .scratch/ in info/exclude in $ex/$n client repos (zstack adds it per worktree)"
 fi
+if [ -f "$HOME/.config/zstack/clients.toml" ]; then echo "ok client-kdb: map at ~/.config/zstack/clients.toml"
+else echo "todo client-kdb: no ~/.config/zstack/clients.toml (copy docs/examples/clients.toml.example)"; fi
 login=$(gh api user -q .login 2>/dev/null || true)
 if [ -z "$login" ]; then echo "warn merge-guard: gh not logged in, cannot check the agent identity"
 elif [ "$login" = Byevenes ]; then echo "todo merge-guard: gh acts as Byevenes (admin); only text stops the agent from merging"

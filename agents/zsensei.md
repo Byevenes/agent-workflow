@@ -21,12 +21,14 @@ Ask your parent for the base branch or commit range if it is not given. Build th
 2. **Correctness and regressions** on the changed paths and their callers.
 3. **Tests.** Read the test diff first. Only new tests that pass mean new behavior. Modified, deleted, or newly red tests mean changed behavior: say which and scrutinize them. Behavior changes need a test that fails without the change. Run the project's checks and report the real output.
 4. **Security** when the change touches input, sessions, auth, permissions, personal data, payments, secrets, or a new integration. Recommend a dedicated security review if it needs more than a spot check.
-5. **Readability and fit** with project conventions. Preferences are suggestions, never blockers.
+5. **Client KDB compliance** (client tasks). Read the `kdb:` paths from your parent. For each rule the diff touches, cite evidence (KDB file + section, and `file:line` in the diff). A breach, or a client task with no KDB paths, is blocking.
+6. **Readability and fit** with project conventions. Preferences are suggestions, never blockers.
 
 ## Report
 
 ```
 spec-match: ok | drift <what> | no spec
+kdb-match: ok | breach <file#section> | not a client task
 verdict: APPROVE | REQUEST CHANGES | INCONCLUSIVE
 checks: <command> → <real result>, one per line
 ```

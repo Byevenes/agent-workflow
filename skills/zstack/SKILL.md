@@ -56,7 +56,7 @@ If a medium or large change turns out to cross a critical boundary, reclassify i
 
 ## 3. Implement (subagent, or inline)
 
-Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, the paths it must not touch, and the `kdb:` paths from section 0 (client tasks). Do not edit files in this chat on that path.
+Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, the paths it must not touch, whether to commit (client repos: the slice commit rules in section 5), and the `kdb:` paths from section 0 (client tasks). Do not edit files in this chat on that path.
 
 Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Medium, Large and Critical: code is written by zNinja; inline only in Small with `inline: <razón>` (if zninja cannot launch on Medium+, stop and tell Brayan).
 
@@ -86,7 +86,23 @@ Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each r
 
 Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (`~/Sites/tinet/Clients/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it. Before writing to `.scratch/` in a client worktree, add `.scratch/` to `$(git rev-parse --git-path info/exclude)` so it never shows in `git status` (`scripts/setup-check.sh` reports it).
 
-Merge: only Brayan merges, and only on his explicit order, in every repo. Never merge, enable auto-merge, or merge a PR yourself as a shortcut. Client repos: never `--force`, no commit, push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval.
+Merge: only Brayan merges, and only on his explicit order, in every repo. Never merge, enable auto-merge, or merge a PR yourself as a shortcut. Client repos: never `--force`, no push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval except the local slice commit below.
+
+Client slice commits (local only). Normal flow is a loop per slice: slice done → commit gate → local commit → log in `.scratch/commits.md` → next slice. No extra ok: the slices were approved before code, each slice is one commit, and its message comes from the slice's issue. If the slice's scope changed from what was approved, do not commit: stop and tell Brayan. Recovery case: if, when the gate starts, uncommitted changes span more than one slice (or mix slices in one file), stop, show Brayan the commit plan (commits, files or hunks, messages) and wait for his ok before the first commit. Check detection (technology-agnostic), by priority: 1) the client KDB or `commit_checks` / `push_checks` in `clients.toml`; 2) what the repo already defines (package.json scripts, Makefile, `.sln`/`.csproj`, pyproject/tox, `go.mod`, `Cargo.toml`, `.pre-commit-config.yaml`; CI config as a reference for what the pipeline runs). Never invent checks: if none is found, do not commit, tell Brayan. Never install anything in a client repo: no hooks, no `core.hooksPath`, no new `.husky/`, `.githooks/` or pre-commit config.
+
+Commit gate (light, every slice), in order; any failure means no commit: report the step and its real output, and stop.
+1. Format and lint, only if the repo already uses them.
+2. Fast compile or type check (incremental when the tool allows it).
+3. Only the slice's tests (the ones TDD already runs).
+4. Existing pre-commit hooks run as they are; never use `--no-verify` or `CLIENT_PUSH_OK`. If one (including the opt-in `client-guard/pre-commit`) blocks, stop and tell Brayan.
+5. Stage explicitly only the slice's files (`git add <paths>`, `git add -p` when a file mixes slices; never `git add -A` or `git add .`), then read `git diff --cached`: no secrets, no `.scratch/`, `.atl/` or config the KDB forbids, no stray debug output or new loose TODOs, no files outside the slice.
+6. Identity and convention: if the client entry in `clients.toml` has `git_email`, `git config user.email` must equal it; without it, abort when the email looks personal (`@gmail.com`, `@users.noreply.github.com`, `@hotmail.com`, `@outlook.com`, `@icloud.com`). Never change git config to fix it. The message follows the project or KDB convention.
+
+Pre-push gate (full), before asking Brayan for the push order: clean build; full test suite, plus coverage when a threshold exists; existing pre-push hooks; review every commit of the branch against its base (identity, message convention, the KDB's file limit per MR if it sets one). A failure is fixed with a new commit; local amend or rebase only with Brayan's ok. Push still needs his explicit order.
+
+After each gate, append to `.scratch/commits.md`: slice, commit hash, each check with its command, where it came from (KDB, clients.toml or repo file) and its real result.
+
+Still only on Brayan's explicit order: push, MR or PR, merge, rebase, reset, amend, cherry-pick, `--force`, git config changes and hook installs.
 
 Retro (decisions #29, #30): run `zretro` at the end of every Medium, Large or Critical task, on a Small task that had an error, and every time the user corrects you. It asks first what code or structure change would have made the mistake impossible (domain model, type, test, lint or check.sh guard), prefers that over a new rule, and removes any rule text the fix replaces. Client repos: a `.scratch/` proposal only. Every size: end your final reply with this block, filled with facts from this session:
 

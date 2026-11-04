@@ -12,5 +12,5 @@ done
 [ -z "$hit" ] && exit 0
 if [ "${CLIENT_PUSH_OK:-}" = "brayan" ]; then echo "client-guard: commit allowed by CLIENT_PUSH_OK=brayan ($hit)"; exit 0; fi
 echo "client-guard: blocked commit in a client repo ($hit)."
-echo "Agents never commit in client repos. Brayan: CLIENT_PUSH_OK=brayan git commit"
+echo "Opt-in guard: agents stop here and ask Brayan, never bypass. Brayan: CLIENT_PUSH_OK=brayan git commit"
 exit 1

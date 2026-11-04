@@ -13,6 +13,10 @@ for f in skills/zstack/SKILL.md agents/opencode/zstack.md; do
   grep -q 'Client slice commits' "$f" || bad "$f: client slice commit rule missing"
 done
 
+grep -q 'technology-agnostic' skills/zstack/SKILL.md || bad "zstack: client checks must be detected agnostically"
+grep -q 'Never invent checks' skills/zstack/SKILL.md || bad "zstack: client rule must forbid invented checks"
+grep -q 'Pre-push gate' skills/zstack/SKILL.md || bad "zstack: client rule must define the pre-push gate"
+grep -q 'push_checks' docs/examples/clients.toml.example || bad "clients.toml.example: push_checks missing"
 grep -q 'Recovery case' skills/zstack/SKILL.md || bad "zstack: client commit rule must define the mixed-slices recovery case"
 grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
 grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"

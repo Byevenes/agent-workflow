@@ -13,6 +13,8 @@ for f in skills/zstack/SKILL.md agents/opencode/zstack.md; do
   grep -q 'Client slice commits' "$f" || bad "$f: client slice commit rule missing"
 done
 
+grep -q 'Recovery case' skills/zstack/SKILL.md || bad "zstack: client commit rule must define the mixed-slices recovery case"
+grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
 grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"
 grep -q 'never use `--no-verify`' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid --no-verify"
 

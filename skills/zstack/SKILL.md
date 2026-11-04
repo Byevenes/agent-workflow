@@ -88,7 +88,7 @@ Delivery report: **summary**, **evidence** (what ran and its real result), **wha
 
 Merge: only Brayan merges, and only on his explicit order, in every repo. Never merge, enable auto-merge, or merge a PR yourself as a shortcut. Client repos: never `--force`, no push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval except the local slice commit below.
 
-Client slice commits (local only). Before the first commit of a task, show Brayan the commit plan (one commit per slice: files and message) and wait for his ok. Then, when a slice closes, run this pre-commit gate in order; any failure means no commit: report the step and its real output, and stop.
+Client slice commits (local only). Normal flow is a loop per slice: slice done → pre-commit gate → local commit → log in `.scratch/commits.md` → next slice. No extra ok: the slices were approved before code, each slice is one commit, and its message comes from the slice's issue. If the slice's scope changed from what was approved, do not commit: stop and tell Brayan. Recovery case: if, when the gate starts, uncommitted changes span more than one slice (or mix slices in one file), stop, show Brayan the commit plan (commits, files or hunks, messages) and wait for his ok before the first commit. The gate runs in order; any failure means no commit: report the step and its real output, and stop.
 1. Format and lint, only if the project already uses them (`dotnet format --verify-no-changes`, `npm run lint`, `npm run format:check`, Makefile targets).
 2. Build or type check (`dotnet build`, `tsc --noEmit`, the project's build script).
 3. Tests (`dotnet test`, `npm test`); coverage too when the project or KDB defines a threshold (e.g. Sonar).

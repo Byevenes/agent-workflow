@@ -1,0 +1,9 @@
+# Client KDB map for zstack section 0. Copy to ~/.config/zstack/clients.toml (outside every repo; never commit the real file).
+# One table per client. zIGL picks the entry whose `root` is a prefix of the worktree path.
+
+[clients.acme]
+root = "~/Sites/work/Clients/acme"
+kdb_dir = "~/Notes/Acme/Guidelines"
+exclude = ["README.md", "*.bak*", "Propuestas KDB/"]
+team_lessons = "Lecciones del equipo.md"
+# confluence_guidelines = "https://acme.atlassian.net/wiki/spaces/DEV/pages/123"

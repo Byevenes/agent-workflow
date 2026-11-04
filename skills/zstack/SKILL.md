@@ -19,6 +19,8 @@ Applies only when the task comes from a client user story (HU) in an external tr
 
 `to-analysis` → questions to the TL/PO (`to-questionnaire`) → Brayan pastes the answers in `.scratch/answers.md` (Jira and Confluence are read-only: never comment, edit or transition) → `grill-with-docs` if gaps remain → `to-techspec` → then the normal size path (Small/Medium/Large/Critical). The TechSpec accompanies the user story as input for the spec. External PRD/TD documents are optional, only when the client asks for them.
 
+Client KDBs (mandatory in every client task, HU or not). Read `~/.config/zstack/clients.toml` (contract: `docs/examples/clients.toml.example`). Pick the client whose `root` is a prefix of the worktree path. From its `kdb_dir`, read the KDBs that apply to the task (skip `exclude`; `team_lessons` is local team notes, read them, never send them to an external tool). If `confluence_guidelines` is set, read that page (read-only). Right under the classification line, write `kdb: <files read>`, or `kdb: none found (<reason>)` when there is no map, no matching root, or no KDB applies. A matching root with no `kdb:` line is a violation. Pass the same paths to zNinja and zSensei.
+
 If `to-analysis`, `to-questionnaire` or `to-techspec` is missing, stop and tell Brayan (`scripts/setup-check.sh` reports them). Attachments: Brayan downloads them by hand into the task folder; read them there, never fetch them with API tokens. Client work happens in a Forge worktree that Brayan approved (`forge`; if it is not on the PATH, `~/Sites/tinet/tinet-cli/bin/forge`).
 
 ## 1. Classify
@@ -54,7 +56,7 @@ If a medium or large change turns out to cross a critical boundary, reclassify i
 
 ## 3. Implement (subagent, or inline)
 
-Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, and the paths it must not touch. Do not edit files in this chat on that path.
+Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, the paths it must not touch, and the `kdb:` paths from section 0 (client tasks). Do not edit files in this chat on that path.
 
 Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Medium, Large and Critical: code is written by zNinja; inline only in Small with `inline: <razón>` (if zninja cannot launch on Medium+, stop and tell Brayan).
 

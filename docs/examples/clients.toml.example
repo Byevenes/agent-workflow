@@ -6,4 +6,6 @@ root = "~/Sites/work/Clients/acme"
 kdb_dir = "~/Notes/Acme/Guidelines"
 exclude = ["README.md", "*.bak*", "Propuestas KDB/"]
 team_lessons = "Lecciones del equipo.md"
+# Optional. Required user.email for local slice commits (zstack section 5). Without it, zstack aborts on a personal-looking email.
+# git_email = "dev@acme-partner.example"
 # confluence_guidelines = "https://acme.atlassian.net/wiki/spaces/DEV/pages/123"

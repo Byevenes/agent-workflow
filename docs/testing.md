@@ -10,3 +10,7 @@ When the work is code in another repo:
 - Postgres is used only when the spec touches the database, through `POSTGRES_URL`.
 
 `agent-browser` remains available. Do not remove it in this cut.
+
+## Slice verification
+
+When a slice's tests fail, classify the HEAD results against the base branch with `scripts/classify-test-failures.sh`. The two result files are the state. The script does not cache them. A HEAD failure is env-known only when the same id and the same detail fail on the base branch. Real failures block the slice. With no base result, every HEAD failure is real. Fixtures live in `docs/examples/test-failure-fixtures/`.

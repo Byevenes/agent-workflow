@@ -1,0 +1,20 @@
+# Role matrix for zStack. Example only. Client repos do not load this file.
+# An empty fallback means stop and ask the owner. The review role stays empty.
+
+[[roles]]
+id = "implement"
+agent = "zninja"
+preferred = "grok-4.7-medium"
+fallback = ["inherit-parent"]
+
+[[roles]]
+id = "spec"
+agent = "zgrill, zspec, ztickets"
+preferred = "grok-4.7-medium"
+fallback = ["inherit-parent"]
+
+[[roles]]
+id = "review"
+agent = "zsensei"
+preferred = "claude-opus-5-5-medium"
+fallback = []

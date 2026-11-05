@@ -13,6 +13,24 @@ cd "$(dirname "$0")/.."
 fail=0
 bad() { echo "FAIL $*"; fail=1; }
 
+check_project_agents() {
+  for agent in zigl zninja zsensei; do
+    p=".cursor/agents/$agent.md"
+    if [ ! -L "$p" ]; then
+      bad "project agent $p is not a symlink"
+      continue
+    fi
+    if [ ! -e "$p" ]; then
+      bad "project agent $p does not resolve"
+      continue
+    fi
+    target=$(readlink "$p")
+    if [ "$target" != "../../agents/$agent.md" ]; then
+      bad "project agent $p target is $target"
+    fi
+  done
+}
+
 n=$(grep -rlF 'Run inline when the Task tool is absent' --exclude-dir=.git --exclude-dir=.scratch --exclude-dir=retros --exclude=check.sh . | wc -l | tr -d ' ')
 [ "$n" -eq 1 ] || bad "inline-trigger sentence must live only in skills/zstack/SKILL.md (found in $n files)"
 
@@ -38,6 +56,15 @@ fixline=$(grep -n 'fix: keep the empty input on the existing path' agents/zninja
 featline=$(grep -n "feat: add the ticket's slice" agents/zninja.md | head -1 | cut -d: -f1)
 if [ -z "$fixline" ] || [ -z "$featline" ] || [ "$fixline" -ge "$featline" ]; then bad "zninja: fix: example is not before the feature example"; fi
 grep -q 'that `fix:` commit is an ancestor of the feature commit' agents/zsensei.md || bad "zsensei: out-of-scope history checklist missing"
+zn_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agents/zninja.md)
+if printf '%s\n' "$zn_front" | grep -q '^model:'; then bad "zninja: model must stay unset so the subagent inherits"; fi
+if printf '%s\n' "$zn_front" | grep -q -- '-fast'; then bad "zninja: must not set a -fast model"; fi
+zs_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agents/zsensei.md)
+if ! printf '%s\n' "$zs_front" | grep -qx 'model: claude-opus-5-5-medium'; then bad "zsensei: model must be claude-opus-5-5-medium"; fi
+if ! printf '%s\n' "$zs_front" | grep -qx 'readonly: true'; then bad "zsensei: readonly must be true"; fi
+grep -q 'issue #58' skills/zstack/SKILL.md || bad "zstack: inline fallback must cite issue #58"
+grep -qF '.cursor/agents/' skills/zstack/SKILL.md || bad "zstack: inline fallback must name .cursor/agents/"
+check_project_agents
 grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
 grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"
 grep -q 'never use `--no-verify`' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid --no-verify"
@@ -90,6 +117,7 @@ if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/bro
 for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done
+check_project_agents
 rm -rf "$tmp"
 
 ra=$(mktemp -d)

@@ -90,6 +90,8 @@ Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for 
 
 Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Medium, Large and Critical: code is written by zNinja; inline only in Small with `inline: <razón>` (if zninja cannot launch on Medium+, stop and tell Brayan).
 
+Project agents (issue #58). Cursor CLI and Cloud Agents load `.cursor/agents/` from the repo. The IDE also reads `~/.cursor/agents`, which `scripts/link.sh` fills from the same files. This repo registers `zninja`, `zsensei`, and `zigl` in `.cursor/agents/` as relative symlinks to `agents/<name>.md`. `agents/zsensei.md` sets `model: claude-opus-5-5-medium` and `readonly: true`. `agents/zninja.md` sets no model, so the subagent inherits the parent, and its frontmatter must not name a `-fast` slug. When Task lists `zninja`, launch it. The inline trigger above covers a session whose Task list omits `zninja`.
+
 Inline: read `poteto-mode` by the path in the intro and follow it. Load the skills for this size (`tdd`, `pstack-tdd` on OpenCode, `security-and-hardening` on critical). Emit the zninja report lines (`poteto-mode: loaded`, `size:`, `checks:`) and the zstack check block. Set `zninja launched: no (inline: <reason>)`.
 
 - Small: the task. One focused test if behavior changes.

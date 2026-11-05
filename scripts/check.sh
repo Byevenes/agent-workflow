@@ -349,6 +349,34 @@ rp_anch_lacks "#section"
 rp_anch_lacks "src/Missing.cs#"
 rp_anch_lacks "src/LinkMissing.cs:"
 
+sec=docs/security-scan.md
+if [ ! -f "$sec" ]; then
+  bad "security-scan: playbook missing"
+else
+  for s in \
+    'SonarQube for IDE' \
+    'gitleaks git --redact' \
+    'Never install a hook into a client repo' \
+    'Never commit security scanner config into a client repo' \
+    '.git/info/exclude' \
+    'CodeQL is a poor fit for this repo'
+  do
+    grep -qF -- "$s" "$sec" || bad "security-scan: playbook missing $s"
+  done
+fi
+gl=.github/workflows/gitleaks.yml
+if [ ! -f "$gl" ]; then
+  bad "gitleaks: workflow missing"
+else
+  for s in 'contents: read' 'fetch-depth: 0' '--redact' '8.30.1' '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb'; do
+    grep -qF -- "$s" "$gl" || bad "gitleaks: workflow missing $s"
+  done
+  if grep -q pull_request_target "$gl"; then bad "gitleaks: workflow uses pull_request_target"; fi
+fi
+help=$(sh scripts/setup-check.sh --help)
+printf '%s\n' "$help" | grep -qF 'docs/security-scan.md' || bad "setup-check: help misses the security-scan playbook"
+grep -qF 'docs/security-scan.md' docs/scripts.md || bad "scripts.md: security-scan playbook missing"
+
 lesson=docs/examples/kdb-lesson-timezone.md
 [ -f "$lesson" ] || bad "timezone lesson: missing"
 grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"

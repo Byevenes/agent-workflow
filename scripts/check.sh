@@ -74,17 +74,17 @@ rm -rf "$ra"
 
 cg=$(mktemp -d)
 git init -q "$cg/r"
-(cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/Byevenes/x.git >/dev/null) || bad "client-guard: blocks a personal GitHub push"
-if (cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-push" origin git@bitbucket.org:client/x.git >/dev/null); then bad "client-guard: allows a bitbucket push"; fi
-mkdir -p "$cg/Sites/tinet/Clients/c"
-git init -q "$cg/Sites/tinet/Clients/c/r"
-if (cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/c/x.git >/dev/null); then bad "client-guard: allows a push under Sites/tinet/Clients"; fi
-(cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-push" origin x >/dev/null) || bad "client-guard: ignores CLIENT_PUSH_OK=brayan"
-(cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null) || bad "client-guard pre-commit: blocks a personal repo"
-if (cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null); then bad "client-guard pre-commit: allows a commit under Sites/tinet/Clients"; fi
+(cd "$cg/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/Byevenes/x.git >/dev/null) || bad "client-guard: blocks a personal GitHub push"
+if (cd "$cg/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-push" origin git@bitbucket.org:client/x.git >/dev/null); then bad "client-guard: allows a bitbucket push"; fi
+mkdir -p "$cg/Clients/c"
+git init -q "$cg/Clients/c/r"
+if (cd "$cg/Clients/c/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/c/x.git >/dev/null); then bad "client-guard: allows a push under the clients root"; fi
+(cd "$cg/Clients/c/r" && HOME=$cg CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-push" origin x >/dev/null) || bad "client-guard: ignores CLIENT_PUSH_OK=brayan"
+(cd "$cg/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null) || bad "client-guard pre-commit: blocks a personal repo"
+if (cd "$cg/Clients/c/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null); then bad "client-guard pre-commit: allows a commit under the clients root"; fi
 git -C "$cg/r" remote add origin git@gitlab.com:client/x.git
-if (cd "$cg/r" && HOME=$cg "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null); then bad "client-guard pre-commit: allows a commit with a gitlab origin"; fi
-(cd "$cg/Sites/tinet/Clients/c/r" && HOME=$cg CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null) || bad "client-guard pre-commit: ignores CLIENT_PUSH_OK=brayan"
+if (cd "$cg/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null); then bad "client-guard pre-commit: allows a commit with a gitlab origin"; fi
+(cd "$cg/Clients/c/r" && HOME=$cg CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null) || bad "client-guard pre-commit: ignores CLIENT_PUSH_OK=brayan"
 rm -rf "$cg"
 
 cr=$(mktemp -d)
@@ -96,28 +96,72 @@ git -C "$cr/b/front/repos/h" config core.hooksPath .husky
 git -C "$cr/a/back/repos/r1" -c user.name=t -c user.email=t@t commit -q --allow-empty -m x
 git -C "$cr/a/back/repos/r1" worktree add -q "$cr/a/back/worktrees/r1/w" -b w 2>/dev/null
 for r in a/back/repos/r1 a/back/repos/r2; do printf '#!/bin/sh\n# client-guard\n' > "$cr/$r/.git/hooks/pre-push"; done
-out=$(CLIENTS_ROOT=$cr sh scripts/setup-check.sh 2>/dev/null | grep "client-guard: pre-push")
+out=$(CLIENTS_ROOT=$cr ZSTACK_CLIENTS_TOML=/nonexistent/zstack-clients.toml sh scripts/setup-check.sh 2>/dev/null | grep "client-guard: pre-push")
 [ "$out" = "ok client-guard: pre-push in 2/3 client repos, skipped (husky) 1" ] || bad "setup-check client-guard count: $out"
 rm -rf "$cr"
 
 ci=$(mktemp -d)
-git init -q "$ci/confuturo/back/repos/c"
-git -C "$ci/confuturo/back/repos/c" config user.email someone@gmail.com
+git init -q "$ci/acme/back/repos/c"
+git -C "$ci/acme/back/repos/c" config user.email dev@other.example
 git init -q "$ci/other/back/repos/o"
-git -C "$ci/other/back/repos/o" config user.email someone@gmail.com
+git -C "$ci/other/back/repos/o" config user.email dev@other.example
+git init -q "$ci/plain/back/repos/u"
+git -C "$ci/plain/back/repos/u" config user.email dev@other.example
 printf '.scratch/\n' >> "$ci/other/back/repos/o/.git/info/exclude"
-out=$(CLIENTS_ROOT=$ci sh scripts/setup-check.sh 2>/dev/null || true)
-echo "$out" | grep -q "^fail client identity: $ci/confuturo/back/repos/c" || bad "setup-check: passes a Confuturo repo with a non-Tinet email"
-echo "$out" | grep -q "^warn client identity: $ci/other/back/repos/o" || bad "setup-check: does not warn on a non-Tinet email outside Confuturo"
-echo "$out" | grep -q "^fail client identity: $ci/other" && bad "setup-check: fails a non-Confuturo client on identity"
-echo "$out" | grep -q "scratch-exclude: .scratch/ in info/exclude in 1/2" || bad "setup-check: scratch-exclude count wrong"
-git -C "$ci/confuturo/back/repos/c" config user.email brayan.yevenes@tinet.cl
-CLIENTS_ROOT=$ci sh scripts/setup-check.sh 2>/dev/null | grep -q '^fail client identity: .*confuturo' && bad "setup-check: fails a Confuturo repo with brayan.yevenes@tinet.cl"
+toml=$(mktemp)
+cat > "$toml" <<EOF
+clients_root = "/no/such/clients-root"
+
+[clients.acme]
+root = "$ci/acme"
+git_email = "dev@acme.example"
+git_email_domains = ["@acme.example"]
+
+[clients.other]
+root = "$ci/other"
+git_email_domains = ["@acme.example"]
+EOF
+out=$(CLIENTS_ROOT=$ci ZSTACK_CLIENTS_TOML=$toml sh scripts/setup-check.sh 2>/dev/null || true)
+echo "$out" | grep -q "^fail client identity: $ci/acme/back/repos/c uses 'dev@other.example', expected the client map git_email" || bad "setup-check: passes a strict client repo with the wrong email"
+echo "$out" | grep -q "^warn client identity: $ci/other/back/repos/o uses 'dev@other.example', expected a client map git_email_domains suffix" || bad "setup-check: does not warn on a domains client with the wrong email"
+echo "$out" | grep -q "^fail client identity: $ci/other" && bad "setup-check: fails a domains-only client on identity"
+echo "$out" | grep -q "client identity: $ci/plain" && bad "setup-check: identity line for an unlisted repo"
+echo "$out" | grep -q "scratch-exclude: .scratch/ in info/exclude in 1/3" || bad "setup-check: scratch-exclude count wrong"
+cat > "$toml" <<EOF
+clients_root = "$ci"
+
+[clients.acme]
+root = "$ci/acme"
+git_email = "dev@acme.example"
+
+[clients.other]
+root = "$ci/other"
+git_email_domains = ["@acme.example"]
+EOF
+out=$(CLIENTS_ROOT='' ZSTACK_CLIENTS_TOML=$toml sh scripts/setup-check.sh 2>/dev/null || true)
+echo "$out" | grep -q "^fail client identity: $ci/acme/back/repos/c uses 'dev@other.example', expected the client map git_email" || bad "setup-check: ignores clients_root when CLIENTS_ROOT is unset"
+git -C "$ci/acme/back/repos/c" config user.email dev@acme.example
+CLIENTS_ROOT=$ci ZSTACK_CLIENTS_TOML=$toml sh scripts/setup-check.sh 2>/dev/null | grep -q "^fail client identity: $ci/acme" && bad "setup-check: fails a strict client repo with the mapped email"
+nest=$(mktemp -d)
+git init -q "$nest/acme/inner"
+git -C "$nest/acme/inner" config user.email dev@acme.example
+ntoml=$(mktemp)
+cat > "$ntoml" <<EOF
+[clients.wide]
+root = "$nest/acme"
+git_email = "dev@other.example"
+
+[clients.inner]
+root = "$nest/acme/inner"
+git_email = "dev@acme.example"
+EOF
+CLIENTS_ROOT=$nest ZSTACK_CLIENTS_TOML=$ntoml sh scripts/setup-check.sh 2>/dev/null | grep -q '^fail client identity:' && bad "setup-check: longest client root prefix lost"
 oh=$(mktemp -d)
 mkdir -p "$oh/.config/opencode/agents"
 printf -- '---\nmodel: opencode/big-pickle\n---\n' > "$oh/.config/opencode/agents/zninja.md"
-HOME=$oh CLIENTS_ROOT=$ci sh scripts/setup-check.sh 2>/dev/null | grep -q '^fail opencode zninja' || bad "setup-check: passes an opencode/* model on zninja"
-rm -rf "$ci" "$oh"
+HOME=$oh CLIENTS_ROOT=$ci ZSTACK_CLIENTS_TOML=/nonexistent/zstack-clients.toml sh scripts/setup-check.sh 2>/dev/null | grep -q '^fail opencode zninja' || bad "setup-check: passes an opencode/* model on zninja"
+rm -rf "$ci" "$oh" "$nest"
+rm -f "$toml" "$ntoml"
 
 for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"

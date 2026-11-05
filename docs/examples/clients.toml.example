@@ -1,13 +1,22 @@
 # Client KDB map for zstack section 0. Copy to ~/.config/zstack/clients.toml (outside every repo; never commit the real file).
-# One table per client. zIGL picks the entry whose `root` is a prefix of the worktree path.
+# Hooks do not read this file. They treat a repo as a client when it is under CLIENTS_ROOT, or under $HOME/Clients when that variable is unset.
+# setup-check resolves the clients root in this order: non-empty CLIENTS_ROOT, then clients_root below, then $HOME/Clients. A leading ~ is $HOME.
+# ZSTACK_CLIENTS_TOML selects another file for a fixture. The client-kdb line in setup-check still looks at ~/.config/zstack/clients.toml.
+# A repo under the clients root with no matching root gets no identity fail or warn. It still counts for client-guard and scratch-exclude.
+clients_root = "~/Clients"
+
+# One table per client. zIGL and setup-check pick the entry whose root is a directory prefix of the worktree. The longest prefix wins.
 
 [clients.acme]
-root = "~/Sites/work/Clients/acme"
+root = "~/Clients/acme"
 kdb_dir = "~/Notes/Acme/Guidelines"
 exclude = ["README.md", "*.bak*", "Propuestas KDB/"]
 team_lessons = "Lecciones del equipo.md"
-# Optional. Required user.email for local slice commits (zstack section 5). Without it, zstack aborts on a personal-looking email.
-# git_email = "dev@acme-partner.example"
+# When set, setup-check fails unless user.email is exactly this value. It wins over git_email_domains.
+# zstack section 5 also requires git config user.email to equal it before a local slice commit. Without git_email, zstack aborts on a personal-looking email.
+# git_email = "dev@acme.example"
+# Warn-only, and only when git_email is unset. setup-check warns unless user.email ends with one suffix.
+# git_email_domains = ["@acme.example"]
 # Optional. Checks for the light commit gate and the full pre-push gate (zstack section 5). Without them zstack detects checks from the repo; it never invents any.
 # commit_checks = ["dotnet build", "dotnet test --filter \"FullyQualifiedName~{slice}\""]
 # push_checks = ["dotnet build --no-incremental", "dotnet test"]

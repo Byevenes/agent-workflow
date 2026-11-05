@@ -2,10 +2,19 @@
 set -eu
 remote_url=${2:-}
 top=$(cd "$(git rev-parse --show-toplevel)" && pwd -P)
-home=$(cd "$HOME" && pwd -P)
 hosts=${CLIENT_GUARD_HOSTS:-bitbucket.org gitlab.}
 hit=""
-case $top in "$home"/Sites/tinet/Clients/*) hit="path $top" ;; esac
+raw=${CLIENTS_ROOT:-}
+if [ -z "$raw" ]; then raw=$HOME/Clients; fi
+case $raw in
+  \~) raw=$HOME ;;
+  \~/*) raw=$HOME/${raw#\~/} ;;
+esac
+croot=""
+if [ -d "$raw" ]; then croot=$(cd "$raw" && pwd -P); fi
+if [ -n "$croot" ] && { [ "$top" = "$croot" ] || [ "${top#"$croot"/}" != "$top" ]; }; then
+  hit="path $top"
+fi
 for h in $hosts; do
   case $remote_url in *"$h"*) hit="${hit:+$hit, }remote $remote_url" ;; esac
 done

@@ -11,3 +11,5 @@
 - **zNinja**: the implementer subagent (`agents/zninja.md`).
 - **zSensei**: the reviewer subagent (`agents/zsensei.md`).
 - **zHunter, zGuard**: reserved names, no role yet.
+- **Clients root**: where client repos live. Non-empty `CLIENTS_ROOT`, otherwise `clients_root` in the client map, otherwise `$HOME/Clients`.
+- **Client map**: local untracked toml at `ZSTACK_CLIENTS_TOML`, or `~/.config/zstack/clients.toml` when that variable is unset. Never commit it.

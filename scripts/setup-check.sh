@@ -71,7 +71,164 @@ for v in GITHUB_PERSONAL_ACCESS_TOKEN GITLAB_PERSONAL_ACCESS_TOKEN POSTGRES_URL;
   else echo "optional env $v (unset; not needed, keeps client data out of OpenCode)"; fi
 done
 
-croot=${CLIENTS_ROOT:-$HOME/Sites/tinet/Clients}
+expand_home() {
+  eh_p=$1
+  case $eh_p in
+    \~) eh_p=$HOME ;;
+    \~/*) eh_p=$HOME/${eh_p#\~/} ;;
+  esac
+  while [ "$eh_p" != "/" ] && [ "${eh_p%/}" != "$eh_p" ]; do
+    eh_p=${eh_p%/}
+  done
+  printf '%s\n' "$eh_p"
+}
+
+path_under() {
+  pu_root=$1
+  pu_path=$2
+  [ -n "$pu_root" ] || return 1
+  [ "$pu_path" = "$pu_root" ] && return 0
+  [ "${pu_path#"$pu_root"/}" != "$pu_path" ]
+}
+
+if [ -n "${ZSTACK_CLIENTS_TOML:-}" ]; then
+  cmap=$ZSTACK_CLIENTS_TOML
+else
+  cmap=$HOME/.config/zstack/clients.toml
+fi
+rules=$(mktemp)
+trap 'rm -f "$rules" "$rules.all"' EXIT
+: > "$rules"
+map_root=
+if [ -f "$cmap" ]; then
+  awk '
+    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+    function strip_comment(s) { sub(/[[:space:]]+#.*$/, "", s); return s }
+    function qval(s) {
+      s = trim(s)
+      if (s ~ /^".*"$/) return substr(s, 2, length(s) - 2)
+      return ""
+    }
+    function emit_client() {
+      if (active != 1 || root == "") return
+      printf "C\034%s\034%s\034%s\034%s\034%s\n", root, has_email, email, has_domains, domains
+    }
+    BEGIN { active = 0; in_section = 0; root = ""; email = ""; domains = ""; has_email = 0; has_domains = 0 }
+    /^[[:space:]]*#/ { next }
+    /^[[:space:]]*$/ { next }
+    /^[[:space:]]*\[/ {
+      emit_client()
+      active = 0
+      in_section = 1
+      line = trim($0)
+      if (line ~ /^\[clients\.[^]]+\]$/) {
+        active = 1
+        root = ""
+        email = ""
+        domains = ""
+        has_email = 0
+        has_domains = 0
+      }
+      next
+    }
+    {
+      line = trim(strip_comment($0))
+      if (line == "" || line !~ /=/) next
+      key = line
+      sub(/[[:space:]]*=.*/, "", key)
+      key = trim(key)
+      val = line
+      sub(/^[^=]*=[[:space:]]*/, "", val)
+      val = trim(val)
+      if (in_section == 0 && key == "clients_root") {
+        v = qval(val)
+        if (v != "") printf "R\034%s\n", v
+        next
+      }
+      if (active != 1) next
+      if (key == "root" && val ~ /^".*"$/) root = qval(val)
+      else if (key == "git_email" && val ~ /^".*"$/) { email = qval(val); has_email = 1 }
+      else if (key == "git_email_domains" && val ~ /^\[/) {
+        has_domains = 1
+        domains = ""
+        rest = val
+        while (match(rest, /"[^"]*"/)) {
+          q = substr(rest, RSTART + 1, RLENGTH - 2)
+          if (domains == "") domains = q
+          else domains = domains "," q
+          rest = substr(rest, RSTART + RLENGTH)
+        }
+      }
+    }
+    END { emit_client() }
+  ' "$cmap" > "$rules.all"
+  fs=$(printf '\034')
+  while IFS=$fs read -r kind f2 f3 f4 f5 f6; do
+    case $kind in
+      R) [ -n "$map_root" ] || map_root=$f2 ;;
+      C) printf '%s%s%s%s%s%s%s%s%s\n' "$f2" "$fs" "$f3" "$fs" "$f4" "$fs" "$f5" "$fs" "$f6" >> "$rules" ;;
+    esac
+  done < "$rules.all"
+  rm -f "$rules.all"
+fi
+if [ -n "${CLIENTS_ROOT:-}" ]; then
+  croot=$(expand_home "$CLIENTS_ROOT")
+elif [ -n "$map_root" ]; then
+  croot=$(expand_home "$map_root")
+else
+  croot=$HOME/Clients
+fi
+
+apply_identity() {
+  repo=$1
+  email=$2
+  bestlen=0
+  bhas_email=0
+  bemail=
+  bhas_domains=0
+  bdomains=
+  while IFS=$(printf '\034') read -r rroot has_email gemail has_domains domains; do
+    [ -n "$rroot" ] || continue
+    expanded=$(expand_home "$rroot")
+    path_under "$expanded" "$repo" || continue
+    len=${#expanded}
+    if [ "$len" -gt "$bestlen" ]; then
+      bestlen=$len
+      bhas_email=$has_email
+      bemail=$gemail
+      bhas_domains=$has_domains
+      bdomains=$domains
+    fi
+  done < "$rules"
+  [ "$bestlen" -gt 0 ] || return 0
+  if [ "$bhas_email" = 1 ]; then
+    if [ "$email" != "$bemail" ]; then
+      echo "fail client identity: $repo uses '${email:-unset}', expected the client map git_email"
+      fail=1
+    fi
+    return 0
+  fi
+  if [ "$bhas_domains" = 1 ]; then
+    okd=0
+    rest=$bdomains
+    while [ -n "$rest" ]; do
+      suf=${rest%%,*}
+      case $rest in
+        *,*) rest=${rest#*,} ;;
+        *) rest= ;;
+      esac
+      if [ -n "$suf" ]; then
+        case $email in
+          *"$suf") okd=1 ;;
+        esac
+      fi
+    done
+    if [ "$okd" -eq 0 ]; then
+      echo "warn client identity: $repo uses '${email:-unset}', expected a client map git_email_domains suffix"
+    fi
+  fi
+}
+
 seen=""; n=0; m=0; k=0; pc=0; ex=0
 if [ -d "$croot" ]; then
   for g in $(find "$croot" -maxdepth 6 -name .git 2>/dev/null | sort); do
@@ -83,14 +240,7 @@ if [ -d "$croot" ]; then
     xf=$(git -C "$d" rev-parse --path-format=absolute --git-path info/exclude)
     if [ -f "$xf" ] && grep -qx '\.scratch/\{0,1\}' "$xf"; then ex=$((ex + 1)); fi
     email=$(git -C "$d" config user.email 2>/dev/null || true)
-    case $d in
-      "$croot"/confuturo/*)
-        if [ "$email" != brayan.yevenes@tinet.cl ]; then echo "fail client identity: $d uses '${email:-unset}', Confuturo needs brayan.yevenes@tinet.cl (includeIf, see docs/architecture.md)"; fail=1; fi ;;
-      "$croot"/tenpo/*)
-        case $email in *@tenpo.cl|*@tinet.cl) ;; *) echo "warn client identity: $d uses '${email:-unset}', expected @tenpo.cl or @tinet.cl" ;; esac ;;
-      *)
-        case $email in *@tinet.cl) ;; *) echo "warn client identity: $d uses '${email:-unset}', expected @tinet.cl" ;; esac ;;
-    esac
+    apply_identity "$d" "$email"
     if [ -n "$(git -C "$d" config --get core.hooksPath)" ]; then k=$((k + 1)); continue; fi
     hp=$(git -C "$d" rev-parse --path-format=absolute --git-path hooks)/pre-push
     if [ -f "$hp" ] && grep -q client-guard "$hp"; then m=$((m + 1)); fi

@@ -10,5 +10,6 @@ Read `~/.agents/skills/to-spec/SKILL.md` and follow it exactly, with these overr
 - Write every output to `.scratch/` in the current worktree.
 - Never publish or create issues in Jira, GitLab, GitHub or any tracker without the user's explicit ok. In client repos, never.
 - If the spec does not say yet, ask "where does the state live?" and "how do we measure progress and success?".
+- A file citation is inline code and a full path from the repo root, for example `src/Foo/Bar.cs`. Run `scripts/check-repo-paths.sh <spec> <repo-root>` and stop when it exits non-zero. The TechSpec section list uses the same rule (`skills/to-techspec/SKILL.md`).
 
 If that file does not exist, stop and tell the user: "run `/to-spec` manually (I can't invoke it)".

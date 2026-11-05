@@ -1,0 +1,11 @@
+symbol Checkout.Run public billing src/Checkout.cs
+symbol Order.Place public billing src/Order.cs
+symbol Order.Validate private billing src/Order.cs
+symbol Order.Save private billing src/Order.cs
+symbol Report.Nightly public billing src/Report.cs
+symbol Other.Touch public audit src/Other.cs
+edge Checkout.Run Order.Place
+edge Order.Place Order.Validate
+edge Order.Validate Order.Save
+edge Report.Nightly Order.Save
+edge Other.Touch Order.Save

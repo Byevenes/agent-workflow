@@ -29,7 +29,7 @@ link_force "$ROOT/skills/zstack" "$HOME_DIR/.cursor/skills/zstack"
 link_force "$ROOT/skills/zstack" "$HOME_DIR/.config/opencode/skills/zstack"
 link_new "$ROOT/skills/zstack" "$HOME_DIR/.agents/skills/zstack"
 link_force "$ROOT/skills/route-work" "$HOME_DIR/.cursor/skills/route-work"
-for w in zgrill zspec ztickets zpr zretro to-techspec; do
+for w in zgrill zspec ztickets zpr zretro to-techspec blast-radius; do
   link_force "$ROOT/skills/$w" "$HOME_DIR/.cursor/skills/$w"
   link_force "$ROOT/skills/$w" "$HOME_DIR/.config/opencode/skills/$w"
 done

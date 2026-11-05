@@ -206,6 +206,12 @@ sh scripts/check-delivery-note.sh "$clean" >/dev/null || bad "delivery-note: cle
 if sh scripts/check-delivery-note.sh "$dirty" >/dev/null 2>&1; then bad "delivery-note: dirty fixture passed"; fi
 if sh scripts/check-delivery-note.sh "$tmpl" >/dev/null 2>&1; then bad "delivery-note: template still sendable"; fi
 
+lesson=docs/examples/kdb-lesson-timezone.md
+[ -f "$lesson" ] || bad "timezone lesson: missing"
+grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
+grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
+grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
+
 for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done

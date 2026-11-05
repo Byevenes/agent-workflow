@@ -18,7 +18,7 @@ Ask your parent for the base branch or commit range if it is not given. Build th
 ## Review order
 
 1. **Spec vs. diff.** Medium and up: read the spec in `.scratch/` (or the path your parent gave). Every acceptance criterion must map to code or a test in the diff, and the diff must not do things the spec does not ask for. A missing spec, an unmet criterion, or unspecified scope is a blocking finding. Small with no spec: say so and use the task text.
-2. **Correctness and regressions** on the changed paths and their callers.
+2. **Correctness and regressions** on the changed paths and their callers. When the diff touches `DateTime` or a time window checked against an external system, confirm three things: external timestamps are UTC unless the contract says otherwise, both sides are normalized to one clock before the comparison, and the runtime offset (`TZ`) is documented. Paste-ready text for a human to put in the client project's KDB: `docs/examples/kdb-lesson-timezone.md`. Do not write that file into a client repo.
 3. **Tests.** Read the test diff first. Only new tests that pass mean new behavior. Modified, deleted, or newly red tests mean changed behavior: say which and scrutinize them. Behavior changes need a test that fails without the change. Run the project's checks and report the real output.
 4. **Security** when the change touches input, sessions, auth, permissions, personal data, payments, secrets, or a new integration. Recommend a dedicated security review if it needs more than a spot check.
 5. **Client KDB compliance** (client tasks). Read the `kdb:` paths from your parent. For each rule the diff touches, cite evidence (KDB file + section, and `file:line` in the diff). A breach, or a client task with no KDB paths, is blocking.

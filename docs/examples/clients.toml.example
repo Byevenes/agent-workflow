@@ -11,6 +11,7 @@ clients_root = "~/Clients"
 [clients.acme]
 root = "~/Clients/acme"
 kdb_dir = "~/Notes/Acme/Guidelines"
+# Paste-ready lessons for that KDB live under docs/examples/ (kdb-lesson-timezone.md is one). A human pastes the one that applies. This repo does not write into a client KDB.
 exclude = ["README.md", "*.bak*", "Propuestas KDB/"]
 team_lessons = "Lecciones del equipo.md"
 # When set, setup-check fails unless user.email is exactly this value. It wins over git_email_domains.

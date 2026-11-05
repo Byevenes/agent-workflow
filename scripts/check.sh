@@ -126,7 +126,9 @@ echo "$out" | grep -q "^fail client identity: $ci/acme/back/repos/c uses 'dev@ot
 echo "$out" | grep -q "^warn client identity: $ci/other/back/repos/o uses 'dev@other.example', expected a client map git_email_domains suffix" || bad "setup-check: does not warn on a domains client with the wrong email"
 echo "$out" | grep -q "^fail client identity: $ci/other" && bad "setup-check: fails a domains-only client on identity"
 echo "$out" | grep -q "client identity: $ci/plain" && bad "setup-check: identity line for an unlisted repo"
-echo "$out" | grep -q "scratch-exclude: .scratch/ in info/exclude in 1/3" || bad "setup-check: scratch-exclude count wrong"
+echo "$out" | grep -q "local-exclude: .scratch/ and .atl/ in info/exclude in 3/3" || bad "setup-check: local-exclude count wrong"
+[ "$(grep -cxF '.scratch/' "$ci/other/back/repos/o/.git/info/exclude")" -eq 1 ] || bad "setup-check: duplicated a pre-existing .scratch/ line"
+grep -qxF '.atl/' "$ci/other/back/repos/o/.git/info/exclude" || bad "setup-check: did not append .atl/ next to an existing .scratch/ line"
 cat > "$toml" <<EOF
 clients_root = "$ci"
 
@@ -162,6 +164,36 @@ printf -- '---\nmodel: opencode/big-pickle\n---\n' > "$oh/.config/opencode/agent
 HOME=$oh CLIENTS_ROOT=$ci ZSTACK_CLIENTS_TOML=/nonexistent/zstack-clients.toml sh scripts/setup-check.sh 2>/dev/null | grep -q '^fail opencode zninja' || bad "setup-check: passes an opencode/* model on zninja"
 rm -rf "$ci" "$oh" "$nest"
 rm -f "$toml" "$ntoml"
+
+lx=$(mktemp -d)
+git init -q "$lx/acme/svc"
+printf '*.log' > "$lx/acme/svc/.git/info/exclude"
+git init -q "$lx/acme/fresh"
+rm -f "$lx/acme/fresh/.git/info/exclude"
+out=$(CLIENTS_ROOT=$lx ZSTACK_CLIENTS_TOML=/nonexistent/zstack-clients.toml sh scripts/setup-check.sh 2>/dev/null || true)
+echo "$out" | grep -q "local-exclude: .scratch/ and .atl/ in info/exclude in 2/2" || bad "setup-check: local-exclude fixture count: $out"
+xf=$lx/acme/svc/.git/info/exclude
+grep -qxF '*.log' "$xf" || bad "setup-check: dropped an unrelated exclude line"
+grep -qxF '.scratch/' "$xf" || bad "setup-check: .scratch/ missing from info/exclude"
+grep -qxF '.atl/' "$xf" || bad "setup-check: .atl/ missing from info/exclude"
+[ "$(grep -cxF '.scratch/' "$xf")" -eq 1 ] || bad "setup-check: duplicated .scratch/"
+[ "$(grep -cxF '.atl/' "$xf")" -eq 1 ] || bad "setup-check: duplicated .atl/"
+ff=$lx/acme/fresh/.git/info/exclude
+[ -f "$ff" ] || bad "setup-check: did not create info/exclude"
+grep -qxF '.scratch/' "$ff" || bad "setup-check: created exclude without .scratch/"
+grep -qxF '.atl/' "$ff" || bad "setup-check: created exclude without .atl/"
+mkdir -p "$lx/acme/svc/.atl" "$lx/acme/svc/.scratch"
+: > "$lx/acme/svc/.atl/foo"
+: > "$lx/acme/svc/.scratch/x"
+git -C "$lx/acme/svc" check-ignore -q -- .atl/foo || bad "setup-check: .atl/foo is not ignored"
+git -C "$lx/acme/svc" check-ignore -q -- .scratch/x || bad "setup-check: .scratch/x is not ignored"
+[ ! -e "$lx/acme/svc/.gitignore" ] || bad "setup-check: created .gitignore"
+if git -C "$lx/acme/svc" status --porcelain | grep -q .; then bad "setup-check: client worktree is not clean"; fi
+before=$(cksum "$xf" | awk '{print $1}')
+CLIENTS_ROOT=$lx ZSTACK_CLIENTS_TOML=/nonexistent/zstack-clients.toml sh scripts/setup-check.sh >/dev/null 2>&1 || true
+after=$(cksum "$xf" | awk '{print $1}')
+[ "$before" = "$after" ] || bad "setup-check: second run changed info/exclude"
+rm -rf "$lx"
 
 for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"

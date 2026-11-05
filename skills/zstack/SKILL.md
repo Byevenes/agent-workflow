@@ -84,7 +84,7 @@ Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each r
 
 ## 5. Deliver and retro
 
-Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (the clients root from local config, `$CLIENTS_ROOT/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it. Before writing to `.scratch/` in a client worktree, add `.scratch/` to `$(git rev-parse --git-path info/exclude)` so it never shows in `git status` (`scripts/setup-check.sh` reports it).
+Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (the clients root from local config, `$CLIENTS_ROOT/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it. Before writing to `.scratch/` in a client worktree, run `scripts/setup-check.sh`: it ensures `.scratch/` and `.atl/` are in `$(git rev-parse --git-path info/exclude)` so they never show in `git status`. Agents may still append those two lines defensively. Do not put them in the client's `.gitignore`.
 
 Merge: only Brayan merges, and only on his explicit order, in every repo. Never merge, enable auto-merge, or merge a PR yourself as a shortcut. Client repos: never `--force`, no push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval except the local slice commit below.
 

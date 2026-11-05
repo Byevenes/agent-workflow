@@ -13,10 +13,14 @@
 - **zHunter, zGuard**: reserved names, no role yet.
 - **Clients root**: where client repos live. Non-empty `CLIENTS_ROOT`, otherwise `clients_root` in the client map, otherwise `$HOME/Clients`.
 - **Client map**: local untracked toml at `ZSTACK_CLIENTS_TOML`, or `~/.config/zstack/clients.toml` when that variable is unset. Never commit it.
+- **Security scan**: the client path stays on the developer machine and the personal path may use CI. The playbook is `docs/security-scan.md`.
 - **Token budget**: 150_000 tokens, one session before the agent degrades.
 - **Holgura**: the slack factor on a token estimate. The estimator names it. This repo sets no default.
 - **Ticket count**: how many token-budget sessions the estimate covers once holgura is applied.
 - **Printed size**: the size on the classification line, after Classify applies risk and the token budget.
+- **Preferred model**: the slug a role uses when its quota is available.
+- **Quota fallback**: the next slug when that quota is exhausted. The review role has none.
+- **Effective model**: the slug that actually ran, written at close.
 - **Repo-root path**: a file citation from the repository root, such as `src/Foo/Bar.cs`, written as inline code or as a markdown link target. `scripts/check-repo-paths.sh` rejects a bare name that is not at that root, a working-directory prefix, and a machine-absolute path. It removes a trailing line anchor before the lookup and ignores a glob.
 - **In-module caller**: a symbol in the same module as a changed symbol that reaches it by calls that stay in that module. Private symbols count. The changed symbol is not its own caller. `scripts/blast-radius-callers.sh` lists them and fails when a report misses one.
 - **Env-known failure**: a HEAD failure whose id and detail also fail on the base branch. It does not block slice close. `scripts/classify-test-failures.sh` is the only thing that may apply this label.

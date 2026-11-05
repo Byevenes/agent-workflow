@@ -301,12 +301,12 @@ cmd=$1
 shift
 case $cmd in
   begin)
-    [ "$#" -eq 2 ] && [ "$1" = "--path" ] || usage
+    if [ "$#" -ne 2 ] || [ "$1" != "--path" ]; then usage; fi
     path=$2
     do_begin
     ;;
   seal)
-    [ "$#" -eq 3 ] && [ "$2" = "--error" ] || usage
+    if [ "$#" -ne 3 ] || [ "$2" != "--error" ]; then usage; fi
     id=$1
     err=$3
     do_seal

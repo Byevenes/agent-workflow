@@ -11,6 +11,7 @@
 - **zIGL**: the router role that classifies, plans and checks (`agents/zigl.md`, and the zstack skill itself).
 - **zNinja**: the implementer subagent (`agents/zninja.md`).
 - **zSensei**: the reviewer subagent (`agents/zsensei.md`).
+- **Inline without Cursor**: the mode in `### Inline without Cursor` under section 3 of `skills/zstack/SKILL.md`, for a host that is not Cursor.
 - **zHunter, zGuard**: reserved names, no role yet.
 - **Clients root**: where client repos live. Non-empty `CLIENTS_ROOT`, otherwise `clients_root` in the client map, otherwise `$HOME/Clients`.
 - **Client map**: local untracked toml at `ZSTACK_CLIENTS_TOML`, or `~/.config/zstack/clients.toml` when that variable is unset. Never commit it.
@@ -26,3 +27,7 @@
 - **In-module caller**: a symbol in the same module as a changed symbol that reaches it by calls that stay in that module. Private symbols count. The changed symbol is not its own caller. `scripts/blast-radius-callers.sh` lists them and fails when a report misses one.
 - **Env-known failure**: a HEAD failure whose id and detail also fail on the base branch. It does not block slice close. `scripts/classify-test-failures.sh` is the only thing that may apply this label.
 - **Real failure**: a HEAD failure that is new, different from the base branch, or has no base result. It blocks slice close.
+- **Retro log**: the TSV of applied retro changes at `.scratch/retro-log.tsv`. Columns are id, date, state, cksum, bytes, error, and path. `scripts/retro-log.sh` reads and writes it. A proposal that is not applied is not a row.
+- **Pendiente**: a retro-log row for an applied change that no later retro has judged. The next retro reviews every pendiente before it proposes a new change.
+- **Confirmado**: a retro-log row whose change kept the named mistake from returning. A later confirm or revert does not apply.
+- **Revertido**: a retro-log row whose change did not help. When the file is still that edit, the pre-change bytes come back. A later confirm or revert does not apply.

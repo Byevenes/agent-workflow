@@ -3,6 +3,13 @@ set -eu
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX
 
 fail=0
+scan_info='info security-scan: client repos stay on the developer machine; personal CI is in this repo (docs/security-scan.md)'
+
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  echo "usage: scripts/setup-check.sh"
+  echo "$scan_info"
+  exit 0
+fi
 
 need() {
   if command -v "$1" >/dev/null 2>&1; then
@@ -285,5 +292,6 @@ login=$(gh api user -q .login 2>/dev/null || true)
 if [ -z "$login" ]; then echo "warn merge-guard: gh not logged in, cannot check the agent identity"
 elif [ "$login" = Byevenes ]; then echo "todo merge-guard: gh acts as Byevenes (admin); only text stops the agent from merging"
 else echo "ok merge-guard: gh acts as $login, not the repo admin"; fi
+echo "$scan_info"
 
 exit "$fail"

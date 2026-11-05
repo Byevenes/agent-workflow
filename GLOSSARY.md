@@ -13,3 +13,7 @@
 - **zHunter, zGuard**: reserved names, no role yet.
 - **Clients root**: where client repos live. Non-empty `CLIENTS_ROOT`, otherwise `clients_root` in the client map, otherwise `$HOME/Clients`.
 - **Client map**: local untracked toml at `ZSTACK_CLIENTS_TOML`, or `~/.config/zstack/clients.toml` when that variable is unset. Never commit it.
+- **Token budget**: 150_000 tokens, one session before the agent degrades.
+- **Holgura**: the slack factor on a token estimate. The estimator names it. This repo sets no default.
+- **Ticket count**: how many token-budget sessions the estimate covers once holgura is applied.
+- **Printed size**: the size on the classification line, after Classify applies risk and the token budget.

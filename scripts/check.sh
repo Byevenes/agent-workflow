@@ -1,6 +1,13 @@
 #!/bin/sh
 set -eu
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX
+n=${GIT_CONFIG_COUNT:-0}
+i=0
+while [ "$i" -lt "$n" ]; do
+  unset "GIT_CONFIG_KEY_${i}" "GIT_CONFIG_VALUE_${i}"
+  i=$((i + 1))
+done
+unset GIT_CONFIG_COUNT GIT_CONFIG_PARAMETERS
 cd "$(dirname "$0")/.."
 fail=0
 bad() { echo "FAIL $*"; fail=1; }
@@ -21,6 +28,14 @@ grep -q 'Recovery case' skills/zstack/SKILL.md || bad "zstack: client commit rul
 grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
 grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"
 grep -q 'never use `--no-verify`' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid --no-verify"
+
+zs=skills/zstack/SKILL.md
+grep -qF 'tickets = ceil(tokens_estimados * holgura / 150_000)' "$zs" || bad "zstack: token ticket formula missing"
+grep -qF 'Medium whose estimate is about 150k tokens promotes to Large' "$zs" || bad "zstack: Medium promote to Large missing"
+grep -qF 'Critical keeps the security path even when the ticket count is 1' "$zs" || bad "zstack: Critical security path for one ticket missing"
+cal='.scratch/<slug>/calibracion.md'
+grep -qF "$cal" "$zs" || bad "zstack: calibration log path missing"
+grep -qF "$cal" skills/zretro/SKILL.md || bad "zretro: calibration log path missing"
 
 if grep -rnE 'SDD|sdd-|tech-lead|test-engineer' skills/zstack rules agents; then bad "zstack copies reference SDD, tech-lead or test-engineer"; fi
 
@@ -222,7 +237,7 @@ if [ -z "${CHECK_NESTED:-}" ]; then
   git -C "$hk/p" remote add origin https://example.invalid/p.git
   git -C "$hk/p" worktree add -q "$hk/w" -b w 2>/dev/null
   before=$(git -C "$hk/p" config --local --list | sort)
-  GIT_DIR="$hk/p/.git/worktrees/w" GIT_INDEX_FILE="$hk/p/.git/worktrees/w/index" CHECK_NESTED=1 sh scripts/check.sh >/dev/null 2>&1 || bad "check.sh fails when run with a hook's GIT_DIR"
+  GIT_DIR="$hk/p/.git/worktrees/w" GIT_INDEX_FILE="$hk/p/.git/worktrees/w/index" GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.email GIT_CONFIG_VALUE_0=leak@example CHECK_NESTED=1 sh scripts/check.sh >/dev/null 2>&1 || bad "check.sh fails when run with a hook's GIT_DIR or git -c config"
   after=$(git -C "$hk/p" config --local --list | sort)
   [ "$before" = "$after" ] || bad "check.sh under a hook's GIT_DIR changed the parent repo config: $(printf '%s\n' "$after" | grep -vxF "$before" | tr '\n' ' ')"
   rm -rf "$hk"

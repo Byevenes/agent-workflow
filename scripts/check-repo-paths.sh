@@ -2,6 +2,10 @@
 set -eu
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX
 
+: <<'END'
+A path containing * or ? or [ is a glob, for example src/**/*.cs. The script ignores it and does not look it up.
+END
+
 if [ "$#" -ne 2 ] || [ ! -f "$1" ] || [ ! -d "$2" ]; then
   echo "usage: scripts/check-repo-paths.sh <markdown> <repo-root>" >&2
   exit 2
@@ -34,6 +38,49 @@ function is_citation(s,    n, i, c, ext) {
   if ((c >= "A" && c <= "Z") || (c >= "a" && c <= "z")) return 1
   return 0
 }
+function has_glob(s,    i, c, n) {
+  n = length(s)
+  for (i = 1; i <= n; i++) {
+    c = substr(s, i, 1)
+    if (c == "*" || c == "?" || c == "[") return 1
+  }
+  return 0
+}
+function strip_anchor(s) {
+  if (match(s, /#L[0-9]+-L[0-9]+$/)) s = substr(s, 1, RSTART - 1)
+  else if (match(s, /#L[0-9]+$/)) s = substr(s, 1, RSTART - 1)
+  if (match(s, /:[0-9]+-[0-9]+$/)) s = substr(s, 1, RSTART - 1)
+  else if (match(s, /:[0-9]+$/)) s = substr(s, 1, RSTART - 1)
+  return s
+}
+function consider(span) {
+  if (span ~ /^https?:\/\//) return
+  if (span ~ /^mailto:/) return
+  if (substr(span, 1, 1) == "#") return
+  if (has_glob(span)) return
+  span = strip_anchor(span)
+  if (is_citation(span)) printf "%d\t%s\n", NR, span
+}
+function extract_links(line,    rest, lb, rel, rb, lp, relp, rp) {
+  rest = line
+  while (length(rest) > 0) {
+    lb = index(rest, "[")
+    if (lb == 0) return
+    rel = index(substr(rest, lb + 1), "]")
+    if (rel == 0) return
+    rb = lb + rel
+    if (substr(rest, rb + 1, 1) != "(") {
+      rest = substr(rest, lb + 1)
+      continue
+    }
+    lp = rb + 1
+    relp = index(substr(rest, lp + 1), ")")
+    if (relp == 0) return
+    rp = lp + relp
+    consider(substr(rest, lp + 1, rp - lp - 1))
+    rest = substr(rest, rp + 1)
+  }
+}
 BEGIN { fence = 0 }
 {
   if ($0 ~ /^[[:space:]]*```/ || $0 ~ /^[[:space:]]*~~~/) {
@@ -45,8 +92,9 @@ BEGIN { fence = 0 }
   while (match(rest, /`[^`]+`/)) {
     span = substr(rest, RSTART + 1, RLENGTH - 2)
     rest = substr(rest, RSTART + RLENGTH)
-    if (is_citation(span)) printf "%d\t%s\n", NR, span
+    consider(span)
   }
+  extract_links($0)
 }
 ' "$note" > "$list"
 

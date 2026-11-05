@@ -265,6 +265,27 @@ rp_has "not a repo-root path" "src/../src/Foo/Bar.cs"
 rp_has "not a repo-root path" 'src\Foo\Bar.cs'
 if sh scripts/check-repo-paths.sh >/dev/null 2>&1; then bad "repo-paths: usage without args passed"; fi
 
+rp_anchors=docs/examples/repo-path-fixtures/anchors.md
+rp_anchors_dirty=docs/examples/repo-path-fixtures/anchors-dirty.md
+rp_anch_out=$(sh scripts/check-repo-paths.sh "$rp_anchors" "$rp_root" 2>&1) || bad "repo-paths: anchor fixture failed: $rp_anch_out"
+rp_anch_status=0
+rp_anch_out=$(sh scripts/check-repo-paths.sh "$rp_anchors_dirty" "$rp_root" 2>&1) || rp_anch_status=$?
+[ "$rp_anch_status" -ne 0 ] || bad "repo-paths: anchor dirty fixture passed"
+rp_anch_has() {
+  printf '%s\n' "$rp_anch_out" | grep -qF -- "$1" || bad "repo-paths: anchor dirty fixture did not report $1"
+}
+rp_anch_has "does not exist from the repo root: src/Missing.cs ("
+rp_anch_has "does not exist from the repo root: src/LinkMissing.cs ("
+rp_anch_lacks() {
+  if printf '%s\n' "$rp_anch_out" | grep -qF -- "$1"; then bad "repo-paths: anchor dirty fixture reported $1"; fi
+}
+rp_anch_lacks "src/**/*.cs"
+rp_anch_lacks "https://"
+rp_anch_lacks "mailto:"
+rp_anch_lacks "#section"
+rp_anch_lacks "src/Missing.cs#"
+rp_anch_lacks "src/LinkMissing.cs:"
+
 lesson=docs/examples/kdb-lesson-timezone.md
 [ -f "$lesson" ] || bad "timezone lesson: missing"
 grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"

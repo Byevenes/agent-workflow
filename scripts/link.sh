@@ -76,6 +76,18 @@ for agent in zigl zninja zsensei; do
   done
 done
 
+for agent in zigl zninja zsensei; do
+  dest="$ROOT/.cursor/agents/$agent.md"
+  rel="../../agents/$agent.md"
+  if [ -L "$dest" ] || [ ! -e "$dest" ]; then
+    mkdir -p "$(dirname "$dest")"
+    ln -sfn "$rel" "$dest"
+    echo "link .cursor/agents/$agent.md"
+  else
+    echo "keep .cursor/agents/$agent.md (regular file; back it up and remove it to link)"
+  fi
+done
+
 link_force "$ROOT/agents/opencode/zstack.md" "$HOME_DIR/.config/opencode/agents/zstack.md"
 
 if [ -d "$HOME_DIR/.agents/skills" ]; then

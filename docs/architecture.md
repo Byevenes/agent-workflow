@@ -4,7 +4,7 @@ How this repo is wired and how a task moves through zStack. `skills/zstack/SKILL
 
 ## 1. Repo to user folders
 
-`scripts/link.sh` symlinks the repo into the folders Cursor and OpenCode read. It is idempotent, removes old links that point into this repo (route-work rule, implementer, code-reviewer, coordinator), sets `core.hooksPath` to `.githooks`, removes broken symlinks (only symlinks, never real folders) in `~/.cursor/skills` and `~/.config/opencode/skills`, and mirrors Matt's skills from `~/.agents/skills` and pstack skills when the name is free.
+Cursor CLI and Cloud Agents load subagents from `.cursor/agents/` in the clone (issue #58). The IDE also reads `~/.cursor/agents`. Both directories point at the same `agents/zigl.md`, `agents/zninja.md`, and `agents/zsensei.md`. The project copies are relative symlinks (`../../agents/<name>.md`), so a checkout resolves them with no home directory. `scripts/link.sh` restores those project links when they are missing or already symlinks, and it symlinks the repo into the folders the IDE and OpenCode read. It is idempotent, removes old links that point into this repo (route-work rule, implementer, code-reviewer, coordinator), sets `core.hooksPath` to `.githooks`, removes broken symlinks (only symlinks, never real folders) in `~/.cursor/skills` and `~/.config/opencode/skills`, and mirrors Matt's skills from `~/.agents/skills` and pstack skills when the name is free.
 
 ```mermaid
 flowchart LR
@@ -13,10 +13,13 @@ flowchart LR
     wr[skills/zgrill, zspec, ztickets, zpr, zretro]
     ru[rules/zstack.mdc]
     ag[agents/zigl, zninja, zsensei]
+    pa[.cursor/agents relative symlinks]
     oc[agents/opencode/zstack.md]
   end
+  ag --> pa
   link[scripts/link.sh]
   repo --> link
+  link --> pa
   link --> cs[~/.cursor/skills]
   link --> cr[~/.cursor/rules/zstack.mdc]
   link --> ca[~/.cursor/agents]
@@ -65,6 +68,7 @@ flowchart LR
   chk --> c3[old names, --force rule, no-comments]
   chk --> c4[link.sh smoke in temp HOME]
   chk --> c5[route-work alias fails after 2026-12-01]
+  chk --> c6[project .cursor/agents symlinks resolve]
   chk --> push[push branch]
   push --> ci[CI check: check.sh and zpr headings in PR body]
   ci --> prot[main protection: PR plus green check, no force push]

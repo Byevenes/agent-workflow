@@ -53,6 +53,16 @@ check_link "$HOME/.cursor/agents/zninja.md"
 check_link "$HOME/.cursor/agents/zsensei.md"
 check_link "$HOME/.config/opencode/agents/zsensei.md"
 check_link "$HOME/.config/opencode/agents/zstack.md"
+for agent in zigl zninja zsensei; do
+  p="$ROOT/.cursor/agents/$agent.md"
+  target=$(readlink "$p" 2>/dev/null || true)
+  if [ -L "$p" ] && [ -e "$p" ] && [ "$target" = "../../agents/$agent.md" ]; then
+    echo "ok project agent $agent"
+  else
+    echo "missing project agent .cursor/agents/$agent.md (relative symlink to ../../agents/$agent.md; run scripts/link.sh)"
+    fail=1
+  fi
+done
 for a in zstack zninja zsensei; do
   f="$HOME/.config/opencode/agents/$a.md"
   if [ -f "$f" ] && grep -Eq '^model: *"?opencode/' "$f"; then echo "fail opencode $a: model opencode/* (Zen); client code must not go to Zen"; fail=1

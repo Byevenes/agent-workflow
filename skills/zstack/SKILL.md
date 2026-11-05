@@ -45,8 +45,30 @@ Say the size, verifiability, and reason in one line before anything else: `zstac
 
 - **Small.** `zgrill` (grill-me) only if a decision is still open, one question at a time. No spec.
 - **Medium.** `zgrill` (grill-with-docs). It must ask "where does the state live?" for every piece of state the change touches. End the grill with an `in-your-own-words` restatement the user confirms, then `zspec` (to-spec), written to `.scratch/<slug>.md` (disposable, not committed unless the repo asks). Optional: an ADR in `docs/adr/` when a decision is hard to reverse; a statechart (mermaid `stateDiagram-v2`) in the spec when the feature has several states. Medium runs full-spec mode (`implement-spec`) in one session, with no slices.
-- **Large.** Medium, plus `ztickets` (to-tickets, slices), then **stop for the user's approval before any code**. If the user already approved the whole run in writing, quote that approval and continue. Use `wayfinder` when the plan does not fit one session.
+- **Large.** Medium, plus `ztickets` (to-tickets, slices), then **stop for the user's approval before any code**. If the user already approved the whole run in writing, quote that approval and continue. Use `wayfinder` when the plan does not fit one session. After approval, run the Slice loop below. A Medium that grows a second slice is promoted to Large and uses the same loop.
 - **Critical.** Large, plus `security-and-hardening` in the spec. `formal-verification` is optional for invariants.
+
+### Slice loop
+
+Large, and a Medium promoted to Large. `ztickets` writes one vertical ticket per slice. Each ticket is one session. The state of a slice is that ticket file plus its commit. The previous session does not carry over.
+
+1. Open a new session. Read that ticket, the spec path, and the checks.
+2. Implement only that ticket.
+3. Run the checks.
+4. Local commit for that ticket. Client repos use section 5. Any other repo commits only when the user already ordered it.
+5. Stop. The next ticket starts in a new session.
+
+A recovery plan does not replace that new session. Use a recovery plan only when a check is red, or when the Recovery case in section 5 fires.
+
+Slice close, before the session ends:
+
+- Checks for this ticket are green.
+- The commit is only this ticket, and the message comes from it.
+- An approved out-of-scope fix is already a `fix:` commit before this ticket's commit.
+- The worktree has no leftover diff for a later ticket.
+- The next ticket is not started here.
+
+Example. Ticket A ends at its commit and the session stops. Ticket B opens in a new session. A note that says to continue with B in this chat is the failure mode.
 
 Optional statechart (Medium and up). Trigger: the change has states, retries, or concurrency. After the spec and before code, next to `blast-radius`, ask "find all of the implicit state machines" and feed the answer to `statechart`. Personal repos: run it. Client repos: read-only analysis, the model lives only in `.scratch/`, and only with Brayan's approval.
 
@@ -64,7 +86,8 @@ Inline: read `poteto-mode` by the path in the intro and follow it. Load the skil
 
 - Small: the task. One focused test if behavior changes.
 - Medium and up: the spec path. `poteto-mode` with pstack's `tdd` (`pstack-tdd` on OpenCode).
-- Large and critical: a new `zninja` per slice, in order, each in a fresh context.
+- Large and critical: a new `zninja` per slice, in order, each in a fresh context. That is the Slice loop. Do not keep the session and switch tickets under a recovery plan.
+- Out-of-scope bug: stop and ask. The protocol is in `agents/zninja.md`. An approved fix is a `fix:` commit before the slice commit, never inside it.
 - Critical: tell it to apply `security-and-hardening`. Inline: apply it here.
 
 On the subagent path, reject the report if it lacks the line `poteto-mode: loaded`. Relaunch it once with that requirement explicit. On the inline path, include that line in this session's report.
@@ -79,6 +102,14 @@ Review follows the size, not the path (decision: option B). On the inline path, 
 
 Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each repo should have its own verification skill (`create-verification-skill`, then `verify-<app>`). Client repos: only the checks they already have, and the verification skill lives locally outside the repo.
 
+### Commit-order gate
+
+Classify decides whether a Large run requires `scripts/check-commit-order.sh`. The gate checks out every commit in `base..HEAD` in a temporary worktree and runs the command you pass. The base commit is excluded. The first red commit fails the gate and names that commit. It does not install hooks, and it does not change the caller's checkout.
+
+`scripts/check-commit-order.sh <base> -- <command> [args...]`
+
+Pass a check the repo already defines. Do not invent one. Run it from the repo root. The command's current directory is that commit's tree.
+
 `zsensei` always reads the test diff: only new green tests mean new behavior; modified or deleted tests mean changed behavior and get extra scrutiny.
 - **Critical.** `zsensei`, then `security-auditor`.
 
@@ -90,7 +121,7 @@ Before drafting a client delivery note, copy `docs/examples/nota-de-entrega.md` 
 
 Merge: only Brayan merges, and only on his explicit order, in every repo. Never merge, enable auto-merge, or merge a PR yourself as a shortcut. Client repos: never `--force`, no push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval except the local slice commit below.
 
-Client slice commits (local only). Normal flow is a loop per slice: slice done → commit gate → local commit → log in `.scratch/commits.md` → next slice. No extra ok: the slices were approved before code, each slice is one commit, and its message comes from the slice's issue. If the slice's scope changed from what was approved, do not commit: stop and tell Brayan. Recovery case: if, when the gate starts, uncommitted changes span more than one slice (or mix slices in one file), stop, show Brayan the commit plan (commits, files or hunks, messages) and wait for his ok before the first commit. Check detection (technology-agnostic), by priority: 1) the client KDB or `commit_checks` / `push_checks` in `clients.toml`; 2) what the repo already defines (package.json scripts, Makefile, `.sln`/`.csproj`, pyproject/tox, `go.mod`, `Cargo.toml`, `.pre-commit-config.yaml`; CI config as a reference for what the pipeline runs). Never invent checks: if none is found, do not commit, tell Brayan. Never install anything in a client repo: no hooks, no `core.hooksPath`, no new `.husky/`, `.githooks/` or pre-commit config.
+Client slice commits (local only). Normal flow is the Slice loop in section 2: one ticket, one new session, checks, commit gate, one local commit, log in `.scratch/commits.md`, then stop. The next ticket starts in a new session. A recovery plan does not replace that new session. No extra ok: the slices were approved before code, each slice is one commit, and its message comes from the slice's issue. An approved out-of-scope bug is a separate `fix:` commit before that slice commit, not part of it. If the slice's scope changed from what was approved, do not commit: stop and tell Brayan. Recovery case: if, when the gate starts, uncommitted changes span more than one slice (or mix slices in one file), stop, show Brayan the commit plan (commits, files or hunks, messages) and wait for his ok before the first commit. That case is a failed gate, not the way to open the next ticket. Check detection (technology-agnostic), by priority: 1) the client KDB or `commit_checks` / `push_checks` in `clients.toml`; 2) what the repo already defines (package.json scripts, Makefile, `.sln`/`.csproj`, pyproject/tox, `go.mod`, `Cargo.toml`, `.pre-commit-config.yaml`; CI config as a reference for what the pipeline runs). Never invent checks: if none is found, do not commit, tell Brayan. Never install anything in a client repo: no hooks, no `core.hooksPath`, no new `.husky/`, `.githooks/` or pre-commit config.
 
 Commit gate (light, every slice), in order; any failure means no commit: report the step and its real output, and stop.
 1. Format and lint, only if the repo already uses them.

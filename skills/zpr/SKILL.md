@@ -17,6 +17,6 @@ Read `~/.agents/skills/pr/SKILL.md` and follow it (Summary visual, Evidence, Mer
 Write in the repo's language. Never paste secrets, tokens or client data.
 
 - Personal repos: use this for every PR. CI fails a body without `## Why`, `## Summary` and `## Merge Danger`.
-- Client repos (`~/Sites/tinet/Clients/**`, GitLab client MRs): write a suggested body to `.scratch/pr-body.md` for Brayan. Never post it or open the PR or MR yourself.
+- Client repos (the clients root from local config, `$CLIENTS_ROOT/**`, GitLab client MRs): write a suggested body to `.scratch/pr-body.md` for Brayan. Never post it or open the PR or MR yourself.
 
 If Matt's file does not exist, use the six sections above on their own.

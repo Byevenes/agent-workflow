@@ -21,7 +21,7 @@ Applies only when the task comes from a client user story (HU) in an external tr
 
 Client KDBs (mandatory in every client task, HU or not). Read `~/.config/zstack/clients.toml` (contract: `docs/examples/clients.toml.example`). Pick the client whose `root` is a prefix of the worktree path. From its `kdb_dir`, read the KDBs that apply to the task (skip `exclude`; `team_lessons` is local team notes, read them, never send them to an external tool). If `confluence_guidelines` is set, read that page (read-only). Right under the classification line, write `kdb: <files read>`, or `kdb: none found (<reason>)` when there is no map, no matching root, or no KDB applies. A matching root with no `kdb:` line is a violation. Pass the same paths to zNinja and zSensei.
 
-If `to-analysis`, `to-questionnaire` or `to-techspec` is missing, stop and tell Brayan (`scripts/setup-check.sh` reports them). Attachments: Brayan downloads them by hand into the task folder; read them there, never fetch them with API tokens. Client work happens in a Forge worktree that Brayan approved (`forge`; if it is not on the PATH, `~/Sites/tinet/tinet-cli/bin/forge`).
+If `to-analysis`, `to-questionnaire` or `to-techspec` is missing, stop and tell Brayan (`scripts/setup-check.sh` reports them). Attachments: Brayan downloads them by hand into the task folder; read them there, never fetch them with API tokens. Client work happens with the company worktree tool from PATH (or a path defined only in local config); Brayan must approve the worktree before use.
 
 ## 1. Classify
 
@@ -84,7 +84,7 @@ Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each r
 
 ## 5. Deliver and retro
 
-Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (`~/Sites/tinet/Clients/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it. Before writing to `.scratch/` in a client worktree, add `.scratch/` to `$(git rev-parse --git-path info/exclude)` so it never shows in `git status` (`scripts/setup-check.sh` reports it).
+Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (the clients root from local config, `$CLIENTS_ROOT/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it. Before writing to `.scratch/` in a client worktree, add `.scratch/` to `$(git rev-parse --git-path info/exclude)` so it never shows in `git status` (`scripts/setup-check.sh` reports it).
 
 Merge: only Brayan merges, and only on his explicit order, in every repo. Never merge, enable auto-merge, or merge a PR yourself as a shortcut. Client repos: never `--force`, no push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval except the local slice commit below.
 

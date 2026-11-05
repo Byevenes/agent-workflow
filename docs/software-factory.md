@@ -28,6 +28,8 @@ flowchart TD
   check --> audit[scripts/route-audit.sh counts it from transcripts]
 ```
 
+The Large `blast-radius` step runs `scripts/blast-radius-callers.sh` (`skills/blast-radius/SKILL.md`). The report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one.
+
 The inline trigger is in section 3 of `skills/zstack/SKILL.md`. That `impl` step then runs in the same session. The check block records `zninja launched: no (inline: <reason>)`. `scripts/route-audit.sh` counts delegated launches only; inline runs show as not launched. Large repeats `impl` once per ticket, each in a new session (Slice loop in the skill). A recovery plan does not replace that new session.
 
 ## Where it is wired

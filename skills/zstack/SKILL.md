@@ -106,7 +106,7 @@ Review follows the size, not the path (decision: option B). On the inline path, 
 
 - **Small.** Read the diff and the checks it ran. No review agent.
 - **Medium.** `zsensei` on the diff, with the spec path. It must confirm the spec still matches the diff.
-- **Large.** `blast-radius`, then `zsensei` with the spec and tickets.
+- **Large.** `blast-radius` (`skills/blast-radius/SKILL.md`), then `zsensei` with the spec and tickets. That step runs `scripts/blast-radius-callers.sh`. The report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one.
 
 Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each repo should have its own verification skill (`create-verification-skill`, then `verify-<app>`). Client repos: only the checks they already have, and the verification skill lives locally outside the repo.
 

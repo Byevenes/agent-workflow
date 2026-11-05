@@ -31,6 +31,11 @@ grep -q 'A recovery plan does not replace that new session' skills/zstack/SKILL.
 grep -q 'The next ticket is not started here' skills/zstack/SKILL.md || bad "zstack: slice close must require a clean session"
 grep -q 'scripts/check-commit-order.sh' skills/zstack/SKILL.md || bad "zstack: commit-order gate missing"
 grep -q 'scripts/check-commit-order.sh' docs/scripts.md || bad "scripts.md: commit-order gate missing"
+grep -q 'scripts/blast-radius-callers.sh' skills/zstack/SKILL.md || bad "zstack: blast-radius caller gate missing"
+grep -qF 'including private methods and indirect callers' skills/blast-radius/SKILL.md || bad "blast-radius skill: private and indirect callers missing"
+grep -qF 'The check fails when the report misses one.' skills/blast-radius/SKILL.md || bad "blast-radius skill: coverage failure missing"
+grep -q 'scripts/blast-radius-callers.sh' docs/scripts.md || bad "scripts.md: blast-radius caller gate missing"
+grep -q 'scripts/blast-radius-callers.sh' agents/zninja.md || bad "zninja: blast-radius caller gate missing"
 grep -q 'explicit yes' agents/zninja.md || bad "zninja: out-of-scope bug must stop for an explicit yes"
 grep -q 'Do not mix the bugfix and the feature in one commit' agents/zninja.md || bad "zninja: bugfix and feature may share a commit"
 grep -q 'the `fix:` commit is an ancestor of the feature commit' agents/zninja.md || bad "zninja: review checklist missing"
@@ -70,7 +75,7 @@ ln -s "$tmp/nowhere" "$tmp/.config/opencode/skills/broken"
 HOME=$tmp scripts/link.sh >/dev/null
 if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/broken" ]; then bad "link.sh: keeps a broken skill symlink"; fi
 [ -d "$tmp/.cursor/skills/realdir" ] || bad "link.sh: removed a real skill folder"
-for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
+for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/skills/blast-radius .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/skills/blast-radius .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done
 rm -rf "$tmp"
@@ -261,7 +266,7 @@ grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then
@@ -314,6 +319,32 @@ st=0
 ( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" >/dev/null 2>&1 ) || st=$?
 [ "$st" -eq 2 ] || bad "check-commit-order: usage exit $st"
 rm -rf "$ord"
+
+br=docs/examples/blast-radius-fixtures
+sh scripts/blast-radius-callers.sh "$br/graph.txt" Order.Save --expect "$br/save-callers.txt" >/dev/null || bad "blast-radius: full caller fixture failed"
+st=0
+bout=$(mktemp)
+sh scripts/blast-radius-callers.sh "$br/graph.txt" Order.Save --expect "$br/public-only.txt" >"$bout" 2>&1 || st=$?
+[ "$st" -eq 1 ] || bad "blast-radius: incomplete report exit $st"
+awk '
+  /^in walk only:/ { section = "walk"; next }
+  /^in report only:/ { section = "report"; next }
+  section == "walk" && index($0, "Order.Validate") { priv = 1 }
+  section == "walk" && index($0, "Checkout.Run") { ind = 1 }
+  section == "walk" && index($0, "Order.Place") { mid = 1 }
+  END { if (!(priv && ind && mid)) exit 1 }
+' "$bout" || bad "blast-radius: incomplete report did not name the private and indirect callers"
+rm -f "$bout"
+sh scripts/blast-radius-callers.sh "$br/cycle.txt" A.A --expect "$br/cycle-callers.txt" >/dev/null || bad "blast-radius: cycle fixture failed"
+st=0
+sh scripts/blast-radius-callers.sh "$br/graph.txt" Missing.Sym >/dev/null 2>&1 || st=$?
+[ "$st" -eq 1 ] || bad "blast-radius: unknown symbol exit $st"
+st=0
+sh scripts/blast-radius-callers.sh "$br/bad-edge.txt" Only.One >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "blast-radius: bad edge exit $st"
+st=0
+sh scripts/blast-radius-callers.sh >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "blast-radius: usage exit $st"
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

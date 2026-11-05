@@ -1,6 +1,14 @@
 #!/bin/sh
 set -eu
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX
+if [ -n "${GIT_CONFIG_COUNT:-}" ]; then
+  _i=0
+  while [ "$_i" -lt "$GIT_CONFIG_COUNT" ]; do
+    unset "GIT_CONFIG_KEY_${_i}" "GIT_CONFIG_VALUE_${_i}"
+    _i=$((_i + 1))
+  done
+fi
+unset GIT_CONFIG_COUNT GIT_CONFIG_PARAMETERS
 cd "$(dirname "$0")/.."
 fail=0
 bad() { echo "FAIL $*"; fail=1; }
@@ -18,6 +26,9 @@ grep -q 'Never invent checks' skills/zstack/SKILL.md || bad "zstack: client rule
 grep -q 'Pre-push gate' skills/zstack/SKILL.md || bad "zstack: client rule must define the pre-push gate"
 grep -q 'push_checks' docs/examples/clients.toml.example || bad "clients.toml.example: push_checks missing"
 grep -q 'Recovery case' skills/zstack/SKILL.md || bad "zstack: client commit rule must define the mixed-slices recovery case"
+grep -q '### Slice loop' skills/zstack/SKILL.md || bad "zstack: slice loop missing"
+grep -q 'A recovery plan does not replace that new session' skills/zstack/SKILL.md || bad "zstack: recovery must not replace a new session per slice"
+grep -q 'The next ticket is not started here' skills/zstack/SKILL.md || bad "zstack: slice close must require a clean session"
 grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
 grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"
 grep -q 'never use `--no-verify`' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid --no-verify"
@@ -222,7 +233,7 @@ if [ -z "${CHECK_NESTED:-}" ]; then
   git -C "$hk/p" remote add origin https://example.invalid/p.git
   git -C "$hk/p" worktree add -q "$hk/w" -b w 2>/dev/null
   before=$(git -C "$hk/p" config --local --list | sort)
-  GIT_DIR="$hk/p/.git/worktrees/w" GIT_INDEX_FILE="$hk/p/.git/worktrees/w/index" CHECK_NESTED=1 sh scripts/check.sh >/dev/null 2>&1 || bad "check.sh fails when run with a hook's GIT_DIR"
+  GIT_DIR="$hk/p/.git/worktrees/w" GIT_INDEX_FILE="$hk/p/.git/worktrees/w/index" GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=user.email GIT_CONFIG_VALUE_0=leaked@example GIT_CONFIG_KEY_1=user.name GIT_CONFIG_VALUE_1=leaked CHECK_NESTED=1 sh scripts/check.sh >/dev/null 2>&1 || bad "check.sh fails when run with a hook's GIT_DIR"
   after=$(git -C "$hk/p" config --local --list | sort)
   [ "$before" = "$after" ] || bad "check.sh under a hook's GIT_DIR changed the parent repo config: $(printf '%s\n' "$after" | grep -vxF "$before" | tr '\n' ' ')"
   rm -rf "$hk"

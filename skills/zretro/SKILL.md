@@ -12,6 +12,12 @@ Read `~/.agents/skills/retro/SKILL.md` and follow it, with these overrides:
 - Rule or skill text is the last resort. Write `no structural fix because <reason>` before you add one.
 - When a barrier replaces a sentence in a skill, rule or AGENTS.md, delete the sentence in the same change.
 - Start from `scripts/route-audit.sh` (agent-workflow): every inline edit without a reason and every Medium+ edit without zsensei is a mistake to retro.
+- Review every pendiente in the retro log before proposing a new change.
+- Confirm the row when the mistake did not return. The state becomes confirmado.
+- Revert the row when the change did not help. The state becomes revertido, and the script restores the pre-change bytes when that is safe.
+- In a personal repo, run `scripts/retro-log.sh begin` before the edit and `scripts/retro-log.sh seal` after it.
+- A client proposal is not a log row until the change is applied.
+- When the script is absent, write the same TSV by hand.
 - At close, write `.scratch/<slug>/calibracion.md` with the fields zstack section 5 names.
 - On a Large or Critical close, add a `## Modelos` table to that file, one row per subagent, using the shape in `docs/examples/calibracion-large.md`. Read `docs/model-matrix.md` for the preferred slug. Keep the review role on its Opus slug. A quota miss there is stopped, not a cheaper model.
 - Present the candidates ranked, as Matt's retro says. The user picks.

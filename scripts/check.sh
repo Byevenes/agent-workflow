@@ -195,7 +195,18 @@ after=$(cksum "$xf" | awk '{print $1}')
 [ "$before" = "$after" ] || bad "setup-check: second run changed info/exclude"
 rm -rf "$lx"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh; do
+clean=docs/examples/delivery-note-fixtures/clean.md
+dirty=docs/examples/delivery-note-fixtures/dirty.md
+tmpl=docs/examples/nota-de-entrega.md
+for s in '## Qué cambió' '## Cómo verificar' '## Riesgos o confirmaciones pendientes'; do
+  grep -qF -- "$s" "$clean" || bad "delivery-note: clean fixture missing $s"
+  grep -qF -- "$s" "$tmpl" || bad "delivery-note: template missing $s"
+done
+sh scripts/check-delivery-note.sh "$clean" >/dev/null || bad "delivery-note: clean fixture failed"
+if sh scripts/check-delivery-note.sh "$dirty" >/dev/null 2>&1; then bad "delivery-note: dirty fixture passed"; fi
+if sh scripts/check-delivery-note.sh "$tmpl" >/dev/null 2>&1; then bad "delivery-note: template still sendable"; fi
+
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then

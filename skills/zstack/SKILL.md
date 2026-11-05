@@ -68,6 +68,10 @@ Large, and a Medium promoted to Large. `ztickets` writes one vertical ticket per
 
 A recovery plan does not replace that new session. Use a recovery plan only when a check is red, or when the Recovery case in section 5 fires.
 
+### Slice verification
+
+Before the slice closes, run the same suite on the base branch and on HEAD, or reuse cached result files, and classify them with `scripts/classify-test-failures.sh`. A HEAD failure is env-known only when the same id and the same detail fail on the base branch. That class does not block the slice. A failure that is new or different on HEAD is real and blocks the slice. With no base result, every HEAD failure is real. Do not label it env-known.
+
 Slice close, before the session ends:
 
 - Checks for this ticket are green.
@@ -90,6 +94,8 @@ Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for 
 
 Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Medium, Large and Critical: code is written by zNinja; inline only in Small with `inline: <razón>` (if zninja cannot launch on Medium+, stop and tell Brayan).
 
+Project agents (issue #58). Cursor CLI and Cloud Agents load `.cursor/agents/` from the repo. The IDE also reads `~/.cursor/agents`, which `scripts/link.sh` fills from the same files. This repo registers `zninja`, `zsensei`, and `zigl` in `.cursor/agents/` as relative symlinks to `agents/<name>.md`. `agents/zsensei.md` sets `model: claude-opus-5-5-medium` and `readonly: true`. `agents/zninja.md` sets no model, so the subagent inherits the parent, and its frontmatter must not name a `-fast` slug. When Task lists `zninja`, launch it. The inline trigger above covers a session whose Task list omits `zninja`.
+
 Inline: read `poteto-mode` by the path in the intro and follow it. Load the skills for this size (`tdd`, `pstack-tdd` on OpenCode, `security-and-hardening` on critical). Emit the zninja report lines (`poteto-mode: loaded`, `size:`, `checks:`) and the zstack check block. Set `zninja launched: no (inline: <reason>)`.
 
 - Small: the task. One focused test if behavior changes.
@@ -106,7 +112,7 @@ Review follows the size, not the path (decision: option B). On the inline path, 
 
 - **Small.** Read the diff and the checks it ran. No review agent.
 - **Medium.** `zsensei` on the diff, with the spec path. It must confirm the spec still matches the diff.
-- **Large.** `blast-radius`, then `zsensei` with the spec and tickets.
+- **Large.** `blast-radius` (`skills/blast-radius/SKILL.md`), then `zsensei` with the spec and tickets. That step runs `scripts/blast-radius-callers.sh`. The report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one.
 
 Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each repo should have its own verification skill (`create-verification-skill`, then `verify-<app>`). Client repos: only the checks they already have, and the verification skill lives locally outside the repo.
 
@@ -134,7 +140,7 @@ Client slice commits (local only). Normal flow is the Slice loop in section 2: o
 Commit gate (light, every slice), in order; any failure means no commit: report the step and its real output, and stop.
 1. Format and lint, only if the repo already uses them.
 2. Fast compile or type check (incremental when the tool allows it).
-3. Only the slice's tests (the ones TDD already runs).
+3. Only the slice's tests (the ones TDD already runs). Classify them with `scripts/classify-test-failures.sh` as in Slice verification. Real failures block the slice. Env-known failures do not.
 4. Existing pre-commit hooks run as they are; never use `--no-verify` or `CLIENT_PUSH_OK`. If one (including the opt-in `client-guard/pre-commit`) blocks, stop and tell Brayan.
 5. Stage explicitly only the slice's files (`git add <paths>`, `git add -p` when a file mixes slices; never `git add -A` or `git add .`), then read `git diff --cached`: no secrets, no `.scratch/`, `.atl/` or config the KDB forbids, no stray debug output or new loose TODOs, no files outside the slice.
 6. Identity and convention: if the client entry in `clients.toml` has `git_email`, `git config user.email` must equal it; without it, abort when the email looks personal (`@gmail.com`, `@users.noreply.github.com`, `@hotmail.com`, `@outlook.com`, `@icloud.com`). Never change git config to fix it. The message follows the project or KDB convention.

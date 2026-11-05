@@ -13,6 +13,24 @@ cd "$(dirname "$0")/.."
 fail=0
 bad() { echo "FAIL $*"; fail=1; }
 
+check_project_agents() {
+  for agent in zigl zninja zsensei; do
+    p=".cursor/agents/$agent.md"
+    if [ ! -L "$p" ]; then
+      bad "project agent $p is not a symlink"
+      continue
+    fi
+    if [ ! -e "$p" ]; then
+      bad "project agent $p does not resolve"
+      continue
+    fi
+    target=$(readlink "$p")
+    if [ "$target" != "../../agents/$agent.md" ]; then
+      bad "project agent $p target is $target"
+    fi
+  done
+}
+
 n=$(grep -rlF 'Run inline when the Task tool is absent' --exclude-dir=.git --exclude-dir=.scratch --exclude-dir=retros --exclude=check.sh . | wc -l | tr -d ' ')
 [ "$n" -eq 1 ] || bad "inline-trigger sentence must live only in skills/zstack/SKILL.md (found in $n files)"
 
@@ -31,6 +49,16 @@ grep -q 'A recovery plan does not replace that new session' skills/zstack/SKILL.
 grep -q 'The next ticket is not started here' skills/zstack/SKILL.md || bad "zstack: slice close must require a clean session"
 grep -q 'scripts/check-commit-order.sh' skills/zstack/SKILL.md || bad "zstack: commit-order gate missing"
 grep -q 'scripts/check-commit-order.sh' docs/scripts.md || bad "scripts.md: commit-order gate missing"
+grep -q 'scripts/blast-radius-callers.sh' skills/zstack/SKILL.md || bad "zstack: blast-radius caller gate missing"
+grep -qF 'including private methods and indirect callers' skills/blast-radius/SKILL.md || bad "blast-radius skill: private and indirect callers missing"
+grep -qF 'The check fails when the report misses one.' skills/blast-radius/SKILL.md || bad "blast-radius skill: coverage failure missing"
+grep -q 'scripts/blast-radius-callers.sh' docs/scripts.md || bad "scripts.md: blast-radius caller gate missing"
+grep -q 'scripts/blast-radius-callers.sh' agents/zninja.md || bad "zninja: blast-radius caller gate missing"
+for f in skills/zstack/SKILL.md docs/testing.md docs/workflow.md docs/software-factory.md docs/scripts.md agents/zninja.md; do
+  grep -q 'scripts/classify-test-failures.sh' "$f" || bad "$f: test failure classifier missing"
+  grep -qF 'A HEAD failure is env-known only when the same id and the same detail fail on the base branch.' "$f" || bad "$f: env-known rule missing"
+  grep -qF 'With no base result, every HEAD failure is real.' "$f" || bad "$f: missing-base rule missing"
+done
 grep -q 'explicit yes' agents/zninja.md || bad "zninja: out-of-scope bug must stop for an explicit yes"
 grep -q 'Do not mix the bugfix and the feature in one commit' agents/zninja.md || bad "zninja: bugfix and feature may share a commit"
 grep -q 'the `fix:` commit is an ancestor of the feature commit' agents/zninja.md || bad "zninja: review checklist missing"
@@ -38,6 +66,15 @@ fixline=$(grep -n 'fix: keep the empty input on the existing path' agents/zninja
 featline=$(grep -n "feat: add the ticket's slice" agents/zninja.md | head -1 | cut -d: -f1)
 if [ -z "$fixline" ] || [ -z "$featline" ] || [ "$fixline" -ge "$featline" ]; then bad "zninja: fix: example is not before the feature example"; fi
 grep -q 'that `fix:` commit is an ancestor of the feature commit' agents/zsensei.md || bad "zsensei: out-of-scope history checklist missing"
+zn_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agents/zninja.md)
+if printf '%s\n' "$zn_front" | grep -q '^model:'; then bad "zninja: model must stay unset so the subagent inherits"; fi
+if printf '%s\n' "$zn_front" | grep -q -- '-fast'; then bad "zninja: must not set a -fast model"; fi
+zs_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agents/zsensei.md)
+if ! printf '%s\n' "$zs_front" | grep -qx 'model: claude-opus-5-5-medium'; then bad "zsensei: model must be claude-opus-5-5-medium"; fi
+if ! printf '%s\n' "$zs_front" | grep -qx 'readonly: true'; then bad "zsensei: readonly must be true"; fi
+grep -q 'issue #58' skills/zstack/SKILL.md || bad "zstack: inline fallback must cite issue #58"
+grep -qF '.cursor/agents/' skills/zstack/SKILL.md || bad "zstack: inline fallback must name .cursor/agents/"
+check_project_agents
 grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
 grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"
 grep -q 'never use `--no-verify`' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid --no-verify"
@@ -70,9 +107,10 @@ ln -s "$tmp/nowhere" "$tmp/.config/opencode/skills/broken"
 HOME=$tmp scripts/link.sh >/dev/null
 if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/broken" ]; then bad "link.sh: keeps a broken skill symlink"; fi
 [ -d "$tmp/.cursor/skills/realdir" ] || bad "link.sh: removed a real skill folder"
-for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
+for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/skills/blast-radius .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/skills/blast-radius .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done
+check_project_agents
 rm -rf "$tmp"
 
 ra=$(mktemp -d)
@@ -310,7 +348,7 @@ grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then
@@ -363,6 +401,69 @@ st=0
 ( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" >/dev/null 2>&1 ) || st=$?
 [ "$st" -eq 2 ] || bad "check-commit-order: usage exit $st"
 rm -rf "$ord"
+
+br=docs/examples/blast-radius-fixtures
+sh scripts/blast-radius-callers.sh "$br/graph.txt" Order.Save --expect "$br/save-callers.txt" >/dev/null || bad "blast-radius: full caller fixture failed"
+st=0
+bout=$(mktemp)
+sh scripts/blast-radius-callers.sh "$br/graph.txt" Order.Save --expect "$br/public-only.txt" >"$bout" 2>&1 || st=$?
+[ "$st" -eq 1 ] || bad "blast-radius: incomplete report exit $st"
+awk '
+  /^in walk only:/ { section = "walk"; next }
+  /^in report only:/ { section = "report"; next }
+  section == "walk" && index($0, "Order.Validate") { priv = 1 }
+  section == "walk" && index($0, "Checkout.Run") { ind = 1 }
+  section == "walk" && index($0, "Order.Place") { mid = 1 }
+  END { if (!(priv && ind && mid)) exit 1 }
+' "$bout" || bad "blast-radius: incomplete report did not name the private and indirect callers"
+rm -f "$bout"
+sh scripts/blast-radius-callers.sh "$br/cycle.txt" A.A --expect "$br/cycle-callers.txt" >/dev/null || bad "blast-radius: cycle fixture failed"
+st=0
+sh scripts/blast-radius-callers.sh "$br/graph.txt" Missing.Sym >/dev/null 2>&1 || st=$?
+[ "$st" -eq 1 ] || bad "blast-radius: unknown symbol exit $st"
+st=0
+sh scripts/blast-radius-callers.sh "$br/bad-edge.txt" Only.One >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "blast-radius: bad edge exit $st"
+st=0
+sh scripts/blast-radius-callers.sh >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "blast-radius: usage exit $st"
+
+tf=docs/examples/test-failure-fixtures
+class_cmp() {
+  want=$1
+  exp=$2
+  shift 2
+  st=0
+  got=$(mktemp)
+  sh scripts/classify-test-failures.sh "$@" >"$got" || st=$?
+  [ "$st" -eq "$want" ] || bad "classify: $exp exit $st want $want"
+  cmp -s "$got" "$exp" || bad "classify: $exp mismatch"
+  rm -f "$got"
+}
+class_cmp 1 "$tf/mixed-expect.txt" "$tf/head-mixed.txt" "$tf/base.txt"
+class_cmp 0 "$tf/env-expect.txt" "$tf/head-env.txt" "$tf/base.txt"
+class_cmp 1 "$tf/new-expect.txt" "$tf/head-new.txt" "$tf/base.txt"
+class_cmp 1 "$tf/detail-expect.txt" "$tf/head-detail.txt" "$tf/base-detail.txt"
+class_cmp 1 "$tf/last-expect.txt" "$tf/head-last.txt" "$tf/base-detail.txt"
+st=0
+got=$(mktemp)
+sh scripts/classify-test-failures.sh "$tf/head-new.txt" >"$got" || st=$?
+[ "$st" -eq 1 ] || bad "classify: new without base exit $st"
+cmp -s "$got" "$tf/new-expect.txt" || bad "classify: new without base mismatch"
+if grep -q '^env-known' "$got"; then bad "classify: new without base labeled env-known"; fi
+rm -f "$got"
+st=0
+got=$(mktemp)
+sh scripts/classify-test-failures.sh "$tf/head-new.txt" "$tf/no-such-base.txt" >"$got" 2>/dev/null || st=$?
+[ "$st" -eq 2 ] || bad "classify: missing base file exit $st"
+if grep -q 'env-known' "$got"; then bad "classify: missing base file labeled env-known"; fi
+rm -f "$got"
+st=0
+sh scripts/classify-test-failures.sh "$tf/malformed.txt" >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "classify: malformed exit $st"
+st=0
+sh scripts/classify-test-failures.sh >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "classify: usage exit $st"
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

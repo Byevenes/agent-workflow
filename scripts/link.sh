@@ -29,7 +29,7 @@ link_force "$ROOT/skills/zstack" "$HOME_DIR/.cursor/skills/zstack"
 link_force "$ROOT/skills/zstack" "$HOME_DIR/.config/opencode/skills/zstack"
 link_new "$ROOT/skills/zstack" "$HOME_DIR/.agents/skills/zstack"
 link_force "$ROOT/skills/route-work" "$HOME_DIR/.cursor/skills/route-work"
-for w in zgrill zspec ztickets zpr zretro to-techspec; do
+for w in zgrill zspec ztickets zpr zretro to-techspec blast-radius; do
   link_force "$ROOT/skills/$w" "$HOME_DIR/.cursor/skills/$w"
   link_force "$ROOT/skills/$w" "$HOME_DIR/.config/opencode/skills/$w"
 done
@@ -74,6 +74,18 @@ for agent in zigl zninja zsensei; do
       echo "keep $dest (regular file; back it up and remove it to link)"
     fi
   done
+done
+
+for agent in zigl zninja zsensei; do
+  dest="$ROOT/.cursor/agents/$agent.md"
+  rel="../../agents/$agent.md"
+  if [ -L "$dest" ] || [ ! -e "$dest" ]; then
+    mkdir -p "$(dirname "$dest")"
+    ln -sfn "$rel" "$dest"
+    echo "link .cursor/agents/$agent.md"
+  else
+    echo "keep .cursor/agents/$agent.md (regular file; back it up and remove it to link)"
+  fi
 done
 
 link_force "$ROOT/agents/opencode/zstack.md" "$HOME_DIR/.config/opencode/agents/zstack.md"

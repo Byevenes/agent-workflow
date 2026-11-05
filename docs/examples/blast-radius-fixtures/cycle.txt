@@ -1,0 +1,4 @@
+symbol A.A private m src/A.cs
+symbol A.B private m src/A.cs
+edge A.A A.B
+edge A.B A.A

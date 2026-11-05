@@ -60,6 +60,10 @@ done
 grep -q 'technology-agnostic' skills/zstack/SKILL.md || bad "zstack: client checks must be detected agnostically"
 grep -q 'Never invent checks' skills/zstack/SKILL.md || bad "zstack: client rule must forbid invented checks"
 grep -q 'Pre-push gate' skills/zstack/SKILL.md || bad "zstack: client rule must define the pre-push gate"
+grep -qF 'docs/security-scan.md' skills/zstack/SKILL.md || bad "zstack: pre-push must point at docs/security-scan.md"
+grep -qF 'gitleaks git --log-opts' skills/zstack/SKILL.md || bad "zstack: pre-push must use branch-vs-base gitleaks"
+grep -qF 'SonarQube for IDE' skills/zstack/SKILL.md || bad "zstack: pre-push must mention SonarQube for IDE"
+grep -qF 'client pipeline remains the source of truth' skills/zstack/SKILL.md || bad "zstack: pre-push must keep the client pipeline as truth"
 grep -q 'push_checks' docs/examples/clients.toml.example || bad "clients.toml.example: push_checks missing"
 grep -q 'Recovery case' skills/zstack/SKILL.md || bad "zstack: client commit rule must define the mixed-slices recovery case"
 grep -q '### Slice loop' skills/zstack/SKILL.md || bad "zstack: slice loop missing"
@@ -462,11 +466,15 @@ if [ ! -f "$sec" ]; then
 else
   for s in \
     'SonarQube for IDE' \
+    'gitleaks git --log-opts="<base>..HEAD" --redact' \
     'gitleaks git --redact' \
     'Never install a hook into a client repo' \
     'Never commit security scanner config into a client repo' \
     '.git/info/exclude' \
-    'CodeQL is a poor fit for this repo'
+    'CodeQL is a poor fit for this repo' \
+    '## Future / optional' \
+    'SonarQube Community' \
+    'connected mode'
   do
     grep -qF -- "$s" "$sec" || bad "security-scan: playbook missing $s"
   done
@@ -483,6 +491,11 @@ fi
 help=$(sh scripts/setup-check.sh --help)
 printf '%s\n' "$help" | grep -qF 'docs/security-scan.md' || bad "setup-check: help misses the security-scan playbook"
 grep -qF 'docs/security-scan.md' docs/scripts.md || bad "scripts.md: security-scan playbook missing"
+grep -qF 'gitleaks: present' docs/scripts.md || bad "scripts.md: gitleaks status line missing"
+grep -qF 'ok gitleaks: present' scripts/setup-check.sh || bad "setup-check: gitleaks present line missing"
+grep -qF 'warn gitleaks: missing' scripts/setup-check.sh || bad "setup-check: gitleaks missing warn missing"
+out=$(sh scripts/setup-check.sh || true)
+printf '%s\n' "$out" | grep -Eq '^(ok|warn) gitleaks: (present|missing)' || bad "setup-check: gitleaks status line missing at runtime"
 
 lesson=docs/examples/kdb-lesson-timezone.md
 [ -f "$lesson" ] || bad "timezone lesson: missing"

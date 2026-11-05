@@ -15,6 +15,8 @@ The git repo is the source of truth. A clone plus `scripts/link.sh` points the u
 5. Optional, only for local-token MCPs (mostly OpenCode; leave unset so client data stays out of OpenCode, decision #10). Export tokens only in the environment, never in git: `GITHUB_PERSONAL_ACCESS_TOKEN`, `GITLAB_PERSONAL_ACCESS_TOKEN`, `POSTGRES_URL`.
 6. Run `scripts/link.sh`, then `scripts/setup-check.sh`.
 
+To pin one skill, add a line to `skills/versions` with the skill name and a tag or a commit, then run `scripts/link.sh` again. To return to main, delete the line or set the rev to `main` or `HEAD`, then run `scripts/link.sh` again. The clone must contain the pinned commits. A depth-1 clone cannot resolve them.
+
 `scripts/setup-check.sh` prints command names and symlink status. It does not print secret values.
 
 ## How work moves

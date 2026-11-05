@@ -25,15 +25,94 @@ link_force() {
   echo "link $dest"
 }
 
-link_force "$ROOT/skills/zstack" "$HOME_DIR/.cursor/skills/zstack"
-link_force "$ROOT/skills/zstack" "$HOME_DIR/.config/opencode/skills/zstack"
-link_new "$ROOT/skills/zstack" "$HOME_DIR/.agents/skills/zstack"
-link_force "$ROOT/skills/route-work" "$HOME_DIR/.cursor/skills/route-work"
+pin_file=$ROOT/skills/versions
+if [ -n "${LINK_SKILL_VERSIONS:-}" ]; then
+  pin_file=$LINK_SKILL_VERSIONS
+fi
+if [ ! -f "$pin_file" ]; then
+  echo "link.sh: pin file missing: $pin_file" >&2
+  exit 1
+fi
+skill_src=''
+
+require_skill_rev() {
+  _name=$1
+  _rev=$2
+  if ! git -C "$ROOT" cat-file -e "${_rev}:skills/${_name}/SKILL.md"; then
+    echo "link.sh: $_name at $_rev has no skills/$_name/SKILL.md" >&2
+    exit 1
+  fi
+}
+
+while IFS= read -r _line || [ -n "${_line:-}" ]; do
+  _name=${_line%%[[:space:]]*}
+  _rest=${_line#"$_name"}
+  _rest=${_rest#"${_rest%%[![:space:]]*}"}
+  _rev=${_rest%%[[:space:]]*}
+  _line=
+  [ -n "$_name" ] || continue
+  case "$_rev" in
+    ''|main|HEAD) continue ;;
+  esac
+  require_skill_rev "$_name" "$_rev"
+done < "$pin_file"
+
+resolve_skill() {
+  _name=$1
+  _rev=$(awk -v n="$_name" 'NF > 0 && $1 == n { print $2; exit }' "$pin_file")
+  case "$_rev" in
+    ''|main|HEAD)
+      skill_src="$ROOT/skills/$_name"
+      return 0
+      ;;
+  esac
+  require_skill_rev "$_name" "$_rev"
+  _safe=$(printf '%s' "$_rev" | tr '/' '_')
+  _cache="$HOME_DIR/.cache/agent-workflow/skills/$_name/$_safe"
+  if [ -f "$_cache/SKILL.md" ]; then
+    skill_src="$_cache"
+    return 0
+  fi
+  _arc=$(mktemp)
+  if ! git -C "$ROOT" archive --format=tar -o "$_arc" "$_rev" "skills/$_name"; then
+    rm -f "$_arc"
+    echo "link.sh: archive failed for $_name at $_rev" >&2
+    exit 1
+  fi
+  _stage=$(mktemp -d)
+  if ! tar -xf "$_arc" -C "$_stage"; then
+    rm -f "$_arc"
+    rm -rf "$_stage"
+    echo "link.sh: extract failed for $_name at $_rev" >&2
+    exit 1
+  fi
+  rm -f "$_arc"
+  _tree="$_stage/skills/$_name"
+  if [ ! -f "$_tree/SKILL.md" ]; then
+    rm -rf "$_stage"
+    echo "link.sh: $_name at $_rev has no skill file" >&2
+    exit 1
+  fi
+  mkdir -p "$(dirname "$_cache")"
+  rm -rf "$_cache"
+  mv "$_tree" "$_cache"
+  rm -rf "$_stage"
+  skill_src="$_cache"
+}
+
+resolve_skill zstack
+link_force "$skill_src" "$HOME_DIR/.cursor/skills/zstack"
+link_force "$skill_src" "$HOME_DIR/.config/opencode/skills/zstack"
+link_new "$skill_src" "$HOME_DIR/.agents/skills/zstack"
+resolve_skill route-work
+route_src="$skill_src"
+link_force "$route_src" "$HOME_DIR/.cursor/skills/route-work"
 for w in zgrill zspec ztickets zpr zretro to-techspec blast-radius; do
-  link_force "$ROOT/skills/$w" "$HOME_DIR/.cursor/skills/$w"
-  link_force "$ROOT/skills/$w" "$HOME_DIR/.config/opencode/skills/$w"
+  resolve_skill "$w"
+  link_force "$skill_src" "$HOME_DIR/.cursor/skills/$w"
+  link_force "$skill_src" "$HOME_DIR/.config/opencode/skills/$w"
 done
-link_force "$ROOT/skills/route-work" "$HOME_DIR/.config/opencode/skills/route-work"
+link_force "$route_src" "$HOME_DIR/.config/opencode/skills/route-work"
 
 for old in \
   "$HOME_DIR/.cursor/rules/route-work.mdc" \

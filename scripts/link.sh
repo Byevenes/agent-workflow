@@ -88,6 +88,26 @@ for agent in zigl zninja zsensei; do
   fi
 done
 
+plugin_root="$HOME_DIR/.cursor/plugins/local/zstack-agents"
+mkdir -p "$plugin_root/.cursor-plugin" "$plugin_root/agents"
+cat > "$plugin_root/.cursor-plugin/plugin.json" <<'EOF'
+{
+  "name": "zstack-agents",
+  "version": "0.1.0",
+  "description": "zStack subagents zigl, zninja, and zsensei.",
+  "agents": "./agents/"
+}
+EOF
+for agent in zigl zninja zsensei; do
+  src="$ROOT/agents/$agent.md"
+  dest="$plugin_root/agents/$agent.md"
+  if [ -L "$dest" ]; then
+    rm "$dest"
+  fi
+  cp "$src" "$dest"
+  echo "copy $dest"
+done
+
 link_force "$ROOT/agents/opencode/zstack.md" "$HOME_DIR/.config/opencode/agents/zstack.md"
 
 if [ -d "$HOME_DIR/.agents/skills" ]; then

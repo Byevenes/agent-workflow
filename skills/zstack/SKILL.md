@@ -94,7 +94,7 @@ Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for 
 
 Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Medium, Large and Critical: code is written by zNinja; inline only in Small with `inline: <razón>` (if zninja cannot launch on Medium+, stop and tell Brayan).
 
-Project agents (issue #58). Cursor CLI and Cloud Agents load `.cursor/agents/` from the repo. The IDE also reads `~/.cursor/agents`, which `scripts/link.sh` fills from the same files. This repo registers `zninja`, `zsensei`, and `zigl` in `.cursor/agents/` as relative symlinks to `agents/<name>.md`. `agents/zsensei.md` sets `model: claude-opus-5-5-medium` and `readonly: true`. `agents/zninja.md` sets no model, so the subagent inherits the parent, and its frontmatter must not name a `-fast` slug. When Task lists `zninja`, launch it. The inline trigger above covers a session whose Task list omits `zninja`.
+Project agents (issue #58). Cursor CLI and Cloud Agents load `.cursor/agents/` from the repo. The IDE also reads `~/.cursor/agents`, which `scripts/link.sh` fills from the same files. This repo registers `zninja`, `zsensei`, and `zigl` in `.cursor/agents/` as relative symlinks to `agents/<name>.md`. `agents/zsensei.md` sets `model: claude-opus-5-5-medium` and `readonly: true`. Outside a clone, Cursor CLI loads `~/.cursor/plugins/local/zstack-agents/`, where `agents` is `./agents/`. `scripts/link.sh` copies the three agent files there as regular files, because symlinks in that folder do not load. Plugin loads ignore the `model` frontmatter, so the Task argument selects the model. `agents/zninja.md` sets no model, so the subagent inherits the parent, and its frontmatter must not name a `-fast` slug. When Task lists `zninja`, launch it. The inline trigger above covers a session whose Task list omits `zninja`.
 
 Inline: read `poteto-mode` by the path in the intro and follow it. Load the skills for this size (`tdd`, `pstack-tdd` on OpenCode, `security-and-hardening` on critical). Emit the zninja report lines (`poteto-mode: loaded`, `size:`, `checks:`) and the zstack check block. Set `zninja launched: no (inline: <reason>)`.
 
@@ -108,11 +108,11 @@ On the subagent path, reject the report if it lacks the line `poteto-mode: loade
 
 ## 4. Check (after code)
 
-Review follows the size, not the path (decision: option B). On the inline path, Small gets a second author pass (`reviewers: inline self-check`). Medium, Large and Critical (always zNinja) get `zsensei` exactly as below. If zsensei cannot be launched, set `reviewers: none (zsensei unavailable: <reason>)` and do not open the PR until Brayan reviews it.
+Review follows the size, not the path (decision: option B). On the inline path, Small gets a second author pass (`reviewers: inline self-check`). Medium, Large and Critical (always zNinja) get `zsensei` exactly as below. If zsensei cannot be launched, set `reviewers: none (zsensei unavailable: <reason>)` and do not open the PR until Brayan reviews it. Plugin loads ignore the `model` frontmatter, so the Task argument selects the model. The review role never runs on another model.
 
 - **Small.** Read the diff and the checks it ran. No review agent.
-- **Medium.** `zsensei` on the diff, with the spec path. It must confirm the spec still matches the diff.
-- **Large.** `blast-radius` (`skills/blast-radius/SKILL.md`), then `zsensei` with the spec and tickets. That step runs `scripts/blast-radius-callers.sh`. The report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one.
+- **Medium.** `zsensei` on the diff, with the spec path. It must confirm the spec still matches the diff. Every Task call to zsensei passes model: claude-opus-5-5-medium.
+- **Large.** `blast-radius` (`skills/blast-radius/SKILL.md`), then `zsensei` with the spec and tickets. That step runs `scripts/blast-radius-callers.sh`. The report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one. Every Task call to zsensei passes model: claude-opus-5-5-medium.
 
 Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each repo should have its own verification skill (`create-verification-skill`, then `verify-<app>`). Client repos: only the checks they already have, and the verification skill lives locally outside the repo.
 
@@ -125,7 +125,7 @@ Classify decides whether a Large run requires `scripts/check-commit-order.sh`. T
 Pass a check the repo already defines. Do not invent one. Run it from the repo root. The command's current directory is that commit's tree.
 
 `zsensei` always reads the test diff: only new green tests mean new behavior; modified or deleted tests mean changed behavior and get extra scrutiny.
-- **Critical.** `zsensei`, then `security-auditor`.
+- **Critical.** `zsensei`, then `security-auditor`. Every Task call to zsensei passes model: claude-opus-5-5-medium.
 
 ## 5. Deliver and retro
 

@@ -226,13 +226,34 @@ sh scripts/check-delivery-note.sh "$clean" >/dev/null || bad "delivery-note: cle
 if sh scripts/check-delivery-note.sh "$dirty" >/dev/null 2>&1; then bad "delivery-note: dirty fixture passed"; fi
 if sh scripts/check-delivery-note.sh "$tmpl" >/dev/null 2>&1; then bad "delivery-note: template still sendable"; fi
 
+rp_root=docs/examples/repo-path-fixtures/root
+rp_clean=docs/examples/repo-path-fixtures/clean.md
+rp_dirty=docs/examples/repo-path-fixtures/dirty.md
+rp_tilde=$(printf '\176/work/src/Foo.cs')
+sh scripts/check-repo-paths.sh "$rp_clean" "$rp_root" >/dev/null || bad "repo-paths: clean fixture failed"
+rp_out=$(sh scripts/check-repo-paths.sh "$rp_dirty" "$rp_root" 2>&1 || true)
+if sh scripts/check-repo-paths.sh "$rp_dirty" "$rp_root" >/dev/null 2>&1; then bad "repo-paths: dirty fixture passed"; fi
+rp_has() {
+  printf '%s\n' "$rp_out" | grep -qF -- "$1: $2" || bad "repo-paths: dirty fixture did not report $1: $2"
+}
+rp_has "does not exist from the repo root" "OnlyName.cs"
+rp_has "does not exist from the repo root" "src/Missing.cs"
+rp_has "absolute path" "/opt/src/Foo.cs"
+rp_has "absolute path" "/Users/someone/src/Foo.cs"
+rp_has "absolute path" "$rp_tilde"
+rp_has "absolute path" "C:/src/Foo.cs"
+rp_has "not a repo-root path" "./src/Foo/Bar.cs"
+rp_has "not a repo-root path" "src/../src/Foo/Bar.cs"
+rp_has "not a repo-root path" 'src\Foo\Bar.cs'
+if sh scripts/check-repo-paths.sh >/dev/null 2>&1; then bad "repo-paths: usage without args passed"; fi
+
 lesson=docs/examples/kdb-lesson-timezone.md
 [ -f "$lesson" ] || bad "timezone lesson: missing"
 grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-commit-order.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then

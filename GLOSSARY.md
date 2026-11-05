@@ -13,3 +13,4 @@
 - **zHunter, zGuard**: reserved names, no role yet.
 - **Clients root**: where client repos live. Non-empty `CLIENTS_ROOT`, otherwise `clients_root` in the client map, otherwise `$HOME/Clients`.
 - **Client map**: local untracked toml at `ZSTACK_CLIENTS_TOML`, or `~/.config/zstack/clients.toml` when that variable is unset. Never commit it.
+- **Repo-root path**: an inline file citation from the repository root, such as `src/Foo/Bar.cs`. `scripts/check-repo-paths.sh` rejects a bare name that is not at that root, a working-directory prefix, and a machine-absolute path.

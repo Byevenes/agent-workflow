@@ -92,7 +92,7 @@ If a medium or large change turns out to cross a critical boundary, reclassify i
 
 Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, the paths it must not touch, whether to commit (client repos: the slice commit rules in section 5), and the `kdb:` paths from section 0 (client tasks). Do not edit files in this chat on that path.
 
-Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Medium, Large and Critical: code is written by zNinja; inline only in Small with `inline: <razón>` (if zninja cannot launch on Medium+, stop and tell Brayan).
+Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Medium, Large and Critical: code is written by zNinja; inline only in Small with `inline: <razón>` (if zninja cannot launch on Medium+ and the host is Cursor, stop and tell Brayan).
 
 Project agents (issue #58). Cursor CLI and Cloud Agents load `.cursor/agents/` from the repo. The IDE also reads `~/.cursor/agents`, which `scripts/link.sh` fills from the same files. This repo registers `zninja`, `zsensei`, and `zigl` in `.cursor/agents/` as relative symlinks to `agents/<name>.md`. `agents/zsensei.md` sets `model: claude-opus-5-5-medium` and `readonly: true`. Outside a clone, Cursor CLI loads `~/.cursor/plugins/local/zstack-agents/`, where `agents` is `./agents/`. `scripts/link.sh` copies the three agent files there as regular files, because symlinks in that folder do not load. Plugin loads ignore the `model` frontmatter, so the Task argument selects the model. `agents/zninja.md` sets no model, so the subagent inherits the parent, and its frontmatter must not name a `-fast` slug. When Task lists `zninja`, launch it. The inline trigger above covers a session whose Task list omits `zninja`.
 
@@ -106,9 +106,19 @@ Inline: read `poteto-mode` by the path in the intro and follow it. Load the skil
 
 On the subagent path, reject the report if it lacks the line `poteto-mode: loaded`. Relaunch it once with that requirement explicit. On the inline path, include that line in this session's report.
 
+### Inline without Cursor
+
+Use this mode only when the host is not Cursor. If the Cursor Task tool lists zninja, launch zninja. This mode is not a bypass. The stop-and-tell for a missing zNinja on Medium and up applies when the host is Cursor. Outside Cursor this mode covers every size, including Medium and up.
+
+Run `git push --dry-run` before coding starts when the branch has an upstream. When the branch has no upstream, run `git push --dry-run <remote> HEAD`. Either command must contact the remote. `git status` is not an equivalent. Stop before any edit when that dry-run is rejected, the remote is missing, or the dry-run fails. The dry-run does not push.
+
+Outside Cursor, if zSensei cannot be launched, or if zNinja cannot be launched and this session writes the diff, a separate subagent or session reviews and receives only the diff. The author does not review their own diff. Record `reviewers: independent (no Cursor: <who>)`.
+
+When a host that is not Cursor can still launch zNinja and zSensei, keep the size review in section 4. Still run the push dry-run.
+
 ## 4. Check (after code)
 
-Review follows the size, not the path (decision: option B). On the inline path, Small gets a second author pass (`reviewers: inline self-check`). Medium, Large and Critical (always zNinja) get `zsensei` exactly as below. If zsensei cannot be launched, set `reviewers: none (zsensei unavailable: <reason>)` and do not open the PR until Brayan reviews it. Plugin loads ignore the `model` frontmatter, so the Task argument selects the model. The review role never runs on another model.
+Review follows the size, not the path (decision: option B). On the inline path, Small gets a second author pass (`reviewers: inline self-check`). Medium, Large and Critical (always zNinja) get `zsensei` exactly as below. If zsensei cannot be launched, set `reviewers: none (zsensei unavailable: <reason>)` and do not open the PR until Brayan reviews it. On a host that is not Cursor, follow `### Inline without Cursor` instead. A separate reviewer receives only the diff. Plugin loads ignore the `model` frontmatter, so the Task argument selects the model. The review role never runs on another model.
 
 - **Small.** Read the diff and the checks it ran. No review agent.
 - **Medium.** `zsensei` on the diff, with the spec path. It must confirm the spec still matches the diff. Every Task call to zsensei passes model: claude-opus-5-5-medium.
@@ -161,7 +171,7 @@ zstack check
 - not verified automatically: <none | item → how to check by hand>
 - zninja launched: <yes | no (inline: <reason>)>
 - poteto-mode loaded: <yes/no> (<zninja | inline>)
-- reviewers: <none | zsensei | zsensei + security-auditor | inline self-check (small only)>
+- reviewers: <none | zsensei | zsensei + security-auditor | inline self-check (small only) | independent (no Cursor)>
 ```
 
 Before reporting done, run `scripts/route-audit.sh` from this repo (Byevenes/agent-workflow). It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, a Medium+ session edited without zsensei, or a Medium+ session edited without launching zninja (`medium+ inline`). A non-zero exit is a retro input, not something to explain away.

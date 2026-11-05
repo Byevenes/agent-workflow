@@ -99,6 +99,12 @@ grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule m
 grep -q 'never use `--no-verify`' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid --no-verify"
 
 zs=skills/zstack/SKILL.md
+grep -qF '### Inline without Cursor' "$zs" || bad "zstack: Inline without Cursor heading missing"
+grep -qF 'git push --dry-run' "$zs" || bad "zstack: push dry-run missing"
+grep -qF 'before coding starts' "$zs" || bad "zstack: dry-run must run before coding starts"
+grep -qF 'only the diff' "$zs" || bad "zstack: reviewer must receive only the diff"
+grep -qF 'independent (no Cursor)' "$zs" || bad "zstack: independent reviewer missing"
+grep -qF 'independent (no Cursor)' agents/opencode/zstack.md || bad "opencode zstack: independent reviewer missing"
 grep -qF 'tickets = ceil(tokens_estimados * holgura / 150_000)' "$zs" || bad "zstack: token ticket formula missing"
 grep -qF 'Medium whose estimate is about 150k tokens promotes to Large' "$zs" || bad "zstack: Medium promote to Large missing"
 grep -qF 'Critical keeps the security path even when the ticket count is 1' "$zs" || bad "zstack: Critical security path for one ticket missing"

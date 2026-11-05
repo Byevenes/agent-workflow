@@ -229,6 +229,29 @@ apply_identity() {
   fi
 }
 
+ensure_local_excludes() {
+  xf=$1
+  mkdir -p "$(dirname "$xf")"
+  if [ ! -f "$xf" ]; then
+    : > "$xf"
+  elif [ -s "$xf" ]; then
+    nl=$(tail -c 1 "$xf" | wc -l | tr -d ' ')
+    if [ "$nl" -eq 0 ]; then
+      printf '\n' >> "$xf"
+    fi
+  fi
+  missing=0
+  for ent in .scratch/ .atl/; do
+    if ! grep -qxF -- "$ent" "$xf"; then
+      printf '%s\n' "$ent" >> "$xf"
+    fi
+    if ! grep -qxF -- "$ent" "$xf"; then
+      missing=1
+    fi
+  done
+  [ "$missing" -eq 0 ]
+}
+
 seen=""; n=0; m=0; k=0; pc=0; ex=0
 if [ -d "$croot" ]; then
   for g in $(find "$croot" -maxdepth 6 -name .git 2>/dev/null | sort); do
@@ -238,7 +261,7 @@ if [ -d "$croot" ]; then
     seen="$seen $common"
     n=$((n + 1))
     xf=$(git -C "$d" rev-parse --path-format=absolute --git-path info/exclude)
-    if [ -f "$xf" ] && grep -qx '\.scratch/\{0,1\}' "$xf"; then ex=$((ex + 1)); fi
+    if ensure_local_excludes "$xf"; then ex=$((ex + 1)); fi
     email=$(git -C "$d" config user.email 2>/dev/null || true)
     apply_identity "$d" "$email"
     if [ -n "$(git -C "$d" config --get core.hooksPath)" ]; then k=$((k + 1)); continue; fi
@@ -254,7 +277,7 @@ elif [ $((m + k)) -eq "$n" ]; then echo "ok $line"
 else echo "todo $line (Brayan installs: see docs/architecture.md)"; fi
 if [ "$n" -gt 0 ]; then
   echo "info client-guard pre-commit: $pc/$n client repos (Brayan installs: see docs/architecture.md)"
-  echo "info scratch-exclude: .scratch/ in info/exclude in $ex/$n client repos (zstack adds it per worktree)"
+  echo "info local-exclude: .scratch/ and .atl/ in info/exclude in $ex/$n client repos (setup-check writes them)"
 fi
 if [ -f "$HOME/.config/zstack/clients.toml" ]; then echo "ok client-kdb: map at ~/.config/zstack/clients.toml"
 else echo "todo client-kdb: no ~/.config/zstack/clients.toml (copy docs/examples/clients.toml.example)"; fi

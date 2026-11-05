@@ -206,13 +206,48 @@ sh scripts/check-delivery-note.sh "$clean" >/dev/null || bad "delivery-note: cle
 if sh scripts/check-delivery-note.sh "$dirty" >/dev/null 2>&1; then bad "delivery-note: dirty fixture passed"; fi
 if sh scripts/check-delivery-note.sh "$tmpl" >/dev/null 2>&1; then bad "delivery-note: template still sendable"; fi
 
+tp=docs/examples/techspec-path-fixtures
+tproot=$tp/root
+grep -q 'src/Foo/Bar.cs' "$tp/clean.md" || bad "techspec-paths: clean fixture missing src/Foo/Bar.cs"
+grep -q 'src/Foo/Bar.cs' skills/to-techspec/SKILL.md || bad "to-techspec: repo-root example missing"
+grep -q 'scripts/check-techspec-paths.sh' skills/to-techspec/SKILL.md || bad "to-techspec: path check missing"
+grep -q 'src/Foo/Bar.cs' skills/zspec/SKILL.md || bad "zspec: repo-root example missing"
+grep -q 'scripts/check-techspec-paths.sh' skills/zspec/SKILL.md || bad "zspec: path check missing"
+if grep -q 'clase o método relativo al repo' skills/to-techspec/SKILL.md; then bad "to-techspec: short path wording is back"; fi
+status=0
+sh scripts/check-techspec-paths.sh >/dev/null 2>&1 || status=$?
+[ "$status" -eq 2 ] || bad "techspec-paths: usage status $status"
+status=0
+out=$(sh scripts/check-techspec-paths.sh "$tp/clean.md" "$tproot" 2>&1) || status=$?
+[ "$status" -eq 0 ] || bad "techspec-paths: clean fixture failed ($status): $out"
+printf '%s\n' "$out" | grep -q '^ok techspec-paths:' || bad "techspec-paths: clean fixture missing ok"
+status=0
+out=$(sh scripts/check-techspec-paths.sh "$tp/dirty-bare.md" "$tproot" 2>&1) || status=$?
+[ "$status" -eq 1 ] || bad "techspec-paths: bare fixture status $status: $out"
+printf '%s\n' "$out" | grep -F -q 'not found from repo root: Bar.cs' || bad "techspec-paths: bare name not reported: $out"
+status=0
+out=$(sh scripts/check-techspec-paths.sh "$tp/dirty-missing.md" "$tproot" 2>&1) || status=$?
+[ "$status" -eq 1 ] || bad "techspec-paths: missing fixture status $status: $out"
+printf '%s\n' "$out" | grep -F -q 'not found from repo root: src/Foo/Missing.cs' || bad "techspec-paths: missing path not reported: $out"
+status=0
+out=$(sh scripts/check-techspec-paths.sh "$tp/dirty-absolute.md" "$tproot" 2>&1) || status=$?
+[ "$status" -eq 1 ] || bad "techspec-paths: absolute fixture status $status: $out"
+printf '%s\n' "$out" | grep -F -q 'absolute machine path: /home/dev/proj/src/Foo/Bar.cs' || bad "techspec-paths: unix absolute not reported: $out"
+printf '%s\n' "$out" | grep -F -q 'absolute machine path: ~/proj/src/Foo/Bar.cs' || bad "techspec-paths: tilde absolute not reported: $out"
+printf '%s\n' "$out" | grep -F -q 'absolute machine path: C:\proj\src\Foo\Bar.cs' || bad "techspec-paths: drive absolute not reported: $out"
+status=0
+out=$(sh scripts/check-techspec-paths.sh "$tp/dirty-escape.md" "$tproot" 2>&1) || status=$?
+[ "$status" -eq 1 ] || bad "techspec-paths: escape fixture status $status: $out"
+escapes=$(printf '%s\n' "$out" | grep -F -c 'escapes the repo root: src/../../etc/passwd' || true)
+[ "$escapes" -eq 2 ] || bad "techspec-paths: escape paths reported $escapes times: $out"
+
 lesson=docs/examples/kdb-lesson-timezone.md
 [ -f "$lesson" ] || bad "timezone lesson: missing"
 grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-techspec-paths.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then

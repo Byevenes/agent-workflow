@@ -22,11 +22,11 @@ Si aún no hay respuestas del TL/PO, no generes la TechSpec: propone primero `to
 1. **Ticket.** Lee el ticket y **todos** sus comentarios con el MCP de Atlassian, solo lectura. Nunca comentes, edites ni transiciones.
 2. **Estructura y KDBs.** Esta skill es la única fuente del formato: usa las secciones de "Salida" en ese orden y no busques una plantilla externa. Lee solo los KDBs y guidelines del cliente (arquitectura, persistencia, testing, despliegue) para el contenido.
 3. **Análisis previo.** Si existe la nota de análisis del ticket, toma de ahí las preguntas, prioridades y respuestas. Cada decisión cerrada lleva fuente (comentario, reunión, KDB) y fecha.
-4. **Repos.** Identifica los repos involucrados desde el inventario del cliente e inspecciónalos: stack y versión del framework, endpoints y contratos **realmente presentes en el código**, modelo de datos, tests existentes y CI/despliegue. **Nunca adivines un contrato:** cita el archivo, la clase o el endpoint encontrado. Si no está en el código, es "Por definir".
+4. **Repos.** Identifica los repos involucrados desde el inventario del cliente e inspecciónalos: stack y versión del framework, endpoints y contratos **realmente presentes en el código**, modelo de datos, tests existentes y CI/despliegue. **Nunca adivines un contrato:** cita la ruta desde la raíz del repo, la clase o el endpoint encontrado. Si no está en el código, es "Por definir".
 5. **Huecos.** Lo que siga abierto pasa a Pendientes con dueño y nivel de bloqueo. Si hay huecos de diseño, sugiere `grill-with-docs` antes de cerrar.
 6. **Diagramas.** Usa la skill `mermaid-diagrams` si está disponible. Ver "Diagramas".
 7. **Escribe** una sola TechSpec, neutral (ver "Neutralidad"). La trazabilidad va en el análisis técnico (ver "Trazabilidad"). Enlaza la TechSpec desde la nota de análisis.
-8. **Pulido.** Aplica `technical-writing` y `unslop` a la TechSpec. Revisa "un dato, un lugar".
+8. **Pulido.** Aplica `technical-writing` y `unslop` a la TechSpec. Revisa "un dato, un lugar". Ejecuta `scripts/check-techspec-paths.sh` con la TechSpec y la raíz del repo. Si el comando falla, corrige las citas antes de cerrar.
 9. **Exportación (opcional, solo si el usuario la pide).** Genera una copia `.md` estándar de la TechSpec: sin frontmatter, sin wikilinks `[[...]]`, sin callouts `> [!...]`, sin embeds ni tags, y con cada diagrama también como imagen (PNG o SVG). La fuente sigue siendo el archivo original.
 
 ## Salida (secciones)
@@ -61,7 +61,8 @@ La TechSpec es una sola versión que puede salir del equipo tal cual. Antes de e
 
 - Sin nombres de personas, autores ni roles internos. El autor es "Equipo de desarrollo".
 - Sin herramientas internas, asistentes, agentes, skills, IDEs ni bases de conocimiento internas.
-- Sin rutas locales, commits, hashes, ramas, números de línea ni tickets de otros sistemas. El código se cita como clase o método relativo al repo.
+- Sin rutas locales, commits, hashes, ramas, números de línea ni tickets de otros sistemas.
+- Cada archivo se cita con la ruta completa desde la raíz del repo, en un span en línea o en el destino de un enlace, por ejemplo `src/Foo/Bar.cs`. Un nombre suelto no basta cuando el archivo no está en esa raíz.
 - Sin historia de decisiones ni citas de conversaciones.
 - Sin URLs, hosts ni credenciales.
 - Antes de entregar, barre el archivo con `grep -niw` contra la lista de términos sensibles del proyecto y confirma 0 coincidencias.

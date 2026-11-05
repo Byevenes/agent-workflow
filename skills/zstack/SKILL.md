@@ -100,6 +100,14 @@ Review follows the size, not the path (decision: option B). On the inline path, 
 
 Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each repo should have its own verification skill (`create-verification-skill`, then `verify-<app>`). Client repos: only the checks they already have, and the verification skill lives locally outside the repo.
 
+### Commit-order gate
+
+Classify decides whether a Large run requires `scripts/check-commit-order.sh`. The gate checks out every commit in `base..HEAD` in a temporary worktree and runs the command you pass. The base commit is excluded. The first red commit fails the gate and names that commit. It does not install hooks, and it does not change the caller's checkout.
+
+`scripts/check-commit-order.sh <base> -- <command> [args...]`
+
+Pass a check the repo already defines. Do not invent one. Run it from the repo root. The command's current directory is that commit's tree.
+
 `zsensei` always reads the test diff: only new green tests mean new behavior; modified or deleted tests mean changed behavior and get extra scrutiny.
 - **Critical.** `zsensei`, then `security-auditor`.
 

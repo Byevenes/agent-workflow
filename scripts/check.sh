@@ -29,6 +29,8 @@ grep -q 'Recovery case' skills/zstack/SKILL.md || bad "zstack: client commit rul
 grep -q '### Slice loop' skills/zstack/SKILL.md || bad "zstack: slice loop missing"
 grep -q 'A recovery plan does not replace that new session' skills/zstack/SKILL.md || bad "zstack: recovery must not replace a new session per slice"
 grep -q 'The next ticket is not started here' skills/zstack/SKILL.md || bad "zstack: slice close must require a clean session"
+grep -q 'scripts/check-commit-order.sh' skills/zstack/SKILL.md || bad "zstack: commit-order gate missing"
+grep -q 'scripts/check-commit-order.sh' docs/scripts.md || bad "scripts.md: commit-order gate missing"
 grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
 grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"
 grep -q 'never use `--no-verify`' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid --no-verify"
@@ -223,7 +225,7 @@ grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-commit-order.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then
@@ -238,6 +240,44 @@ if [ -z "${CHECK_NESTED:-}" ]; then
   [ "$before" = "$after" ] || bad "check.sh under a hook's GIT_DIR changed the parent repo config: $(printf '%s\n' "$after" | grep -vxF "$before" | tr '\n' ' ')"
   rm -rf "$hk"
 fi
+
+ord=$(mktemp -d)
+git init -q "$ord/r"
+git -C "$ord/r" config user.email t@t
+git -C "$ord/r" config user.name t
+printf 'ok\n' > "$ord/r/marker"
+git -C "$ord/r" add marker
+git -C "$ord/r" commit -q -m base
+obase=$(git -C "$ord/r" rev-parse HEAD)
+printf 'bad\n' > "$ord/r/marker"
+git -C "$ord/r" commit -q -am mid
+omid=$(git -C "$ord/r" rev-parse HEAD)
+printf 'ok\n' > "$ord/r/marker"
+git -C "$ord/r" commit -q -am tip
+otip=$(git -C "$ord/r" rev-parse HEAD)
+printf '#!/bin/sh\necho ran > "%s/hook-ran"\nexit 1\n' "$ord" > "$ord/r/.git/hooks/post-checkout"
+chmod +x "$ord/r/.git/hooks/post-checkout"
+repo=$(pwd)
+st=0
+out=$( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" "$obase" -- grep -qx ok marker 2>&1 ) || st=$?
+[ "$st" -ne 0 ] || bad "check-commit-order: passes a range whose middle commit is red"
+echo "$out" | grep -q "$omid" || bad "check-commit-order: does not name the red commit"
+[ "$(git -C "$ord/r" rev-parse HEAD)" = "$otip" ] || bad "check-commit-order: moved HEAD"
+[ -z "$(git -C "$ord/r" status --porcelain)" ] || bad "check-commit-order: dirtied the caller worktree"
+[ ! -e "$ord/hook-ran" ] || bad "check-commit-order: ran post-checkout"
+if git -C "$ord/r" config --local --get core.hooksPath >/dev/null 2>&1; then bad "check-commit-order: set core.hooksPath"; fi
+[ "$(git -C "$ord/r" worktree list | wc -l | tr -d ' ')" -eq 1 ] || bad "check-commit-order: left a worktree"
+rm -f "$ord/r/.git/hooks/post-checkout"
+git -C "$ord/r" checkout -q -b green "$obase"
+printf 'ok\n' > "$ord/r/other"
+git -C "$ord/r" add other
+git -C "$ord/r" commit -q -m good
+( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" "$obase" -- grep -qx ok marker >/dev/null ) || bad "check-commit-order: fails an all-green range"
+( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" HEAD -- true >/dev/null ) || bad "check-commit-order: empty range failed"
+st=0
+( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" >/dev/null 2>&1 ) || st=$?
+[ "$st" -eq 2 ] || bad "check-commit-order: usage exit $st"
+rm -rf "$ord"
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

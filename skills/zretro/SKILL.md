@@ -12,6 +12,7 @@ Read `~/.agents/skills/retro/SKILL.md` and follow it, with these overrides:
 - Rule or skill text is the last resort. Write `no structural fix because <reason>` before you add one.
 - When a barrier replaces a sentence in a skill, rule or AGENTS.md, delete the sentence in the same change.
 - Start from `scripts/route-audit.sh` (agent-workflow): every inline edit without a reason and every Medium+ edit without zsensei is a mistake to retro.
+- At close, write `.scratch/<slug>/calibracion.md` with the fields zstack section 5 names.
 - Present the candidates ranked, as Matt's retro says. The user picks.
 - Personal repos: implement the picked barriers in the same PR or a follow-up PR.
 - Client repos: write the proposal to `.scratch/retro-<date>.md` only. Brayan approves before anything changes.

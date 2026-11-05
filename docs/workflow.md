@@ -1,6 +1,6 @@
 # Workflow
 
-Size picks the path. Risk outranks file count. Auth, permissions, personal data, payments, a new secret or credential, or a new integration is critical at any file count.
+Size picks the path. Risk outranks file count. Section 1 of `skills/zstack/SKILL.md` applies the token budget before the size line. The path below uses the printed size. Auth, permissions, personal data, payments, a new secret or credential, or a new integration is critical at any file count.
 
 `skills/zstack` classifies and calls only that path, and is always on through `rules/zstack.mdc`. Code is written by the `zninja` subagent with `poteto-mode`. The inline trigger is in section 3 of `skills/zstack/SKILL.md`. Full map: `docs/software-factory.md`. On OpenCode, Sisyphus may split a large change, and it follows the same skill. It does not open the other installed routers. This repo does not rewrite Sisyphus on disk.
 

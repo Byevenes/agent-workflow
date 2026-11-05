@@ -34,6 +34,14 @@ Size follows risk, not file count. If unsure, take the higher size.
 - **Large.** Several slices, or more than one session.
 - **Critical.** Auth, permissions, personal data, payments, secrets or credentials, or a new integration, at any file count. Never small.
 
+Risk picks the process. Tokens pick the ticket count. Before the size line, write `tokens_estimados` and `holgura`. The estimator supplies holgura. Both numbers are required. Then compute:
+
+`tickets = ceil(tokens_estimados * holgura / 150_000)`
+
+A Medium whose estimate is about 150k tokens promotes to Large and enters `ztickets`. Print the size after that promote. A Small stays Small. Critical stays Critical.
+
+Critical keeps the security path even when the ticket count is 1.
+
 Besides size, record verifiability, with the reason.
 
 - **Full.** The repo's automated checks (tests, type checks, lint, others it has) prove it is done. They must run green before done.
@@ -137,7 +145,7 @@ After each gate, append to `.scratch/commits.md`: slice, commit hash, each check
 
 Still only on Brayan's explicit order: push, MR or PR, merge, rebase, reset, amend, cherry-pick, `--force`, git config changes and hook installs.
 
-Retro (decisions #29, #30): run `zretro` at the end of every Medium, Large or Critical task, on a Small task that had an error, and every time the user corrects you. It asks first what code or structure change would have made the mistake impossible (domain model, type, test, lint or check.sh guard), prefers that over a new rule, and removes any rule text the fix replaces. Client repos: a `.scratch/` proposal only. Every size: end your final reply with this block, filled with facts from this session:
+Retro (decisions #29, #30): run `zretro` at the end of every Medium, Large or Critical task, on a Small task that had an error, and every time the user corrects you. It asks first what code or structure change would have made the mistake impossible (domain model, type, test, lint or check.sh guard), prefers that over a new rule, and removes any rule text the fix replaces. Client repos: a `.scratch/` proposal only. At close, write `.scratch/<slug>/calibracion.md` with tokens_estimados, holgura, tickets, tokens_reales, the size by risk, and the printed size. Every size: end your final reply with this block, filled with facts from this session:
 
 ```
 zstack check

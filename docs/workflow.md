@@ -51,8 +51,12 @@ Inline runs skip the Router->>Impl handoff.
 
 - **Small.** One clear area, one session, no sensitive boundary. `zgrill` (grill-me) only if a decision is open. Then `zninja` with `poteto-mode`. A focused test if behavior changes. No spec. No PRD, Figma, or Stitch unless the user points at one. No `zsensei`, no `security-auditor`.
 - **Medium.** Several pieces, one session, and none of the critical boundaries. `zgrill` (grill-with-docs), then `zspec` (to-spec). `prd-td-coherence` only when a PRD and a design already exist. `poteto-mode` with pstack's `tdd`. `zsensei` loads `code-review-and-quality` once. `zretro` once. Read a visual reference only when one exists.
-- **Large.** Several slices or more than one session, and none of the critical boundaries. `zgrill` or `wayfinder`, then `zspec` and `ztickets`. A human gate before code. Then the slice loop: one new session per ticket, checks, local commit, stop. A recovery plan does not replace that new session. Then `blast-radius`, the same `zsensei`, and `zretro`.
+- **Large.** Several slices or more than one session, and none of the critical boundaries. `zgrill` or `wayfinder`, then `zspec` and `ztickets`. A human gate before code. Then the slice loop: one new session per ticket, checks, local commit, stop. A recovery plan does not replace that new session. Then `blast-radius` (`skills/blast-radius/SKILL.md`, `scripts/blast-radius-callers.sh`), the same `zsensei`, and `zretro`. The caller report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one.
 - **Critical.** Auth, permissions, personal data, payments, a new secret or credential, or a new integration, at any file count. Its own sequence: `zgrill`, `zspec`, `poteto-mode` with `security-and-hardening`, `zsensei`, then `security-auditor`. It does not stop at the medium or large boundary check.
+
+## Slice verification
+
+Run the same suite on the base branch and on HEAD with `scripts/classify-test-failures.sh`. A HEAD failure is env-known only when the same id and the same detail fail on the base branch. Real failures block the slice. With no base result, every HEAD failure is real.
 
 ## Examples
 

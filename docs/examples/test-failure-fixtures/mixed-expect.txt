@@ -1,0 +1,4 @@
+env-known	kept.same	same detail
+env-known	net.timeout	dial timed out
+real	fresh.one	boom
+real	unit.add	expected 1

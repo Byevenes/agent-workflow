@@ -328,6 +328,11 @@ login=$(gh api user -q .login 2>/dev/null || true)
 if [ -z "$login" ]; then echo "warn merge-guard: gh not logged in, cannot check the agent identity"
 elif [ "$login" = Byevenes ]; then echo "todo merge-guard: gh acts as Byevenes (admin); only text stops the agent from merging"
 else echo "ok merge-guard: gh acts as $login, not the repo admin"; fi
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "ok gitleaks: present"
+else
+  echo "warn gitleaks: missing (install on the machine; see docs/security-scan.md)"
+fi
 echo "$scan_info"
 
 exit "$fail"

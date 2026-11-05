@@ -17,4 +17,4 @@
 - **Holgura**: the slack factor on a token estimate. The estimator names it. This repo sets no default.
 - **Ticket count**: how many token-budget sessions the estimate covers once holgura is applied.
 - **Printed size**: the size on the classification line, after Classify applies risk and the token budget.
-- **Repo-root path**: an inline file citation from the repository root, such as `src/Foo/Bar.cs`. `scripts/check-repo-paths.sh` rejects a bare name that is not at that root, a working-directory prefix, and a machine-absolute path.
+- **Repo-root path**: a file citation from the repository root, such as `src/Foo/Bar.cs`, written as inline code or as a markdown link target. `scripts/check-repo-paths.sh` rejects a bare name that is not at that root, a working-directory prefix, and a machine-absolute path. It removes a trailing line anchor before the lookup and ignores a glob.

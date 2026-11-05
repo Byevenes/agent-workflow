@@ -72,6 +72,7 @@ if printf '%s\n' "$zn_front" | grep -q -- '-fast'; then bad "zninja: must not se
 zs_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agents/zsensei.md)
 if ! printf '%s\n' "$zs_front" | grep -qx 'model: claude-opus-5-5-medium'; then bad "zsensei: model must be claude-opus-5-5-medium"; fi
 if ! printf '%s\n' "$zs_front" | grep -qx 'readonly: true'; then bad "zsensei: readonly must be true"; fi
+grep -qF 'Every Task call to zsensei passes model: claude-opus-5-5-medium.' skills/zstack/SKILL.md || bad "zstack: zsensei Task model sentence missing"
 grep -q 'issue #58' skills/zstack/SKILL.md || bad "zstack: inline fallback must cite issue #58"
 grep -qF '.cursor/agents/' skills/zstack/SKILL.md || bad "zstack: inline fallback must name .cursor/agents/"
 check_project_agents
@@ -104,11 +105,40 @@ tmp=$(mktemp -d)
 mkdir -p "$tmp/.cursor/skills/realdir" "$tmp/.config/opencode/skills"
 ln -s "$tmp/nowhere" "$tmp/.cursor/skills/broken"
 ln -s "$tmp/nowhere" "$tmp/.config/opencode/skills/broken"
+mkdir -p "$tmp/.cursor/plugins/local/other-plugin" "$tmp/.cursor/plugins/local/zstack-agents/agents"
+printf 'marker\n' > "$tmp/.cursor/plugins/local/other-plugin/marker"
+printf 'canary\n' > "$tmp/plugin-canary"
+ln -s "$tmp/plugin-canary" "$tmp/.cursor/plugins/local/zstack-agents/agents/zsensei.md"
 HOME=$tmp scripts/link.sh >/dev/null
 if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/broken" ]; then bad "link.sh: keeps a broken skill symlink"; fi
 [ -d "$tmp/.cursor/skills/realdir" ] || bad "link.sh: removed a real skill folder"
 for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/skills/blast-radius .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/skills/blast-radius .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
+done
+plug="$tmp/.cursor/plugins/local/zstack-agents"
+manifest="$plug/.cursor-plugin/plugin.json"
+if [ ! -f "$manifest" ]; then
+  bad "link.sh: plugin manifest missing"
+else
+  grep -q '"name": "zstack-agents"' "$manifest" || bad "link.sh: plugin manifest name missing"
+  grep -q '"agents": "./agents/"' "$manifest" || bad "link.sh: plugin manifest agents path missing"
+fi
+for agent in zigl zninja zsensei; do
+  p="$plug/agents/$agent.md"
+  if [ -L "$p" ] || [ ! -f "$p" ]; then bad "link.sh: plugin agent $agent is not a regular file"; fi
+  cmp -s "agents/$agent.md" "$p" || bad "link.sh: plugin agent $agent differs from the repo"
+done
+cmp -s "$tmp/plugin-canary" - <<'EOF' || bad "link.sh: followed the zsensei symlink and changed the canary"
+canary
+EOF
+cmp -s "$tmp/.cursor/plugins/local/other-plugin/marker" - <<'EOF' || bad "link.sh: changed a sibling plugin marker"
+marker
+EOF
+HOME=$tmp scripts/link.sh >/dev/null
+for agent in zigl zninja zsensei; do
+  p="$plug/agents/$agent.md"
+  if [ -L "$p" ] || [ ! -f "$p" ]; then bad "link.sh: second run plugin agent $agent is not a regular file"; fi
+  cmp -s "agents/$agent.md" "$p" || bad "link.sh: second run plugin agent $agent differs from the repo"
 done
 check_project_agents
 rm -rf "$tmp"

@@ -63,6 +63,32 @@ for agent in zigl zninja zsensei; do
     fail=1
   fi
 done
+manifest="$HOME/.cursor/plugins/local/zstack-agents/.cursor-plugin/plugin.json"
+if [ ! -f "$manifest" ]; then
+  echo "missing plugin manifest $manifest (run scripts/link.sh)"
+  fail=1
+elif ! grep -q '"name": "zstack-agents"' "$manifest" || ! grep -q '"agents": "./agents/"' "$manifest"; then
+  echo "fail plugin manifest $manifest (needs name zstack-agents and agents ./agents/)"
+  fail=1
+else
+  echo "ok plugin manifest"
+fi
+for agent in zigl zninja zsensei; do
+  dest="$HOME/.cursor/plugins/local/zstack-agents/agents/$agent.md"
+  src="$ROOT/agents/$agent.md"
+  if [ -L "$dest" ]; then
+    echo "fail plugin agent $agent is a symlink (run scripts/link.sh)"
+    fail=1
+  elif [ ! -f "$dest" ]; then
+    echo "missing plugin agent $dest (run scripts/link.sh)"
+    fail=1
+  elif ! cmp -s "$src" "$dest"; then
+    echo "fail plugin agent $agent differs from agents/$agent.md"
+    fail=1
+  else
+    echo "ok plugin agent $agent"
+  fi
+done
 for a in zstack zninja zsensei; do
   f="$HOME/.config/opencode/agents/$a.md"
   if [ -f "$f" ] && grep -Eq '^model: *"?opencode/' "$f"; then echo "fail opencode $a: model opencode/* (Zen); client code must not go to Zen"; fail=1

@@ -64,6 +64,7 @@ Slice close, before the session ends:
 
 - Checks for this ticket are green.
 - The commit is only this ticket, and the message comes from it.
+- An approved out-of-scope fix is already a `fix:` commit before this ticket's commit.
 - The worktree has no leftover diff for a later ticket.
 - The next ticket is not started here.
 
@@ -86,6 +87,7 @@ Inline: read `poteto-mode` by the path in the intro and follow it. Load the skil
 - Small: the task. One focused test if behavior changes.
 - Medium and up: the spec path. `poteto-mode` with pstack's `tdd` (`pstack-tdd` on OpenCode).
 - Large and critical: a new `zninja` per slice, in order, each in a fresh context. That is the Slice loop. Do not keep the session and switch tickets under a recovery plan.
+- Out-of-scope bug: stop and ask. The protocol is in `agents/zninja.md`. An approved fix is a `fix:` commit before the slice commit, never inside it.
 - Critical: tell it to apply `security-and-hardening`. Inline: apply it here.
 
 On the subagent path, reject the report if it lacks the line `poteto-mode: loaded`. Relaunch it once with that requirement explicit. On the inline path, include that line in this session's report.
@@ -119,7 +121,7 @@ Before drafting a client delivery note, copy `docs/examples/nota-de-entrega.md` 
 
 Merge: only Brayan merges, and only on his explicit order, in every repo. Never merge, enable auto-merge, or merge a PR yourself as a shortcut. Client repos: never `--force`, no push, MR or PR without Brayan's explicit order, stay inside the task worktree, and every step needs his approval except the local slice commit below.
 
-Client slice commits (local only). Normal flow is the Slice loop in section 2: one ticket, one new session, checks, commit gate, one local commit, log in `.scratch/commits.md`, then stop. The next ticket starts in a new session. A recovery plan does not replace that new session. No extra ok: the slices were approved before code, each slice is one commit, and its message comes from the slice's issue. If the slice's scope changed from what was approved, do not commit: stop and tell Brayan. Recovery case: if, when the gate starts, uncommitted changes span more than one slice (or mix slices in one file), stop, show Brayan the commit plan (commits, files or hunks, messages) and wait for his ok before the first commit. That case is a failed gate, not the way to open the next ticket. Check detection (technology-agnostic), by priority: 1) the client KDB or `commit_checks` / `push_checks` in `clients.toml`; 2) what the repo already defines (package.json scripts, Makefile, `.sln`/`.csproj`, pyproject/tox, `go.mod`, `Cargo.toml`, `.pre-commit-config.yaml`; CI config as a reference for what the pipeline runs). Never invent checks: if none is found, do not commit, tell Brayan. Never install anything in a client repo: no hooks, no `core.hooksPath`, no new `.husky/`, `.githooks/` or pre-commit config.
+Client slice commits (local only). Normal flow is the Slice loop in section 2: one ticket, one new session, checks, commit gate, one local commit, log in `.scratch/commits.md`, then stop. The next ticket starts in a new session. A recovery plan does not replace that new session. No extra ok: the slices were approved before code, each slice is one commit, and its message comes from the slice's issue. An approved out-of-scope bug is a separate `fix:` commit before that slice commit, not part of it. If the slice's scope changed from what was approved, do not commit: stop and tell Brayan. Recovery case: if, when the gate starts, uncommitted changes span more than one slice (or mix slices in one file), stop, show Brayan the commit plan (commits, files or hunks, messages) and wait for his ok before the first commit. That case is a failed gate, not the way to open the next ticket. Check detection (technology-agnostic), by priority: 1) the client KDB or `commit_checks` / `push_checks` in `clients.toml`; 2) what the repo already defines (package.json scripts, Makefile, `.sln`/`.csproj`, pyproject/tox, `go.mod`, `Cargo.toml`, `.pre-commit-config.yaml`; CI config as a reference for what the pipeline runs). Never invent checks: if none is found, do not commit, tell Brayan. Never install anything in a client repo: no hooks, no `core.hooksPath`, no new `.husky/`, `.githooks/` or pre-commit config.
 
 Commit gate (light, every slice), in order; any failure means no commit: report the step and its real output, and stop.
 1. Format and lint, only if the repo already uses them.

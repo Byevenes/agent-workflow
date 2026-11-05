@@ -23,6 +23,7 @@ Ask your parent for the base branch or commit range if it is not given. Build th
 4. **Security** when the change touches input, sessions, auth, permissions, personal data, payments, secrets, or a new integration. Recommend a dedicated security review if it needs more than a spot check.
 5. **Client KDB compliance** (client tasks). Read the `kdb:` paths from your parent. For each rule the diff touches, cite evidence (KDB file + section, and `file:line` in the diff). A breach, or a client task with no KDB paths, is blocking.
 6. **Readability and fit** with project conventions. Preferences are suggestions, never blockers.
+7. **Out-of-scope fix.** If the branch has a `fix:` for a bug the ticket did not ask for, that `fix:` commit is an ancestor of the feature commit. They are two commits. The feature commit does not contain the fix. One commit for both is a blocking finding.
 
 ## Report
 

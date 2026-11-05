@@ -13,6 +13,24 @@ cd "$(dirname "$0")/.."
 fail=0
 bad() { echo "FAIL $*"; fail=1; }
 
+argv_secret_hit() {
+  scan_root=$1
+  scan_hit=0
+  scan_flag=$(printf '%s%s' '--api-' 'key')
+  hits=$(grep -rlF -- "$scan_flag" "$scan_root" || true)
+  if [ -n "$hits" ]; then
+    printf '%s\n' "argv secret: $scan_flag" "$hits"
+    scan_hit=1
+  fi
+  scan_flag=$(printf '%s%s' '--auth-' 'token')
+  hits=$(grep -rlF -- "$scan_flag" "$scan_root" || true)
+  if [ -n "$hits" ]; then
+    printf '%s\n' "argv secret: $scan_flag" "$hits"
+    scan_hit=1
+  fi
+  return "$scan_hit"
+}
+
 check_project_agents() {
   for agent in zigl zninja zsensei; do
     p=".cursor/agents/$agent.md"
@@ -86,6 +104,23 @@ grep -qF 'Critical keeps the security path even when the ticket count is 1' "$zs
 cal='.scratch/<slug>/calibracion.md'
 grep -qF "$cal" "$zs" || bad "zstack: calibration log path missing"
 grep -qF "$cal" skills/zretro/SKILL.md || bad "zretro: calibration log path missing"
+mm=docs/model-matrix.md
+grep -qF 'claude-opus-5-5-medium' "$mm" || bad "model-matrix: Opus slug missing"
+grep -qF 'The review role is Claude Opus fixed' "$mm" || bad "model-matrix: Opus pin missing"
+grep -qF 'no quota fallback that downgrades judgment' "$mm" || bad "model-matrix: review downgrade missing"
+grep -qF 'inherit-parent' "$mm" || bad "model-matrix: quota fallback missing"
+grep -qF 'docs/model-matrix.md' "$zs" || bad "zstack: model matrix pointer missing"
+grep -qF '## Modelos' "$zs" || bad "zstack: Large close model table missing"
+grep -qF 'docs/model-matrix.md' skills/zretro/SKILL.md || bad "zretro: model matrix pointer missing"
+grep -qF '## Modelos' skills/zretro/SKILL.md || bad "zretro: Large close model table missing"
+grep -qF 'fallback = []' docs/examples/model-matrix.toml || bad "model-matrix.toml: review fallback is not empty"
+grep -qF 'claude-opus-5-5-medium' docs/examples/model-matrix.toml || bad "model-matrix.toml: Opus slug missing"
+grep -qF 'grok-4.7-medium' docs/examples/model-matrix.toml || bad "model-matrix.toml: implement slug missing"
+ex=docs/examples/calibracion-large.md
+grep -qF '## Modelos' "$ex" || bad "calibracion-large: Modelos missing"
+grep -qF '| zsensei | review | claude-opus-5-5-medium | claude-opus-5-5-medium | no |' "$ex" || bad "calibracion-large: review row drifted"
+grep -qF '| zninja | implement | grok-4.7-medium | grok-4.7-medium | no |' "$ex" || bad "calibracion-large: implement row drifted"
+if [ -e rules/pstack-models.mdc ] || [ -e .cursor/rules/pstack-models.mdc ]; then bad "model-matrix: pstack-models.mdc must stay outside this repo"; fi
 
 if grep -rnE 'SDD|sdd-|tech-lead|test-engineer' skills/zstack rules agents; then bad "zstack copies reference SDD, tech-lead or test-engineer"; fi
 
@@ -401,6 +436,19 @@ st=0
 ( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" >/dev/null 2>&1 ) || st=$?
 [ "$st" -eq 2 ] || bad "check-commit-order: usage exit $st"
 rm -rf "$ord"
+
+sec=$(mktemp -d)
+printf '%s\n' 'export CURSOR_API_KEY' > "$sec/env.sh"
+argv_secret_hit "$sec" || bad "argv secret check fails a script that only names the env var"
+printf '%s\n' "agent $(printf '%s%s' '--api-' 'key')" > "$sec/flag.sh"
+if argv_secret_hit "$sec" >/dev/null 2>&1; then bad "argv secret check passes a script that passes the key flag on argv"; fi
+rm -f "$sec/flag.sh"
+printf '%s\n' "agent $(printf '%s%s' '--auth-' 'token')" > "$sec/token.sh"
+if argv_secret_hit "$sec" >/dev/null 2>&1; then bad "argv secret check passes a script that passes the auth token flag on argv"; fi
+rm -rf "$sec"
+for scan_root in scripts hooks .githooks; do
+  argv_secret_hit "$scan_root" || bad "argv secret flag in $scan_root"
+done
 
 br=docs/examples/blast-radius-fixtures
 sh scripts/blast-radius-callers.sh "$br/graph.txt" Order.Save --expect "$br/save-callers.txt" >/dev/null || bad "blast-radius: full caller fixture failed"

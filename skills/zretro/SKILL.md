@@ -13,6 +13,7 @@ Read `~/.agents/skills/retro/SKILL.md` and follow it, with these overrides:
 - When a barrier replaces a sentence in a skill, rule or AGENTS.md, delete the sentence in the same change.
 - Start from `scripts/route-audit.sh` (agent-workflow): every inline edit without a reason and every Medium+ edit without zsensei is a mistake to retro.
 - At close, write `.scratch/<slug>/calibracion.md` with the fields zstack section 5 names.
+- On a Large or Critical close, add a `## Modelos` table to that file, one row per subagent, using the shape in `docs/examples/calibracion-large.md`. Read `docs/model-matrix.md` for the preferred slug. Keep the review role on its Opus slug. A quota miss there is stopped, not a cheaper model.
 - Present the candidates ranked, as Matt's retro says. The user picks.
 - Personal repos: implement the picked barriers in the same PR or a follow-up PR.
 - Client repos: write the proposal to `.scratch/retro-<date>.md` only. Brayan approves before anything changes.

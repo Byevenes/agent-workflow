@@ -113,6 +113,10 @@ grep -qF 'docs/model-matrix.md' "$zs" || bad "zstack: model matrix pointer missi
 grep -qF '## Modelos' "$zs" || bad "zstack: Large close model table missing"
 grep -qF 'docs/model-matrix.md' skills/zretro/SKILL.md || bad "zretro: model matrix pointer missing"
 grep -qF '## Modelos' skills/zretro/SKILL.md || bad "zretro: Large close model table missing"
+grep -qF 'pendiente' skills/zretro/SKILL.md || bad "zretro: pendiente missing"
+grep -qF 'confirmado' skills/zretro/SKILL.md || bad "zretro: confirmado missing"
+grep -qF 'revertido' skills/zretro/SKILL.md || bad "zretro: revertido missing"
+grep -qF 'Review every pendiente in the retro log before proposing a new change.' skills/zretro/SKILL.md || bad "zretro: pending review sentence missing"
 grep -qF 'fallback = []' docs/examples/model-matrix.toml || bad "model-matrix.toml: review fallback is not empty"
 grep -qF 'claude-opus-5-5-medium' docs/examples/model-matrix.toml || bad "model-matrix.toml: Opus slug missing"
 grep -qF 'grok-4.7-medium' docs/examples/model-matrix.toml || bad "model-matrix.toml: implement slug missing"
@@ -383,7 +387,7 @@ grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh scripts/retro-log.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then
@@ -512,6 +516,94 @@ sh scripts/classify-test-failures.sh "$tf/malformed.txt" >/dev/null 2>&1 || st=$
 st=0
 sh scripts/classify-test-failures.sh >/dev/null 2>&1 || st=$?
 [ "$st" -eq 2 ] || bad "classify: usage exit $st"
+
+rl=$(mktemp -d)
+trap 'rm -rf "$rl"' EXIT
+retro() {
+  RETRO_ROOT=$rl RETRO_DATE=2026-11-05 sh scripts/retro-log.sh "$@"
+}
+tab=$(printf '\t')
+mkdir -p "$rl/skills"
+st=0
+out=$(retro pending) || st=$?
+[ "$st" -eq 0 ] || bad "retro-log: empty pending exit $st"
+[ -z "$out" ] || bad "retro-log: empty pending printed"
+st=0
+retro begin --path 'a/../b' >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "retro-log: dotdot path exit $st"
+printf 'alpha-old\n' > "$rl/skills/a.md"
+printf 'bravo-old\n' > "$rl/skills/b.md"
+printf 'charlie-old\n' > "$rl/skills/c.md"
+cp "$rl/skills/b.md" "$rl/bravo-old"
+cp "$rl/skills/c.md" "$rl/charlie-old"
+id1=$(retro begin --path skills/a.md)
+[ "$id1" = 1 ] || bad "retro-log: first id is $id1"
+printf 'alpha-new\n' > "$rl/skills/a.md"
+retro seal "$id1" --error 'mistake a'
+pend=$(retro pending)
+printf '%s\n' "$pend" | grep -q "^${id1}${tab}2026-11-05${tab}pendiente${tab}" || bad "retro-log: pending row"
+printf '%s\n' "$pend" | grep -q 'mistake a' || bad "retro-log: pending error"
+got=$(retro confirm "$id1")
+[ "$got" = "$id1" ] || bad "retro-log: confirm printed $got"
+grep -q "^${id1}${tab}2026-11-05${tab}confirmado${tab}" "$rl/.scratch/retro-log.tsv" || bad "retro-log: confirm state"
+out=$(retro pending) || bad "retro-log: pending after confirm failed"
+[ -z "$out" ] || bad "retro-log: confirm left a pendiente row"
+before=$(cksum "$rl/.scratch/retro-log.tsv")
+st=0
+retro confirm "$id1" >/dev/null 2>&1 || st=$?
+[ "$st" -ne 0 ] || bad "retro-log: second confirm exited 0"
+after=$(cksum "$rl/.scratch/retro-log.tsv")
+[ "$before" = "$after" ] || bad "retro-log: second confirm changed the log"
+id2=$(retro begin --path skills/b.md)
+printf 'bravo-new\n' > "$rl/skills/b.md"
+retro seal "$id2" --error 'mistake b'
+out=$(retro revert "$id2")
+printf '%s\n' "$out" | grep -qx "$id2" || bad "retro-log: revert did not print the id"
+printf '%s\n' "$out" | grep -qx restored || bad "retro-log: revert did not print restored"
+cmp -s "$rl/skills/b.md" "$rl/bravo-old" || bad "retro-log: revert bytes"
+grep -q "^${id2}${tab}2026-11-05${tab}revertido${tab}" "$rl/.scratch/retro-log.tsv" || bad "retro-log: revert state"
+id3=$(retro begin --path skills/c.md)
+printf 'charlie-sealed\n' > "$rl/skills/c.md"
+retro seal "$id3" --error 'mistake c'
+printf 'charlie-later\n' > "$rl/skills/c.md"
+cp "$rl/skills/c.md" "$rl/charlie-later"
+st=0
+out=$(retro revert "$id3") || st=$?
+[ "$st" -eq 3 ] || bad "retro-log: dirty revert exit $st"
+[ "$out" = dirty ] || bad "retro-log: dirty revert printed $out"
+cmp -s "$rl/skills/c.md" "$rl/charlie-later" || bad "retro-log: dirty revert changed the file"
+pend=$(retro pending)
+printf '%s\n' "$pend" | grep -q "^${id3}${tab}2026-11-05${tab}pendiente${tab}" || bad "retro-log: dirty revert left the row"
+out=$(retro revert --force "$id3")
+printf '%s\n' "$out" | grep -qx restored || bad "retro-log: force did not restore"
+cmp -s "$rl/skills/c.md" "$rl/charlie-old" || bad "retro-log: force bytes"
+grep -q "^${id3}${tab}2026-11-05${tab}revertido${tab}" "$rl/.scratch/retro-log.tsv" || bad "retro-log: force state"
+id4=$(retro begin --path skills/d.md)
+printf 'added\n' > "$rl/skills/d.md"
+retro seal "$id4" --error 'added file'
+retro revert "$id4" >/dev/null
+[ ! -e "$rl/skills/d.md" ] || bad "retro-log: revert left an added file"
+printf 'echo-old\n' > "$rl/skills/e.md"
+cp "$rl/skills/e.md" "$rl/echo-old"
+id5=$(retro begin --path skills/e.md)
+rm "$rl/skills/e.md"
+retro seal "$id5" --error 'deleted file'
+pend=$(retro pending)
+printf '%s\n' "$pend" | grep -q "^${id5}${tab}2026-11-05${tab}pendiente${tab}missing${tab}0${tab}" || bad "retro-log: deleted file fingerprint"
+retro revert "$id5" >/dev/null
+cmp -s "$rl/skills/e.md" "$rl/echo-old" || bad "retro-log: revert did not restore a deleted file"
+printf 'fox-old\n' > "$rl/skills/f.md"
+id6=$(retro begin --path skills/f.md)
+printf 'fox-new\n' > "$rl/skills/f.md"
+cp "$rl/skills/f.md" "$rl/fox-new"
+retro seal "$id6" --error 'lost snapshot'
+rm -f "$rl/.scratch/retro-snapshots/$id6" "$rl/.scratch/retro-snapshots/$id6.missing"
+out=$(retro revert "$id6")
+printf '%s\n' "$out" | grep -qx marked-only || bad "retro-log: missing snapshot did not print marked-only"
+cmp -s "$rl/skills/f.md" "$rl/fox-new" || bad "retro-log: missing snapshot changed the file"
+grep -q "^${id6}${tab}2026-11-05${tab}revertido${tab}" "$rl/.scratch/retro-log.tsv" || bad "retro-log: missing snapshot state"
+rm -rf "$rl"
+trap - EXIT
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

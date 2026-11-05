@@ -2,10 +2,10 @@
 set -eu
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX
 if [ -n "${GIT_CONFIG_COUNT:-}" ]; then
-  i=0
-  while [ "$i" -lt "$GIT_CONFIG_COUNT" ]; do
-    unset "GIT_CONFIG_KEY_$i" "GIT_CONFIG_VALUE_$i"
-    i=$((i + 1))
+  _i=0
+  while [ "$_i" -lt "$GIT_CONFIG_COUNT" ]; do
+    unset "GIT_CONFIG_KEY_${_i}" "GIT_CONFIG_VALUE_${_i}"
+    _i=$((_i + 1))
   done
 fi
 unset GIT_CONFIG_COUNT GIT_CONFIG_PARAMETERS
@@ -26,9 +26,29 @@ grep -q 'Never invent checks' skills/zstack/SKILL.md || bad "zstack: client rule
 grep -q 'Pre-push gate' skills/zstack/SKILL.md || bad "zstack: client rule must define the pre-push gate"
 grep -q 'push_checks' docs/examples/clients.toml.example || bad "clients.toml.example: push_checks missing"
 grep -q 'Recovery case' skills/zstack/SKILL.md || bad "zstack: client commit rule must define the mixed-slices recovery case"
+grep -q '### Slice loop' skills/zstack/SKILL.md || bad "zstack: slice loop missing"
+grep -q 'A recovery plan does not replace that new session' skills/zstack/SKILL.md || bad "zstack: recovery must not replace a new session per slice"
+grep -q 'The next ticket is not started here' skills/zstack/SKILL.md || bad "zstack: slice close must require a clean session"
+grep -q 'scripts/check-commit-order.sh' skills/zstack/SKILL.md || bad "zstack: commit-order gate missing"
+grep -q 'scripts/check-commit-order.sh' docs/scripts.md || bad "scripts.md: commit-order gate missing"
+grep -q 'explicit yes' agents/zninja.md || bad "zninja: out-of-scope bug must stop for an explicit yes"
+grep -q 'Do not mix the bugfix and the feature in one commit' agents/zninja.md || bad "zninja: bugfix and feature may share a commit"
+grep -q 'the `fix:` commit is an ancestor of the feature commit' agents/zninja.md || bad "zninja: review checklist missing"
+fixline=$(grep -n 'fix: keep the empty input on the existing path' agents/zninja.md | head -1 | cut -d: -f1)
+featline=$(grep -n "feat: add the ticket's slice" agents/zninja.md | head -1 | cut -d: -f1)
+if [ -z "$fixline" ] || [ -z "$featline" ] || [ "$fixline" -ge "$featline" ]; then bad "zninja: fix: example is not before the feature example"; fi
+grep -q 'that `fix:` commit is an ancestor of the feature commit' agents/zsensei.md || bad "zsensei: out-of-scope history checklist missing"
 grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
 grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"
 grep -q 'never use `--no-verify`' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid --no-verify"
+
+zs=skills/zstack/SKILL.md
+grep -qF 'tickets = ceil(tokens_estimados * holgura / 150_000)' "$zs" || bad "zstack: token ticket formula missing"
+grep -qF 'Medium whose estimate is about 150k tokens promotes to Large' "$zs" || bad "zstack: Medium promote to Large missing"
+grep -qF 'Critical keeps the security path even when the ticket count is 1' "$zs" || bad "zstack: Critical security path for one ticket missing"
+cal='.scratch/<slug>/calibracion.md'
+grep -qF "$cal" "$zs" || bad "zstack: calibration log path missing"
+grep -qF "$cal" skills/zretro/SKILL.md || bad "zretro: calibration log path missing"
 
 if grep -rnE 'SDD|sdd-|tech-lead|test-engineer' skills/zstack rules agents; then bad "zstack copies reference SDD, tech-lead or test-engineer"; fi
 
@@ -262,7 +282,7 @@ grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then
@@ -272,11 +292,49 @@ if [ -z "${CHECK_NESTED:-}" ]; then
   git -C "$hk/p" remote add origin https://example.invalid/p.git
   git -C "$hk/p" worktree add -q "$hk/w" -b w 2>/dev/null
   before=$(git -C "$hk/p" config --local --list | sort)
-  GIT_DIR="$hk/p/.git/worktrees/w" GIT_INDEX_FILE="$hk/p/.git/worktrees/w/index" CHECK_NESTED=1 sh scripts/check.sh >/dev/null 2>&1 || bad "check.sh fails when run with a hook's GIT_DIR"
+  GIT_DIR="$hk/p/.git/worktrees/w" GIT_INDEX_FILE="$hk/p/.git/worktrees/w/index" GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=user.email GIT_CONFIG_VALUE_0=leaked@example GIT_CONFIG_KEY_1=user.name GIT_CONFIG_VALUE_1=leaked CHECK_NESTED=1 sh scripts/check.sh >/dev/null 2>&1 || bad "check.sh fails when run with a hook's GIT_DIR"
   after=$(git -C "$hk/p" config --local --list | sort)
   [ "$before" = "$after" ] || bad "check.sh under a hook's GIT_DIR changed the parent repo config: $(printf '%s\n' "$after" | grep -vxF "$before" | tr '\n' ' ')"
   rm -rf "$hk"
 fi
+
+ord=$(mktemp -d)
+git init -q "$ord/r"
+git -C "$ord/r" config user.email t@t
+git -C "$ord/r" config user.name t
+printf 'ok\n' > "$ord/r/marker"
+git -C "$ord/r" add marker
+git -C "$ord/r" commit -q -m base
+obase=$(git -C "$ord/r" rev-parse HEAD)
+printf 'bad\n' > "$ord/r/marker"
+git -C "$ord/r" commit -q -am mid
+omid=$(git -C "$ord/r" rev-parse HEAD)
+printf 'ok\n' > "$ord/r/marker"
+git -C "$ord/r" commit -q -am tip
+otip=$(git -C "$ord/r" rev-parse HEAD)
+printf '#!/bin/sh\necho ran > "%s/hook-ran"\nexit 1\n' "$ord" > "$ord/r/.git/hooks/post-checkout"
+chmod +x "$ord/r/.git/hooks/post-checkout"
+repo=$(pwd)
+st=0
+out=$( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" "$obase" -- grep -qx ok marker 2>&1 ) || st=$?
+[ "$st" -ne 0 ] || bad "check-commit-order: passes a range whose middle commit is red"
+echo "$out" | grep -q "$omid" || bad "check-commit-order: does not name the red commit"
+[ "$(git -C "$ord/r" rev-parse HEAD)" = "$otip" ] || bad "check-commit-order: moved HEAD"
+[ -z "$(git -C "$ord/r" status --porcelain)" ] || bad "check-commit-order: dirtied the caller worktree"
+[ ! -e "$ord/hook-ran" ] || bad "check-commit-order: ran post-checkout"
+if git -C "$ord/r" config --local --get core.hooksPath >/dev/null 2>&1; then bad "check-commit-order: set core.hooksPath"; fi
+[ "$(git -C "$ord/r" worktree list | wc -l | tr -d ' ')" -eq 1 ] || bad "check-commit-order: left a worktree"
+rm -f "$ord/r/.git/hooks/post-checkout"
+git -C "$ord/r" checkout -q -b green "$obase"
+printf 'ok\n' > "$ord/r/other"
+git -C "$ord/r" add other
+git -C "$ord/r" commit -q -m good
+( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" "$obase" -- grep -qx ok marker >/dev/null ) || bad "check-commit-order: fails an all-green range"
+( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" HEAD -- true >/dev/null ) || bad "check-commit-order: empty range failed"
+st=0
+( cd "$ord/r" && "$repo/scripts/check-commit-order.sh" >/dev/null 2>&1 ) || st=$?
+[ "$st" -eq 2 ] || bad "check-commit-order: usage exit $st"
+rm -rf "$ord"
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

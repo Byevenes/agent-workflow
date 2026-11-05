@@ -1,6 +1,6 @@
 # Software factory
 
-How one task moves through this setup, from intake to retro. `skills/zstack/SKILL.md` is the source; this page is the map.
+How one task moves through this setup, from intake to retro. `skills/zstack/SKILL.md` is the source; this page is the map. Section 1 of that skill applies the token budget before the size line. This map uses the printed size.
 
 ```mermaid
 flowchart TD
@@ -8,7 +8,7 @@ flowchart TD
   rule --> rw[zstack classifies: zstack: size, verifiability — reason]
   rw -->|Small| sPlan[zgrill only if a decision is open]
   rw -->|Medium| mPlan[zgrill → zspec in .scratch/ · optional ADR / statechart]
-  rw -->|Large| lPlan[Medium + ztickets · wayfinder if multi-session]
+  rw -->|Large| lPlan[Medium + ztickets · one new session per slice]
   rw -->|Critical| cPlan[Large + security-and-hardening · formal-verification optional]
   lPlan --> gate{{User approval before code}}
   cPlan --> gate
@@ -28,7 +28,7 @@ flowchart TD
   check --> audit[scripts/route-audit.sh counts it from transcripts]
 ```
 
-The inline trigger is in section 3 of `skills/zstack/SKILL.md`. That `impl` step then runs in the same session. The check block records `zninja launched: no (inline: <reason>)`. `scripts/route-audit.sh` counts delegated launches only; inline runs show as not launched.
+The inline trigger is in section 3 of `skills/zstack/SKILL.md`. That `impl` step then runs in the same session. The check block records `zninja launched: no (inline: <reason>)`. `scripts/route-audit.sh` counts delegated launches only; inline runs show as not launched. Large repeats `impl` once per ticket, each in a new session (Slice loop in the skill). A recovery plan does not replace that new session.
 
 ## Where it is wired
 

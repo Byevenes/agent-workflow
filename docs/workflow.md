@@ -54,6 +54,10 @@ Inline runs skip the Router->>Impl handoff.
 - **Large.** Several slices or more than one session, and none of the critical boundaries. `zgrill` or `wayfinder`, then `zspec` and `ztickets`. A human gate before code. Then the slice loop: one new session per ticket, checks, local commit, stop. A recovery plan does not replace that new session. Then `blast-radius` (`skills/blast-radius/SKILL.md`, `scripts/blast-radius-callers.sh`), the same `zsensei`, and `zretro`. The caller report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one.
 - **Critical.** Auth, permissions, personal data, payments, a new secret or credential, or a new integration, at any file count. Its own sequence: `zgrill`, `zspec`, `poteto-mode` with `security-and-hardening`, `zsensei`, then `security-auditor`. It does not stop at the medium or large boundary check.
 
+## Slice verification
+
+Run the same suite on the base branch and on HEAD with `scripts/classify-test-failures.sh`. A HEAD failure is env-known only when the same id and the same detail fail on the base branch. Real failures block the slice. With no base result, every HEAD failure is real.
+
 ## Examples
 
 A button label change is small. The task is already clear, so `grill-me` is skipped. `poteto-mode` edits it. No spec and no review agent.

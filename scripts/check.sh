@@ -36,6 +36,11 @@ grep -qF 'including private methods and indirect callers' skills/blast-radius/SK
 grep -qF 'The check fails when the report misses one.' skills/blast-radius/SKILL.md || bad "blast-radius skill: coverage failure missing"
 grep -q 'scripts/blast-radius-callers.sh' docs/scripts.md || bad "scripts.md: blast-radius caller gate missing"
 grep -q 'scripts/blast-radius-callers.sh' agents/zninja.md || bad "zninja: blast-radius caller gate missing"
+for f in skills/zstack/SKILL.md docs/testing.md docs/workflow.md docs/software-factory.md docs/scripts.md agents/zninja.md; do
+  grep -q 'scripts/classify-test-failures.sh' "$f" || bad "$f: test failure classifier missing"
+  grep -qF 'A HEAD failure is env-known only when the same id and the same detail fail on the base branch.' "$f" || bad "$f: env-known rule missing"
+  grep -qF 'With no base result, every HEAD failure is real.' "$f" || bad "$f: missing-base rule missing"
+done
 grep -q 'explicit yes' agents/zninja.md || bad "zninja: out-of-scope bug must stop for an explicit yes"
 grep -q 'Do not mix the bugfix and the feature in one commit' agents/zninja.md || bad "zninja: bugfix and feature may share a commit"
 grep -q 'the `fix:` commit is an ancestor of the feature commit' agents/zninja.md || bad "zninja: review checklist missing"
@@ -266,7 +271,7 @@ grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then
@@ -345,6 +350,43 @@ sh scripts/blast-radius-callers.sh "$br/bad-edge.txt" Only.One >/dev/null 2>&1 |
 st=0
 sh scripts/blast-radius-callers.sh >/dev/null 2>&1 || st=$?
 [ "$st" -eq 2 ] || bad "blast-radius: usage exit $st"
+
+tf=docs/examples/test-failure-fixtures
+class_cmp() {
+  want=$1
+  exp=$2
+  shift 2
+  st=0
+  got=$(mktemp)
+  sh scripts/classify-test-failures.sh "$@" >"$got" || st=$?
+  [ "$st" -eq "$want" ] || bad "classify: $exp exit $st want $want"
+  cmp -s "$got" "$exp" || bad "classify: $exp mismatch"
+  rm -f "$got"
+}
+class_cmp 1 "$tf/mixed-expect.txt" "$tf/head-mixed.txt" "$tf/base.txt"
+class_cmp 0 "$tf/env-expect.txt" "$tf/head-env.txt" "$tf/base.txt"
+class_cmp 1 "$tf/new-expect.txt" "$tf/head-new.txt" "$tf/base.txt"
+class_cmp 1 "$tf/detail-expect.txt" "$tf/head-detail.txt" "$tf/base-detail.txt"
+class_cmp 1 "$tf/last-expect.txt" "$tf/head-last.txt" "$tf/base-detail.txt"
+st=0
+got=$(mktemp)
+sh scripts/classify-test-failures.sh "$tf/head-new.txt" >"$got" || st=$?
+[ "$st" -eq 1 ] || bad "classify: new without base exit $st"
+cmp -s "$got" "$tf/new-expect.txt" || bad "classify: new without base mismatch"
+if grep -q '^env-known' "$got"; then bad "classify: new without base labeled env-known"; fi
+rm -f "$got"
+st=0
+got=$(mktemp)
+sh scripts/classify-test-failures.sh "$tf/head-new.txt" "$tf/no-such-base.txt" >"$got" 2>/dev/null || st=$?
+[ "$st" -eq 2 ] || bad "classify: missing base file exit $st"
+if grep -q 'env-known' "$got"; then bad "classify: missing base file labeled env-known"; fi
+rm -f "$got"
+st=0
+sh scripts/classify-test-failures.sh "$tf/malformed.txt" >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "classify: malformed exit $st"
+st=0
+sh scripts/classify-test-failures.sh >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "classify: usage exit $st"
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

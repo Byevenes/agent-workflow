@@ -19,3 +19,5 @@
 - **Printed size**: the size on the classification line, after Classify applies risk and the token budget.
 - **Repo-root path**: an inline file citation from the repository root, such as `src/Foo/Bar.cs`. `scripts/check-repo-paths.sh` rejects a bare name that is not at that root, a working-directory prefix, and a machine-absolute path.
 - **In-module caller**: a symbol in the same module as a changed symbol that reaches it by calls that stay in that module. Private symbols count. The changed symbol is not its own caller. `scripts/blast-radius-callers.sh` lists them and fails when a report misses one.
+- **Env-known failure**: a HEAD failure whose id and detail also fail on the base branch. It does not block slice close. `scripts/classify-test-failures.sh` is the only thing that may apply this label.
+- **Real failure**: a HEAD failure that is new, different from the base branch, or has no base result. It blocks slice close.

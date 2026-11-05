@@ -136,6 +136,12 @@ if command -v shellcheck >/dev/null 2>&1; then shellcheck -e SC2016 scripts/*.sh
 
 if [ "$(date +%Y%m%d)" -ge 20261201 ] && { [ -e skills/route-work ] || grep -q route-work scripts/link.sh; }; then bad "route-work alias expired 2026-12-01: delete skills/route-work and its link.sh lines"; fi
 
+grep -qF 'to-techspec 7ce3d36805ad176911be8262a6e2dd3429cfd47b' skills/versions || bad "skills/versions: to-techspec pin missing"
+pin_back='delete the line or set the rev to `main` or `HEAD`, then run `scripts/link.sh` again'
+grep -qF "$pin_back" docs/scripts.md || bad "scripts.md: return to main missing"
+grep -qF "$pin_back" README.md || bad "README: return to main missing"
+grep -qF 'fetch-depth: 0' .github/workflows/check.yml || bad "check.yml: fetch-depth 0 missing"
+
 tmp=$(mktemp -d)
 mkdir -p "$tmp/.cursor/skills/realdir" "$tmp/.config/opencode/skills"
 ln -s "$tmp/nowhere" "$tmp/.cursor/skills/broken"
@@ -144,6 +150,7 @@ mkdir -p "$tmp/.cursor/plugins/local/other-plugin" "$tmp/.cursor/plugins/local/z
 printf 'marker\n' > "$tmp/.cursor/plugins/local/other-plugin/marker"
 printf 'canary\n' > "$tmp/plugin-canary"
 ln -s "$tmp/plugin-canary" "$tmp/.cursor/plugins/local/zstack-agents/agents/zsensei.md"
+unset LINK_SKILL_VERSIONS
 HOME=$tmp scripts/link.sh >/dev/null
 if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/broken" ]; then bad "link.sh: keeps a broken skill symlink"; fi
 [ -d "$tmp/.cursor/skills/realdir" ] || bad "link.sh: removed a real skill folder"
@@ -175,6 +182,66 @@ for agent in zigl zninja zsensei; do
   if [ -L "$p" ] || [ ! -f "$p" ]; then bad "link.sh: second run plugin agent $agent is not a regular file"; fi
   cmp -s "agents/$agent.md" "$p" || bad "link.sh: second run plugin agent $agent differs from the repo"
 done
+pin=7ce3d36805ad176911be8262a6e2dd3429cfd47b
+repo_root=$(CDPATH='' pwd)
+want=$(mktemp)
+git show "$pin:skills/to-techspec/SKILL.md" >"$want"
+for p in .cursor/skills/to-techspec .config/opencode/skills/to-techspec; do
+  target=$(readlink "$tmp/$p")
+  case "$target" in
+    *agent-workflow/skills/to-techspec/"$pin"*) ;;
+    *) bad "link.sh: $p is not pinned at $pin" ;;
+  esac
+  cmp -s "$want" "$tmp/$p/SKILL.md" || bad "link.sh: $p text differs from $pin"
+done
+rm -f "$want"
+[ "$(readlink "$tmp/.cursor/skills/zstack")" = "$repo_root/skills/zstack" ] || bad "link.sh: zstack left the checkout"
+pinned_once=$(readlink "$tmp/.cursor/skills/to-techspec")
+HOME=$tmp scripts/link.sh >/dev/null
+[ "$(readlink "$tmp/.cursor/skills/to-techspec")" = "$pinned_once" ] || bad "link.sh: second run moved to-techspec"
+old=38536b1f66b1e3f84277efa939812937228092ce
+vf=$(mktemp)
+printf '%s\n' "to-techspec $old" >"$vf"
+h=$(mktemp -d)
+HOME=$h LINK_SKILL_VERSIONS=$vf scripts/link.sh >/dev/null
+want=$(mktemp)
+git show "$old:skills/to-techspec/SKILL.md" >"$want"
+cmp -s "$want" "$h/.cursor/skills/to-techspec/SKILL.md" || bad "link.sh: override pin text differs from $old"
+if grep -q 'scripts/check-repo-paths.sh' "$h/.cursor/skills/to-techspec/SKILL.md"; then bad "link.sh: override pin still has the checkout marker"; fi
+[ "$(readlink "$h/.cursor/skills/zgrill")" = "$repo_root/skills/zgrill" ] || bad "link.sh: zgrill left the checkout"
+rm -rf "$h"
+rm -f "$want"
+for rev in HEAD main; do
+  printf '%s\n' "to-techspec $rev" >"$vf"
+  h=$(mktemp -d)
+  HOME=$h LINK_SKILL_VERSIONS=$vf scripts/link.sh >/dev/null
+  [ "$(readlink "$h/.cursor/skills/to-techspec")" = "$repo_root/skills/to-techspec" ] || bad "link.sh: rev $rev left the checkout"
+  [ "$(readlink "$h/.config/opencode/skills/to-techspec")" = "$repo_root/skills/to-techspec" ] || bad "link.sh: rev $rev left the opencode checkout"
+  rm -rf "$h"
+done
+(
+  trap 'git tag -d skill-pin-fixture >/dev/null 2>&1 || true' EXIT
+  git tag -d skill-pin-fixture >/dev/null 2>&1 || true
+  git tag skill-pin-fixture "$old"
+  printf '%s\n' 'to-techspec skill-pin-fixture' >"$vf"
+  h=$(mktemp -d)
+  HOME=$h LINK_SKILL_VERSIONS=$vf scripts/link.sh >/dev/null || exit 1
+  git show 'skill-pin-fixture:skills/to-techspec/SKILL.md' >"$h/want"
+  cmp -s "$h/want" "$h/.cursor/skills/to-techspec/SKILL.md" || exit 1
+  rm -rf "$h"
+) || bad "link.sh: tag pin text differs"
+if [ -n "$(git tag -l skill-pin-fixture)" ]; then bad "link.sh: skill-pin-fixture tag survived"; fi
+printf '%s\n' 'to-techspec deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' >"$vf"
+h=$(mktemp -d)
+err=$(mktemp)
+if HOME=$h LINK_SKILL_VERSIONS=$vf scripts/link.sh >/dev/null 2>"$err"; then
+  bad "link.sh: accepts an unknown rev"
+fi
+grep -q to-techspec "$err" || bad "link.sh: unknown rev stderr omits to-techspec"
+if [ -e "$h/.cursor/skills/to-techspec" ] || [ -L "$h/.cursor/skills/to-techspec" ]; then bad "link.sh: unknown rev linked to-techspec"; fi
+if [ -e "$h/.cursor/skills/zstack" ] || [ -L "$h/.cursor/skills/zstack" ]; then bad "link.sh: unknown rev linked zstack"; fi
+rm -rf "$h"
+rm -f "$vf" "$err"
 check_project_agents
 rm -rf "$tmp"
 

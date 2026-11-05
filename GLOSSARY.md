@@ -2,6 +2,7 @@
 
 - **Workflow stack**: this repo plus the user-level installs it links to. Skills, agents, MCP templates, OpenCode, and Cursor.
 - **Skill**: a `SKILL.md` instruction contract the agent loads. Not a compiled program.
+- **Skill pin**: a tag or commit chosen for one skill. When absent, or when the rev is main or HEAD, the skill follows the skill source checkout.
 - **Agent**: a markdown role. It can delegate to another agent.
 - **Subagent**: an agent spawned for one slice, then finished. It does not own the conversation.
 - **Outer loop**: Grok bots that read tasks and hand them inward. They do not replace the local sessions.

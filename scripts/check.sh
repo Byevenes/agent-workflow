@@ -492,8 +492,10 @@ help=$(sh scripts/setup-check.sh --help)
 printf '%s\n' "$help" | grep -qF 'docs/security-scan.md' || bad "setup-check: help misses the security-scan playbook"
 grep -qF 'docs/security-scan.md' docs/scripts.md || bad "scripts.md: security-scan playbook missing"
 grep -qF 'gitleaks: present' docs/scripts.md || bad "scripts.md: gitleaks status line missing"
-out=$(sh scripts/setup-check.sh)
-printf '%s\n' "$out" | grep -Eq '^(ok|warn) gitleaks: (present|missing)' || bad "setup-check: gitleaks status line missing"
+grep -qF 'ok gitleaks: present' scripts/setup-check.sh || bad "setup-check: gitleaks present line missing"
+grep -qF 'warn gitleaks: missing' scripts/setup-check.sh || bad "setup-check: gitleaks missing warn missing"
+out=$(sh scripts/setup-check.sh || true)
+printf '%s\n' "$out" | grep -Eq '^(ok|warn) gitleaks: (present|missing)' || bad "setup-check: gitleaks status line missing at runtime"
 
 lesson=docs/examples/kdb-lesson-timezone.md
 [ -f "$lesson" ] || bad "timezone lesson: missing"

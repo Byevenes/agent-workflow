@@ -18,7 +18,7 @@ usage() {
 [ "$#" -ge 1 ] || usage
 base=$1
 shift
-[ "$#" -ge 1 ] && [ "$1" = "--" ] || usage
+if [ "$#" -lt 1 ] || [ "$1" != "--" ]; then usage; fi
 shift
 [ "$#" -ge 1 ] || usage
 

@@ -36,7 +36,7 @@ grep -q 'Do not mix the bugfix and the feature in one commit' agents/zninja.md |
 grep -q 'the `fix:` commit is an ancestor of the feature commit' agents/zninja.md || bad "zninja: review checklist missing"
 fixline=$(grep -n 'fix: keep the empty input on the existing path' agents/zninja.md | head -1 | cut -d: -f1)
 featline=$(grep -n "feat: add the ticket's slice" agents/zninja.md | head -1 | cut -d: -f1)
-[ -n "$fixline" ] && [ -n "$featline" ] && [ "$fixline" -lt "$featline" ] || bad "zninja: fix: example is not before the feature example"
+if [ -z "$fixline" ] || [ -z "$featline" ] || [ "$fixline" -ge "$featline" ]; then bad "zninja: fix: example is not before the feature example"; fi
 grep -q 'that `fix:` commit is an ancestor of the feature commit' agents/zsensei.md || bad "zsensei: out-of-scope history checklist missing"
 grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
 grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"

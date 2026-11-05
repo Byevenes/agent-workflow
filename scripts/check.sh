@@ -49,6 +49,23 @@ grep -qF 'Critical keeps the security path even when the ticket count is 1' "$zs
 cal='.scratch/<slug>/calibracion.md'
 grep -qF "$cal" "$zs" || bad "zstack: calibration log path missing"
 grep -qF "$cal" skills/zretro/SKILL.md || bad "zretro: calibration log path missing"
+mm=docs/model-matrix.md
+grep -qF 'claude-opus-5-5-medium' "$mm" || bad "model-matrix: Opus slug missing"
+grep -qF 'The review role is Claude Opus fixed' "$mm" || bad "model-matrix: Opus pin missing"
+grep -qF 'no quota fallback that downgrades judgment' "$mm" || bad "model-matrix: review downgrade missing"
+grep -qF 'inherit-parent' "$mm" || bad "model-matrix: quota fallback missing"
+grep -qF 'docs/model-matrix.md' "$zs" || bad "zstack: model matrix pointer missing"
+grep -qF '## Modelos' "$zs" || bad "zstack: Large close model table missing"
+grep -qF 'docs/model-matrix.md' skills/zretro/SKILL.md || bad "zretro: model matrix pointer missing"
+grep -qF '## Modelos' skills/zretro/SKILL.md || bad "zretro: Large close model table missing"
+grep -qF 'fallback = []' docs/examples/model-matrix.toml || bad "model-matrix.toml: review fallback is not empty"
+grep -qF 'claude-opus-5-5-medium' docs/examples/model-matrix.toml || bad "model-matrix.toml: Opus slug missing"
+grep -qF 'grok-4.7-medium' docs/examples/model-matrix.toml || bad "model-matrix.toml: implement slug missing"
+ex=docs/examples/calibracion-large.md
+grep -qF '## Modelos' "$ex" || bad "calibracion-large: Modelos missing"
+grep -qF '| zsensei | review | claude-opus-5-5-medium | claude-opus-5-5-medium | no |' "$ex" || bad "calibracion-large: review row drifted"
+grep -qF '| zninja | implement | grok-4.7-medium | grok-4.7-medium | no |' "$ex" || bad "calibracion-large: implement row drifted"
+if [ -e rules/pstack-models.mdc ] || [ -e .cursor/rules/pstack-models.mdc ]; then bad "model-matrix: pstack-models.mdc must stay outside this repo"; fi
 
 if grep -rnE 'SDD|sdd-|tech-lead|test-engineer' skills/zstack rules agents; then bad "zstack copies reference SDD, tech-lead or test-engineer"; fi
 

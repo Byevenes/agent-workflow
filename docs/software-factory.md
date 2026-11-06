@@ -2,6 +2,8 @@
 
 How one task moves through this setup, from intake to retro. `skills/zstack/SKILL.md` is the source; this page is the map. Section 1 of that skill applies the token budget before the size line. This map uses the printed size.
 
+Who runs the work: `docs/routing.md`.
+
 ```mermaid
 flowchart TD
   task[Task in a new session] --> rule[rules/zstack.mdc always on]

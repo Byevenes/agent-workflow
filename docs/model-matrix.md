@@ -18,6 +18,8 @@ The review role is Claude Opus fixed (`claude-opus-5-5-medium`). It has no quota
 
 OpenCode is unchanged. Client work still forbids `opencode/*`. zninja and zsensei still inherit the OpenCode agent model. See `agents/opencode/zstack.md`.
 
+Who runs the work: `docs/routing.md`.
+
 ## Close
 
 A Large or Critical close records the effective model of each subagent in the calibration file zstack section 5 already names. The fields already required stay. Those are tokens_estimados, holgura, tickets, tokens_reales, the size by risk, and the printed size. The same file gains a `## Modelos` table. One row per subagent. Columns are subagent, role, preferred, effective, and quota_fallback.

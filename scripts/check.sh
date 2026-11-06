@@ -137,6 +137,22 @@ grep -qF '| zsensei | review | claude-opus-5-5-medium | claude-opus-5-5-medium |
 grep -qF '| zninja | implement | grok-4.7-medium | grok-4.7-medium | no |' "$ex" || bad "calibracion-large: implement row drifted"
 if [ -e rules/pstack-models.mdc ] || [ -e .cursor/rules/pstack-models.mdc ]; then bad "model-matrix: pstack-models.mdc must stay outside this repo"; fi
 
+rt=docs/routing.md
+grep -qF 'When orchestrator usage exceeds Cursor usage, move heavy work to Cursor.' "$rt" || bad "routing: usage sentence missing"
+grep -qF 'docs/model-matrix.md' "$rt" || bad "routing: model matrix pointer missing"
+grep -qF 'grok-4.7-high' "$rt" || bad "routing: high model missing"
+grep -qF 'claude-opus-5-5-medium' "$rt" || bad "routing: opus slug missing"
+grep -qF 'opencode/*' "$rt" || bad "routing: opencode models missing"
+grep -qF 'Never on a client project' docs/routing.md || bad "routing: client models must stay off"
+grep -qF 'docs/routing.md' "$zs" || bad "zstack: routing page missing"
+grep -qF 'Análisis' "$zs" || bad "zstack: Análisis missing"
+grep -qiF 'optional external input' "$zs" || bad "zstack: optional external input missing"
+grep -qF 'It never uses a free-form prompt.' skills/zstack/SKILL.md || bad "zstack: free-form client prompt missing"
+grep -qF 'Análisis' agents/opencode/zstack.md || bad "opencode zstack: Análisis missing"
+for f in docs/architecture.md docs/model-matrix.md docs/workflow.md docs/software-factory.md; do
+  grep -qF 'docs/routing.md' "$f" || bad "$f: routing page missing"
+done
+
 if grep -rnE 'SDD|sdd-|tech-lead|test-engineer' skills/zstack rules agents; then bad "zstack copies reference SDD, tech-lead or test-engineer"; fi
 
 if grep -rnE '"subagent_type": *"(implementer|code-reviewer)"|`(implementer|code-reviewer|coordinator)`' skills/zstack rules agents README.md AGENTS.md docs/software-factory.md docs/workflow.md; then bad "old role names in live copies"; fi

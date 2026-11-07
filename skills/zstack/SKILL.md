@@ -147,7 +147,7 @@ Pass a check the repo already defines. Do not invent one. Run it from the repo r
 
 ## 5. Deliver and retro
 
-Delivery report: **summary**, **evidence** (what ran and its real result), **what can break** (from `blast-radius`). PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (the clients root from local config, `$CLIENTS_ROOT/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it. Before writing to `.scratch/` in a client worktree, run `scripts/setup-check.sh`: it ensures `.scratch/` and `.atl/` are in `$(git rev-parse --git-path info/exclude)` so they never show in `git status`. Agents may still append those two lines defensively. Do not put them in the client's `.gitignore`.
+Delivery report (one report, before the PR or delivery): **summary** (short pseudocode), **flow** (Mermaid; concurrency and interactions only when relevant; a diagram is not proof), **evidence** (commands that ran, with real results and limits; reuse pre-push evidence; never invent a run; a check that did not run stays explicit; tests and the TDD cycle when TDD was used), **what can break** (from `blast-radius`). Shape: `docs/examples/review-package.md`. PR or MR description (decision #16): always use the `zpr` skill. Personal repos: every PR body follows zpr, and CI checks its headings. Client repos (the clients root from local config, `$CLIENTS_ROOT/**`, GitLab client MRs): zpr writes a suggested body for Brayan in `.scratch/pr-body.md`; never post it. Before writing to `.scratch/` in a client worktree, run `scripts/setup-check.sh`: it ensures `.scratch/` and `.atl/` are in `$(git rev-parse --git-path info/exclude)` so they never show in `git status`. Agents may still append those two lines defensively. Do not put them in the client's `.gitignore`.
 
 Before drafting a client delivery note, copy `docs/examples/nota-de-entrega.md` and run `scripts/check-delivery-note.sh` on the draft. Delete the author block (`BORRAR ANTES DE ENVIAR`) or the check fails. The client sees three sections: what changed, how to verify, and risks or pending confirmations. The note must not describe how the work was done, and must not name tools, models, the internal stack, local paths, or internal branch names. In a client repo, write the suggested text under `.scratch/` for Brayan and do not send it.
 
@@ -180,6 +180,10 @@ zstack check
 - zninja launched: <yes | no (inline: <reason>)>
 - poteto-mode loaded: <yes/no> (<zninja | inline>)
 - reviewers: <none | zsensei | zsensei + security-auditor | inline self-check (small only) | independent (no Cursor)>
+- summary: <short pseudocode>
+- flow: <mermaid | none>
+- evidence: <command → real result and limit | did not run: reason>
+- tdd: <red and green commands with real results | not used>
 ```
 
 Before reporting done, run `scripts/route-audit.sh` from this repo (Byevenes/agent-workflow). It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, a Medium+ session edited without zsensei, or a Medium+ session edited without launching zninja (`medium+ inline`). A non-zero exit is a retro input, not something to explain away.

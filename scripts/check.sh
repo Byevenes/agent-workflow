@@ -721,5 +721,65 @@ grep -q "^${id6}${tab}2026-11-05${tab}revertido${tab}" "$rl/.scratch/retro-log.t
 rm -rf "$rl"
 trap - EXIT
 
+rn=$(mktemp -d)
+trap 'rm -rf "$rn"' EXIT
+runlog() {
+  RUN_ROOT=$rn sh scripts/run-log.sh "$@"
+}
+tab=$(printf '\t')
+task1=task-alpha
+model1=model-alpha
+checks1=checks-alpha
+result1=result-alpha
+cost1=cost-alpha
+task2=task-beta
+model2=model-beta
+checks2=checks-beta
+result2=result-beta
+cost2=cost-beta
+st=0
+out=$(runlog show) || st=$?
+[ "$st" -eq 0 ] || bad "run-log: empty show exit $st"
+[ -z "$out" ] || bad "run-log: empty show printed"
+st=0
+runlog append --task "bad${tab}task" --model "$model1" --checks "$checks1" --result "$result1" --cost "$cost1" >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "run-log: tab in task exit $st"
+[ ! -e "$rn/.scratch/run-log.tsv" ] || bad "run-log: tab in task created the log"
+id1=$(runlog append --task "$task1" --model "$model1" --checks "$checks1" --result "$result1" --cost "$cost1")
+[ "$id1" = 1 ] || bad "run-log: first id is $id1"
+cp "$rn/.scratch/run-log.tsv" "$rn/saved.tsv"
+id2=$(runlog append --task "$task2" --model "$model2" --checks "$checks2" --result "$result2" --cost "$cost2")
+[ "$id2" = 2 ] || bad "run-log: second id is $id2"
+len=$(wc -c < "$rn/saved.tsv" | tr -d ' ')
+dd if="$rn/.scratch/run-log.tsv" of="$rn/prefix.tsv" bs=1 count="$len" status=none
+cmp -s "$rn/saved.tsv" "$rn/prefix.tsv" || bad "run-log: append rewrote an earlier row"
+first=$(awk 'NR == 1 { print; exit }' "$rn/.scratch/run-log.tsv")
+savedline=$(awk 'NR == 1 { print; exit }' "$rn/saved.tsv")
+[ "$first" = "$savedline" ] || bad "run-log: first line is not the first row"
+row=$(runlog show 1)
+[ "$row" = "1${tab}${task1}${tab}${model1}${tab}${checks1}${tab}${result1}${tab}${cost1}" ] || bad "run-log: show 1 row"
+got_model=$(printf '%s\n' "$row" | awk -F '\t' '{ print $3 }')
+got_checks=$(printf '%s\n' "$row" | awk -F '\t' '{ print $4 }')
+got_cost=$(printf '%s\n' "$row" | awk -F '\t' '{ print $6 }')
+[ "$got_model" = "$model1" ] || bad "run-log: show 1 model is $got_model"
+[ "$got_checks" = "$checks1" ] || bad "run-log: show 1 checks is $got_checks"
+[ "$got_cost" = "$cost1" ] || bad "run-log: show 1 cost is $got_cost"
+case $row in
+  *"$model2"*) bad "run-log: show 1 contains the second model" ;;
+esac
+both=$(runlog show)
+printf '%s\n' "$both" > "$rn/shown.tsv"
+cmp -s "$rn/.scratch/run-log.tsv" "$rn/shown.tsv" || bad "run-log: show did not print both rows"
+st=0
+out=$(runlog show 9 2>/dev/null) || st=$?
+[ "$st" -eq 1 ] || bad "run-log: unknown id exit $st"
+[ -z "$out" ] || bad "run-log: unknown id printed"
+st=0
+out=$(sh scripts/run-log.sh 2>/dev/null) || st=$?
+[ "$st" -eq 2 ] || bad "run-log: usage exit $st"
+[ -z "$out" ] || bad "run-log: usage wrote to stdout"
+rm -rf "$rn"
+trap - EXIT
+
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

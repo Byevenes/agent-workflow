@@ -20,3 +20,4 @@ Every coding task starts with `skills/zstack` (always on through `rules/zstack.m
 - `agents/zninja.md` writes the code for every size and loads `poteto-mode` first (`poteto-mode: loaded`), as a subagent or on that inline fallback.
 - `agents/zigl.md` is the same router as a subagent, for when a parent wants one.
 - Reviews: `zsensei` (medium and up), `security-auditor` (critical).
+- `skills/zwrite` writes `AGENTS.md` and rules under `rules/`. It does not rewrite `skills/zretro/SKILL.md`.

@@ -15,6 +15,14 @@ Load only the skills named for the chosen size. Ignore any other router, spec ch
 
 ## 0. Client user story pre-stage (conditional)
 
+### System map
+
+At the start of `to-analysis`, before the detailed analysis, write a short system map. If that step already produces this map, keep one map and apply these rules there.
+
+Name the affected modules, the boundaries between them, and the dependencies. List each branch to compare and why, or say none apply. Read the names from the repo or the task. Do not assume branch names.
+
+Separate what was observed from what is still unconfirmed, and cite the source of each line. The map limits the later walk. It does not redesign the system. A short case is `docs/examples/system-map.md`.
+
 Applies only when the task comes from a client user story (HU) in an external tracker. Personal and internal projects skip this section and start at Classify.
 
 `to-analysis` → questions to the TL/PO (`to-questionnaire`) → Brayan pastes the answers in `.scratch/answers.md` (Jira and Confluence are read-only: never comment, edit or transition) → `grill-with-docs` if gaps remain → `to-techspec` → then the normal size path (Small/Medium/Large/Critical). The TechSpec accompanies the user story as input for the spec. External PRD/TD documents are optional, only when the client asks for them.

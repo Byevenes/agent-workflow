@@ -37,3 +37,9 @@ checks: <command> → <real result>, one per line
 ```
 
 Then the findings, blocking first, each with `file:line`, the problem, evidence, and a fix direction. Say "no findings" when there are none. Never approve a diff you could not inspect; return INCONCLUSIVE and say why. Never print secrets.
+
+## Deepen modules
+
+On a personal repo, after the review order, you may run an optional deepen-modules pass. It does not block the verdict by itself. Skip it on an external repo.
+
+Propose a module only when there is a concrete benefit: a small interface and cohesive internals. Each finding states the current complexity, the proposed boundary, and the expected benefit. When that benefit is missing, conclude that no change is warranted. Do not run a refactor outside an approved scope.

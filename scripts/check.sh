@@ -259,6 +259,7 @@ rm -f "$vf" "$err"
 check_project_agents
 rm -rf "$tmp"
 
+sh scripts/check-draft-sections.sh --example docs/examples/unslop-before-after.md >/dev/null || bad "unslop: required sections missing"
 ra=$(mktemp -d)
 mkdir -p "$ra/p/agent-transcripts"
 printf '%s\n' 'zstack: small, full verifiable' '"name":"Write"' 'zninja launched: no (inline: Task tool absent)' > "$ra/p/agent-transcripts/ok.jsonl"

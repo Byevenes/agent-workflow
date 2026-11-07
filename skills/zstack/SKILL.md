@@ -187,3 +187,7 @@ zstack check
 ```
 
 Before reporting done, run `scripts/route-audit.sh` from this repo (Byevenes/agent-workflow). It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, a Medium+ session edited without zsensei, or a Medium+ session edited without launching zninja (`medium+ inline`). A non-zero exit is a retro input, not something to explain away.
+
+### Unslop before handoff
+
+After the draft and before handoff, unslop `to-analysis`, `to-questionnaire`, `to-techspec`, the client delivery note, and a ticket-comment draft. Cut filler and stock phrases. Keep facts, uncertainties, requirements, technical terms, and every required heading. Run `scripts/check-draft-sections.sh <kind> <draft>` with kind `analysis`, `questionnaire`, `techspec`, `delivery-note`, or `ticket-comment`. A missing heading fails the check. Example: `docs/examples/unslop-before-after.md`. A ticket-comment draft is not published.

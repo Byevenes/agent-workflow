@@ -26,7 +26,7 @@ Si aún no hay respuestas del TL/PO, no generes la TechSpec: propone primero `to
 5. **Huecos.** Lo que siga abierto pasa a Pendientes con dueño y nivel de bloqueo. Si hay huecos de diseño, sugiere `grill-with-docs` antes de cerrar.
 6. **Diagramas.** Usa la skill `mermaid-diagrams` si está disponible. Ver "Diagramas".
 7. **Escribe** una sola TechSpec, neutral (ver "Neutralidad"). La trazabilidad va en el análisis técnico (ver "Trazabilidad"). Enlaza la TechSpec desde la nota de análisis.
-8. **Pulido.** Aplica `technical-writing` y `unslop` a la TechSpec. Revisa "un dato, un lugar". Corre `scripts/check-repo-paths.sh` con la TechSpec y la raíz del repo. Si no sale 0, corrige las citas.
+8. **Pulido.** Después del borrador y antes de entregar, aplica `technical-writing` y `unslop` a la TechSpec. Conserva hechos, incertidumbres, requisitos, términos técnicos y cada sección obligatoria. Revisa "un dato, un lugar". Corre `scripts/check-draft-sections.sh techspec` sobre la TechSpec y `scripts/check-repo-paths.sh` con la TechSpec y la raíz del repo. Si uno no sale 0, corrige.
 9. **Exportación (opcional, solo si el usuario la pide).** Genera una copia `.md` estándar de la TechSpec: sin frontmatter, sin wikilinks `[[...]]`, sin callouts `> [!...]`, sin embeds ni tags, y con cada diagrama también como imagen (PNG o SVG). La fuente sigue siendo el archivo original.
 
 ## Salida (secciones)

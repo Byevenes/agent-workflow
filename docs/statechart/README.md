@@ -10,8 +10,8 @@ Each forbidden step is a separate `Agent*` action, enabled only when its `Barrie
 | `ZStackTextOnly.cfg` | All barriers `TRUE`: what the skill promises if the agent obeys it. |
 | `ZStack.cfg` | All barriers `FALSE`: the repo today, where nothing blocks those steps. |
 | `view.mjs` | Chart labels for `/statechart --view`. |
-| `chart.mmd`, `report.md` | Run on `ZStackTextOnly.cfg` (94 states). |
-| `chart-today.mmd`, `report-today.md` | Run on `ZStack.cfg` (347 states). |
+| `chart.mmd`, `report.md` | Run on `ZStackTextOnly.cfg` (67 states). |
+| `chart-today.mmd`, `report-today.md` | Run on `ZStack.cfg` (314 states). |
 
 ## Rules
 

@@ -42,10 +42,10 @@ A Medium whose estimate is about 150k tokens promotes to Large and enters `ztick
 
 Critical keeps the security path even when the ticket count is 1.
 
-Besides size, record verifiability, with the reason.
+Besides size, record verifiability, with the reason. On every task, ask how the change will be made fully verifiable. Record the answer as full or partial.
 
-- **Full.** The repo's automated checks (tests, type checks, lint, others it has) prove it is done. They must run green before done.
-- **Partial.** Pixel-perfect UI, copy or visual changes, behavior depending on external systems or data not available locally, or manual flows. The final report lists exactly what could not be verified automatically and how to check each item by hand. The task cannot be marked done without explicit human review.
+- **Full.** The repo's automated checks (tests, type checks, lint, others it has) prove it is done. They must run green before done. Record which automatic check covers the change.
+- **Partial.** Pixel-perfect UI, copy or visual changes, behavior depending on external systems or data not available locally, or manual flows. The final report lists exactly what could not be verified automatically and how to check each item by hand. The task cannot be marked done without explicit human review. A partial answer blocks code until a written verification plan exists.
 
 Say the size, verifiability, and reason in one line before anything else: `zstack: <size>, <full|partial> verifiable — <reason>`, size one of Small, Medium, Large, Critical. `route-audit.sh` fails a session without it. The old prefix `route-work:` is still accepted until 2026-12-01.
 
@@ -90,7 +90,7 @@ If a medium or large change turns out to cross a critical boundary, reclassify i
 
 ## 3. Implement (subagent, or inline)
 
-Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, the paths it must not touch, whether to commit (client repos: the slice commit rules in section 5), and the `kdb:` paths from section 0 (client tasks). Do not edit files in this chat on that path.
+Launch the `zninja` subagent with the Task tool (`subagent_type: "zninja"`) for every size, including small. Pass: the task or spec path, the repo and branch, the size, the checks to run, the paths it must not touch, whether to commit (client repos: the slice commit rules in section 5), the `kdb:` paths from section 0 (client tasks), and the question of how the change will be made fully verifiable together with the recorded answer (full or partial). Do not edit files in this chat on that path.
 
 Run inline when the Task tool is absent, or its subagent list does not include zninja, or one launch attempt returned an error (quote it in the reason), or this session is a whole task that arrived with no parent and is running headless without subagents; if the Task tool exists and lists zninja, you must launch it. Medium, Large and Critical: code is written by zNinja; inline only in Small with `inline: <razón>` (if zninja cannot launch on Medium+ and the host is Cursor, stop and tell Brayan).
 

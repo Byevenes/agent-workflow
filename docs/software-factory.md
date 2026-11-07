@@ -46,3 +46,15 @@ Every retro answers, with numbers from `scripts/route-audit.sh <project> <days>`
 
 - ¿Se invocó zstack?
 - ¿zninja lanzó poteto-mode? (`poteto-mode: loaded` in its report)
+
+## Deterministic checks before another agent
+
+Run a mechanism that fails the same way on every machine before adding an agent.
+
+1. `scripts/check.sh` covers syntax, shellcheck, pinned phrases, and fixtures.
+2. Lint covers style and the static mistakes its rules name, when the tree already has a linter.
+3. gitleaks covers known secret patterns.
+4. Tests cover the cases they encode.
+5. A property test covers one invariant across generated inputs when its cost is low. One generator, a fast check, and no new service.
+
+Choosing that invariant, naming a case nobody wrote, and judging that a change matches the task sit outside that set. An agent is for that remaining risk, and only after the list above has run.

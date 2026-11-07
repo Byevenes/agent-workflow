@@ -1,6 +1,6 @@
 ---- MODULE ZStack ----
-\* zStack as written in skills/zstack/SKILL.md (agent-workflow, option B: only large and critical
-\* get zsensei; no agent merge). Each Agent* action is a step the skill forbids. It is enabled only when
+\* zStack as written in skills/zstack/SKILL.md (agent-workflow, option B: large and critical
+\* get zsensei; medium gets a light review or zsensei when it escalates; no agent merge). Each Agent* action is a step the skill forbids. It is enabled only when
 \* the matching Barrier* constant is FALSE, i.e. when only skill text (no hook, CI check or
 \* permission) stops it. A rule that holds with its barrier FALSE holds by design; one that holds only
 \* with the barrier TRUE holds by text until that barrier exists.
@@ -47,7 +47,9 @@ AgentEditsInlineMediumUp == ~BarrierInlineSize /\ ReadyToCode /\ size /= "small"
 
 \* Option B: review follows the size on both paths.
 Review == phase = "implemented" /\ phase' = "reviewed"
-  /\ reviewer' = (IF size \in {"large", "critical"} THEN "zsensei" ELSE "light")
+  /\ reviewer' \in (IF size \in {"large", "critical"} THEN {"zsensei"}
+                    ELSE IF size = "medium" THEN {"light", "zsensei"}
+                    ELSE {"light"})
   /\ UNCHANGED <<size, repo, impl, approved, edited, published, mergedBy>>
 
 AgentSkipsReview == ~BarrierReview /\ phase = "implemented" /\ size \in {"large", "critical"}

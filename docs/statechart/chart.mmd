@@ -18,18 +18,18 @@ stateDiagram-v2
   s5: Code written, by zNinja
   s6: Reviewed, inline, reason recorded, light review
   s7: Reviewed, by zNinja, light review
-  s8: Checks green + retro, inline, reason recorded, light review
-  s9: Checks green + retro, by zNinja, light review
-  s10: Reviewed, by zNinja, zSensei
-  s11: Client: PR body drafted in .scratch, inline, reason recorded, light review
-  s12: Client: PR body drafted in .scratch, by zNinja, light review
-  s13: PR open (zpr body), inline, reason recorded, light review
-  s14: PR open (zpr body), by zNinja, light review
-  s15: Checks green + retro, by zNinja, zSensei
-  s16: Client: PR body drafted in .scratch, by zNinja, zSensei
-  s17: Merged, inline, reason recorded, light review, by Brayan
-  s18: Merged, by zNinja, light review, by Brayan
-  s19: PR open (zpr body), by zNinja, zSensei
+  s8: Reviewed, by zNinja, zSensei
+  s9: Checks green + retro, inline, reason recorded, light review
+  s10: Checks green + retro, by zNinja, light review
+  s11: Checks green + retro, by zNinja, zSensei
+  s12: Client: PR body drafted in .scratch, inline, reason recorded, light review
+  s13: Client: PR body drafted in .scratch, by zNinja, light review
+  s14: Client: PR body drafted in .scratch, by zNinja, zSensei
+  s15: PR open (zpr body), inline, reason recorded, light review
+  s16: PR open (zpr body), by zNinja, light review
+  s17: PR open (zpr body), by zNinja, zSensei
+  s18: Merged, inline, reason recorded, light review, by Brayan
+  s19: Merged, by zNinja, light review, by Brayan
   s20: Merged, by zNinja, zSensei, by Brayan
   [*] --> s0
   s0 --> s1: zStack classifies the task
@@ -40,19 +40,19 @@ stateDiagram-v2
   s3 --> s5: zNinja writes the code
   s4 --> s6: the change is reviewed
   s5 --> s7: the change is reviewed
-  s5 --> s10: the change is reviewed
-  s6 --> s8: pre-commit, CI and zretro pass
-  s7 --> s9: pre-commit, CI and zretro pass
-  s8 --> s11: zpr drafts the body [client repo]
+  s5 --> s8: the change is reviewed
+  s6 --> s9: pre-commit, CI and zretro pass
+  s7 --> s10: pre-commit, CI and zretro pass
+  s8 --> s11: pre-commit, CI and zretro pass
   s9 --> s12: zpr drafts the body [client repo]
-  s8 --> s13: zpr opens the PR [personal repo]
-  s9 --> s14: zpr opens the PR [personal repo]
-  s10 --> s15: pre-commit, CI and zretro pass
-  s13 --> s17: Brayan merges
-  s14 --> s18: Brayan merges
-  s15 --> s16: zpr drafts the body [client repo]
-  s15 --> s19: zpr opens the PR [personal repo]
-  s19 --> s20: Brayan merges
+  s10 --> s13: zpr drafts the body [client repo]
+  s11 --> s14: zpr drafts the body [client repo]
+  s9 --> s15: zpr opens the PR [personal repo]
+  s10 --> s16: zpr opens the PR [personal repo]
+  s11 --> s17: zpr opens the PR [personal repo]
+  s15 --> s18: Brayan merges
+  s16 --> s19: Brayan merges
+  s17 --> s20: Brayan merges
   class s0 blue
   class s1 blue
   class s2 blue
@@ -61,9 +61,9 @@ stateDiagram-v2
   class s5 orange
   class s6 orange
   class s7 orange
-  class s8 teal
+  class s8 orange
   class s9 teal
-  class s10 orange
+  class s10 teal
   class s11 teal
   class s12 teal
   class s13 teal

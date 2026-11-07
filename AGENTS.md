@@ -19,5 +19,5 @@ Every coding task starts with `skills/zstack` (always on through `rules/zstack.m
 - `zstack` classifies, plans, and checks. The inline trigger is in section 3 of `skills/zstack/SKILL.md`. Otherwise the `zninja` subagent writes the code.
 - `agents/zninja.md` writes the code for every size and loads `poteto-mode` first (`poteto-mode: loaded`), as a subagent or on that inline fallback.
 - `agents/zigl.md` is the same router as a subagent, for when a parent wants one.
-- Reviews: light review (small and medium), `zsensei` (large and critical), `security-auditor` (critical).
+- Reviews: light review (small and medium). Medium escalates to `zsensei` for security, auth, destructive git, a public contract, or a diff over 400 changed lines. `zsensei` (large and critical), `security-auditor` (critical).
 - `skills/zwrite` writes `AGENTS.md` and rules under `rules/`. It does not rewrite `skills/zretro/SKILL.md`.

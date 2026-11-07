@@ -1,6 +1,6 @@
 # zStack statechart (TLA+, decision #23)
 
-Model of `skills/zstack/SKILL.md` after option B: large and critical get zSensei, small and medium get a light review, and only Brayan merges. Checked with TLC through pstack's `/statechart`.
+Model of `skills/zstack/SKILL.md` after option B: large and critical get zSensei, small gets a light review, medium gets a light review or zSensei when it escalates, and only Brayan merges. Checked with TLC through pstack's `/statechart`.
 
 Each forbidden step is a separate `Agent*` action, enabled only when its `Barrier*` constant is `FALSE`. `FALSE` means only skill text stops the step; `TRUE` means a hook, CI check or permission makes it impossible.
 
@@ -10,8 +10,8 @@ Each forbidden step is a separate `Agent*` action, enabled only when its `Barrie
 | `ZStackTextOnly.cfg` | All barriers `TRUE`: what the skill promises if the agent obeys it. |
 | `ZStack.cfg` | All barriers `FALSE`: the repo today, where nothing blocks those steps. |
 | `view.mjs` | Chart labels for `/statechart --view`. |
-| `chart.mmd`, `report.md` | Run on `ZStackTextOnly.cfg` (67 states). |
-| `chart-today.mmd`, `report-today.md` | Run on `ZStack.cfg` (314 states). |
+| `chart.mmd`, `report.md` | Run on `ZStackTextOnly.cfg` (74 states). |
+| `chart-today.mmd`, `report-today.md` | Run on `ZStack.cfg` (347 states). |
 
 ## Rules
 

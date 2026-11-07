@@ -1,7 +1,7 @@
 # ZStack
 
-TLC reached 314 states and 452 steps. The chart draws 62 states and 65 arrows.
-The chart does not draw 112 steps that stay in one chart state.
+TLC reached 347 states and 500 steps. The chart draws 62 states and 65 arrows.
+The chart does not draw 127 steps that stay in one chart state.
 
 ## NoEditBeforeClassify breaks
 The shortest path has 1 step:

@@ -16,54 +16,43 @@ stateDiagram-v2
   s3: Plan approved by Brayan
   s4: Code written, inline, reason recorded
   s5: Code written, by zNinja
-  s6: Reviewed, inline, reason recorded, diff read
-  s7: Reviewed, inline, reason recorded, zSensei
-  s8: Reviewed, by zNinja, diff read
-  s9: Reviewed, by zNinja, zSensei
-  s10: Checks green + retro, inline, reason recorded, diff read
-  s11: Checks green + retro, inline, reason recorded, zSensei
-  s12: Checks green + retro, by zNinja, diff read
-  s13: Checks green + retro, by zNinja, zSensei
-  s14: Client: PR body drafted in .scratch, inline, reason recorded, diff read
-  s15: Client: PR body drafted in .scratch, inline, reason recorded, zSensei
-  s16: Client: PR body drafted in .scratch, by zNinja, diff read
-  s17: Client: PR body drafted in .scratch, by zNinja, zSensei
-  s18: PR open (zpr body), inline, reason recorded, diff read
-  s19: PR open (zpr body), inline, reason recorded, zSensei
-  s20: PR open (zpr body), by zNinja, diff read
-  s21: PR open (zpr body), by zNinja, zSensei
-  s22: Merged, inline, reason recorded, diff read, by Brayan
-  s23: Merged, inline, reason recorded, zSensei, by Brayan
-  s24: Merged, by zNinja, diff read, by Brayan
-  s25: Merged, by zNinja, zSensei, by Brayan
+  s6: Reviewed, inline, reason recorded, light review
+  s7: Reviewed, by zNinja, light review
+  s8: Reviewed, by zNinja, zSensei
+  s9: Checks green + retro, inline, reason recorded, light review
+  s10: Checks green + retro, by zNinja, light review
+  s11: Checks green + retro, by zNinja, zSensei
+  s12: Client: PR body drafted in .scratch, inline, reason recorded, light review
+  s13: Client: PR body drafted in .scratch, by zNinja, light review
+  s14: Client: PR body drafted in .scratch, by zNinja, zSensei
+  s15: PR open (zpr body), inline, reason recorded, light review
+  s16: PR open (zpr body), by zNinja, light review
+  s17: PR open (zpr body), by zNinja, zSensei
+  s18: Merged, inline, reason recorded, light review, by Brayan
+  s19: Merged, by zNinja, light review, by Brayan
+  s20: Merged, by zNinja, zSensei, by Brayan
   [*] --> s0
   s0 --> s1: zStack classifies the task
   s1 --> s2: zgrill / zspec / ztickets plan it
   s2 --> s3: Brayan approves the plan [Large or Critical]
-  s2 --> s4: the agent codes inline and writes the reason
   s2 --> s5: zNinja writes the code
-  s3 --> s4: the agent codes inline and writes the reason
+  s2 --> s4: the agent codes inline and writes the reason
   s3 --> s5: zNinja writes the code
-  s4 --> s7: the change is reviewed
   s4 --> s6: the change is reviewed
-  s5 --> s9: the change is reviewed
+  s5 --> s7: the change is reviewed
   s5 --> s8: the change is reviewed
-  s6 --> s10: pre-commit, CI and zretro pass
-  s7 --> s11: pre-commit, CI and zretro pass
-  s8 --> s12: pre-commit, CI and zretro pass
-  s9 --> s13: pre-commit, CI and zretro pass
-  s10 --> s14: zpr drafts the body [client repo]
-  s11 --> s15: zpr drafts the body [client repo]
-  s12 --> s16: zpr drafts the body [client repo]
-  s13 --> s17: zpr drafts the body [client repo]
-  s10 --> s18: zpr opens the PR [personal repo]
-  s11 --> s19: zpr opens the PR [personal repo]
-  s12 --> s20: zpr opens the PR [personal repo]
-  s13 --> s21: zpr opens the PR [personal repo]
-  s18 --> s22: Brayan merges
-  s19 --> s23: Brayan merges
-  s20 --> s24: Brayan merges
-  s21 --> s25: Brayan merges
+  s6 --> s9: pre-commit, CI and zretro pass
+  s7 --> s10: pre-commit, CI and zretro pass
+  s8 --> s11: pre-commit, CI and zretro pass
+  s9 --> s12: zpr drafts the body [client repo]
+  s10 --> s13: zpr drafts the body [client repo]
+  s11 --> s14: zpr drafts the body [client repo]
+  s9 --> s15: zpr opens the PR [personal repo]
+  s10 --> s16: zpr opens the PR [personal repo]
+  s11 --> s17: zpr opens the PR [personal repo]
+  s15 --> s18: Brayan merges
+  s16 --> s19: Brayan merges
+  s17 --> s20: Brayan merges
   class s0 blue
   class s1 blue
   class s2 blue
@@ -73,7 +62,7 @@ stateDiagram-v2
   class s6 orange
   class s7 orange
   class s8 orange
-  class s9 orange
+  class s9 teal
   class s10 teal
   class s11 teal
   class s12 teal
@@ -85,8 +74,3 @@ stateDiagram-v2
   class s18 teal
   class s19 teal
   class s20 teal
-  class s21 teal
-  class s22 teal
-  class s23 teal
-  class s24 teal
-  class s25 teal

@@ -35,7 +35,7 @@ flowchart LR
 
 ## 2. Task flow
 
-`rules/zstack.mdc` is always on, so each session starts in zStack as zIGL. zIGL classifies the size and loads only that path. Matt's planning skills keep `disable-model-invocation`, so zStack calls them through wrappers that read Matt's file and add our rules. zNinja writes the code with poteto-mode; zIGL works inline only on Small, on the trigger in section 3 of the skill, and records the reason; Medium and up always go to zNinja (route-audit fails `medium+ inline`). zSensei reviews Medium and up. Client user stories start with section 0 of the skill: Jira and Confluence read-only, answers in `.scratch/answers.md`, attachments downloaded by hand into the task folder, work in a worktree from the company worktree tool on PATH (or a path defined only in local config); Brayan must approve the worktree before use, `.scratch/` and `.atl/` in `info/exclude` (written by `scripts/setup-check.sh`), and never `opencode/*` models. In every client task zIGL also loads the client KDBs from the local map `~/.config/zstack/clients.toml` (example: `docs/examples/clients.toml.example`), prints a `kdb:` line, zNinja follows them and stops on a conflict with the TechSpec, and zSensei reports `kdb-match` with evidence. zretro ends in a barrier, and zpr writes the PR body. Large, and a Medium promoted to Large, then follows the slice loop in the skill: one new session per ticket, checks, local commit, stop. A recovery plan does not replace that new session. A host that is not Cursor uses `### Inline without Cursor` in section 3 of `skills/zstack/SKILL.md`.
+`rules/zstack.mdc` is always on, so each session starts in zStack as zIGL. zIGL classifies the size and loads only that path. Matt's planning skills keep `disable-model-invocation`, so zStack calls them through wrappers that read Matt's file and add our rules. zNinja writes the code with poteto-mode; zIGL works inline only on Small, on the trigger in section 3 of the skill, and records the reason; Medium and up always go to zNinja (route-audit fails `medium+ inline`). Small and Medium get deterministic checks and a light review. zSensei reviews Large and Critical. A Medium escalates to zSensei for security, auth, destructive git, a public contract, or a diff over 400 changed lines (additions plus deletions). Client user stories start with section 0 of the skill: Jira and Confluence read-only, answers in `.scratch/answers.md`, attachments downloaded by hand into the task folder, work in a worktree from the company worktree tool on PATH (or a path defined only in local config); Brayan must approve the worktree before use, `.scratch/` and `.atl/` in `info/exclude` (written by `scripts/setup-check.sh`), and never `opencode/*` models. In every client task zIGL also loads the client KDBs from the local map `~/.config/zstack/clients.toml` (example: `docs/examples/clients.toml.example`), prints a `kdb:` line, zNinja follows them and stops on a conflict with the TechSpec, and zSensei reports `kdb-match` with evidence. zretro ends in a barrier, and zpr writes the PR body. Large, and a Medium promoted to Large, then follows the slice loop in the skill: one new session per ticket, checks, local commit, stop. A recovery plan does not replace that new session. A host that is not Cursor uses `### Inline without Cursor` in section 3 of `skills/zstack/SKILL.md`.
 
 ```mermaid
 flowchart TD
@@ -47,10 +47,13 @@ flowchart TD
   s & m & l & c --> impl{Task tool lists zninja?}
   impl -->|yes| zn[zNinja subagent, poteto-mode]
   impl -->|no, Small only, reason stated| inl[inline: poteto-mode in this session]
-  zn & inl --> rev{Medium or up?}
-  rev -->|yes| zs[zSensei review; Critical adds security-auditor]
-  rev -->|no| ck
-  zs --> retro[zretro]
+  zn & inl --> rev{Size?}
+  rev -->|Small| ck
+  rev -->|Medium| light[light review]
+  rev -->|Medium escalated| zs
+  rev -->|Large or Critical| zs[zSensei review; Critical adds security-auditor]
+  light --> retro[zretro]
+  zs --> retro
   retro --> bar[barrier: hook, lint, test, type, check.sh guard]
   bar --> ck[zstack check block]
   ck --> pr[zpr PR body]

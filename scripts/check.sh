@@ -267,12 +267,18 @@ ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null || bad "route-audit: fail
 printf '%s\n' 'zstack: small, full verifiable' '"name":"Write"' > "$ra/p/agent-transcripts/noreason.jsonl"
 if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: passes an inline edit without a reason"; fi
 rm "$ra/p/agent-transcripts/noreason.jsonl"
-printf '%s\n' 'zstack: medium, full verifiable' '"name":"Write"' 'zninja launched: no (inline: Task tool absent)' > "$ra/p/agent-transcripts/norev.jsonl"
-if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: passes a medium edit without zsensei"; fi
+printf '%s\n' 'zstack: medium, full verifiable' '"name":"Write"' '"subagent_type":"zninja"' > "$ra/p/agent-transcripts/norev.jsonl"
+ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null || bad "route-audit: fails a Medium edit with zninja and without zsensei"
 rm "$ra/p/agent-transcripts/norev.jsonl"
-printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"text","text":"Clasificación **Medium** (zstack): dos piezas."}]}}' '{"type":"tool_use","name":"Write"}' '{"text":"zninja launched: no (inline: Task tool absent)"}' > "$ra/p/agent-transcripts/real.jsonl"
-if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: misses a real-format Medium transcript without zsensei"; fi
+printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"text","text":"Clasificación **Medium** (zstack): dos piezas."}]}}' '{"type":"tool_use","name":"Write"}' '{"subagent_type":"zninja"}' > "$ra/p/agent-transcripts/real.jsonl"
+ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null || bad "route-audit: fails a real-format Medium transcript with zninja and without zsensei"
 rm "$ra/p/agent-transcripts/real.jsonl"
+printf '%s\n' 'zstack: large, full verifiable' '"name":"Write"' '"subagent_type":"zninja"' > "$ra/p/agent-transcripts/norev.jsonl"
+if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: passes a Large edit with zninja and without zsensei"; fi
+rm "$ra/p/agent-transcripts/norev.jsonl"
+printf '%s\n' 'zstack: critical, full verifiable' '"name":"Write"' '"subagent_type":"zninja"' > "$ra/p/agent-transcripts/norev.jsonl"
+if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: passes a Critical edit with zninja and without zsensei"; fi
+rm "$ra/p/agent-transcripts/norev.jsonl"
 printf '%s\n' 'using zstack skill' 'zninja launched: no (inline: Task tool absent)' > "$ra/p/agent-transcripts/nosize.jsonl"
 if ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null; then bad "route-audit: passes a zstack session with no classification line"; fi
 rm "$ra/p/agent-transcripts/nosize.jsonl"

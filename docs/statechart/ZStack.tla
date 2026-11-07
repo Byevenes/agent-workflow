@@ -1,6 +1,6 @@
 ---- MODULE ZStack ----
-\* zStack as written in skills/zstack/SKILL.md (agent-workflow, option B: inline Medium+ still gets
-\* zsensei; no agent merge). Each Agent* action is a step the skill forbids. It is enabled only when
+\* zStack as written in skills/zstack/SKILL.md (agent-workflow, option B: large and critical
+\* get zsensei; medium gets a light review or zsensei when it escalates; no agent merge). Each Agent* action is a step the skill forbids. It is enabled only when
 \* the matching Barrier* constant is FALSE, i.e. when only skill text (no hook, CI check or
 \* permission) stops it. A rule that holds with its barrier FALSE holds by design; one that holds only
 \* with the barrier TRUE holds by text until that barrier exists.
@@ -47,10 +47,12 @@ AgentEditsInlineMediumUp == ~BarrierInlineSize /\ ReadyToCode /\ size /= "small"
 
 \* Option B: review follows the size on both paths.
 Review == phase = "implemented" /\ phase' = "reviewed"
-  /\ reviewer' = (IF size = "small" THEN "diff_read" ELSE "zsensei")
+  /\ reviewer' \in (IF size \in {"large", "critical"} THEN {"zsensei"}
+                    ELSE IF size = "medium" THEN {"light", "zsensei"}
+                    ELSE {"light"})
   /\ UNCHANGED <<size, repo, impl, approved, edited, published, mergedBy>>
 
-AgentSkipsReview == ~BarrierReview /\ phase = "implemented" /\ size /= "small"
+AgentSkipsReview == ~BarrierReview /\ phase = "implemented" /\ size \in {"large", "critical"}
   /\ reviewer' = "self_check" /\ phase' = "reviewed"
   /\ UNCHANGED <<size, repo, impl, approved, edited, published, mergedBy>>
 
@@ -86,8 +88,8 @@ NoEditBeforeClassify == edited => size /= "none"
 BigNeedsApproval == (edited /\ size \in {"large", "critical"}) => approved
 EditNeedsZninjaOrReason == edited => impl \in {"none", "zninja", "inline_reason"}
 MediumUpByZninja == (edited /\ impl = "inline_reason") => size = "small"
-MediumUpIndependentReview ==
-  (phase \in {"pr_open", "merged", "draft_ready"} /\ size /= "small") => reviewer = "zsensei"
+LargeCriticalIndependentReview ==
+  (phase \in {"pr_open", "merged", "draft_ready"} /\ size \in {"large", "critical"}) => reviewer = "zsensei"
 ClientNeverPublishes == repo = "client" => ~published
 OnlyBrayanMerges == mergedBy \in {"none", "brayan"}
 ====

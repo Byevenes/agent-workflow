@@ -18,10 +18,12 @@ flowchart TD
   impl --> pm[zninja or inline session loads poteto-mode SKILL.md → reports poteto-mode: loaded]
   pm --> tdd[pstack tdd · project checks]
   tdd -->|Small| done[Parent or inline session reads diff and checks]
-  tdd -->|Medium| cr[zsensei: spec still matches diff]
-  tdd -->|Large| br[blast-radius] --> cr
+  tdd -->|Medium| light[deterministic checks and a light review]
+  light -->|security, auth, destructive git, public contract, or 400 lines| cr
+  tdd -->|Large| br[blast-radius] --> cr[zsensei: spec still matches diff]
   tdd -->|Critical| cr2[zsensei] --> sa[security-auditor]
-  cr --> retro[retro]
+  light --> retro[retro]
+  cr --> retro
   sa --> retro
   done --> check[zstack check block]
   retro --> check

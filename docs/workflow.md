@@ -12,7 +12,7 @@ Engineer Lead, on the outer loop, can split work before it arrives. It does not 
 flowchart TD
   intake[Intake] --> size{Size by risk}
   size -->|one area, no sensitive boundary| smallPath[zninja with poteto-mode and a focused test]
-  size -->|several pieces, one session| medPath[zgrill then zspec then poteto-mode then one zsensei]
+  size -->|several pieces, one session| medPath[zgrill then zspec then poteto-mode then a light review]
   size -->|several slices or more than one session| largePath[wayfinder zspec ztickets then one new session per slice]
   size -->|sensitive boundary| critPath[spec then poteto-mode then zsensei then security-auditor]
 ```
@@ -31,7 +31,11 @@ sequenceDiagram
   alt Small
     Router->>Impl: task, no spec
     Impl-->>You: change and a focused test
-  else Medium or large
+  else Medium
+    Router->>Router: zgrill and zspec
+    Router->>Impl: spec
+    Impl-->>You: diff and a light review
+  else Large
     Router->>Router: zgrill and zspec
     Router->>Impl: spec
     Impl-->>Review: diff
@@ -50,8 +54,8 @@ Inline runs skip the Router->>Impl handoff.
 ## Paths
 
 - **Small.** One clear area, one session, no sensitive boundary. `zgrill` (grill-me) only if a decision is open. Then `zninja` with `poteto-mode`. A focused test if behavior changes. No spec. No PRD, Figma, or Stitch unless the user points at one. No `zsensei`, no `security-auditor`.
-- **Medium.** Several pieces, one session, and none of the critical boundaries. `zgrill` (grill-with-docs), then `zspec` (to-spec). `prd-td-coherence` only when a PRD and a design already exist. `poteto-mode` with pstack's `tdd`. `zsensei` loads `code-review-and-quality` once. `zretro` once. Read a visual reference only when one exists.
-- **Large.** Several slices or more than one session, and none of the critical boundaries. `zgrill` or `wayfinder`, then `zspec` and `ztickets`. A human gate before code. Then the slice loop: one new session per ticket, checks, local commit, stop. A recovery plan does not replace that new session. Then `blast-radius` (`skills/blast-radius/SKILL.md`, `scripts/blast-radius-callers.sh`), the same `zsensei`, and `zretro`. The caller report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one.
+- **Medium.** Several pieces, one session, and none of the critical boundaries. `zgrill` (grill-with-docs), then `zspec` (to-spec). `prd-td-coherence` only when a PRD and a design already exist. `poteto-mode` with pstack's `tdd`. Typecheck, tests, lint, and gitleaks are mandatory. A light review rejects a test that passes and proves nothing and points at the section 5 delivery report. `zsensei` only for security, auth, destructive git, a public contract, or a diff over 400 changed lines. `zretro` once. Read a visual reference only when one exists.
+- **Large.** Several slices or more than one session, and none of the critical boundaries. `zgrill` or `wayfinder`, then `zspec` and `ztickets`. A human gate before code. Then the slice loop: one new session per ticket, checks, local commit, stop. A recovery plan does not replace that new session. Then `blast-radius` (`skills/blast-radius/SKILL.md`, `scripts/blast-radius-callers.sh`), `zsensei`, and `zretro`. The caller report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one.
 - **Critical.** Auth, permissions, personal data, payments, a new secret or credential, or a new integration, at any file count. Its own sequence: `zgrill`, `zspec`, `poteto-mode` with `security-and-hardening`, `zsensei`, then `security-auditor`. It does not stop at the medium or large boundary check.
 
 ## Slice verification
@@ -62,7 +66,7 @@ Run the same suite on the base branch and on HEAD with `scripts/classify-test-fa
 
 A button label change is small. The task is already clear, so `grill-me` is skipped. `poteto-mode` edits it. No spec and no review agent.
 
-A one-session feature with two states and an unclear empty case is medium. `grill-with-docs` settles the empty case, `to-spec` writes it down, `poteto-mode` builds it, and `zsensei` reads the diff.
+A one-session feature with two states and an unclear empty case is medium. `grill-with-docs` settles the empty case, `to-spec` writes it down, `poteto-mode` builds it, and a light review reads the diff.
 
 A change that stores a new personal-data field is critical whether it is a few lines or several files. It follows the critical sequence: a spec, `poteto-mode`, `zsensei`, then `security-auditor`.
 

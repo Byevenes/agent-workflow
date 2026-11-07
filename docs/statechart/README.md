@@ -1,6 +1,6 @@
 # zStack statechart (TLA+, decision #23)
 
-Model of `skills/zstack/SKILL.md` after option B: inline Medium+ work still gets zSensei, and only Brayan merges. Checked with TLC through pstack's `/statechart`.
+Model of `skills/zstack/SKILL.md` after option B: large and critical get zSensei, small gets a light review, medium gets a light review or zSensei when it escalates, and only Brayan merges. Checked with TLC through pstack's `/statechart`.
 
 Each forbidden step is a separate `Agent*` action, enabled only when its `Barrier*` constant is `FALSE`. `FALSE` means only skill text stops the step; `TRUE` means a hook, CI check or permission makes it impossible.
 
@@ -10,7 +10,7 @@ Each forbidden step is a separate `Agent*` action, enabled only when its `Barrie
 | `ZStackTextOnly.cfg` | All barriers `TRUE`: what the skill promises if the agent obeys it. |
 | `ZStack.cfg` | All barriers `FALSE`: the repo today, where nothing blocks those steps. |
 | `view.mjs` | Chart labels for `/statechart --view`. |
-| `chart.mmd`, `report.md` | Run on `ZStackTextOnly.cfg` (94 states). |
+| `chart.mmd`, `report.md` | Run on `ZStackTextOnly.cfg` (74 states). |
 | `chart-today.mmd`, `report-today.md` | Run on `ZStack.cfg` (347 states). |
 
 ## Rules
@@ -20,7 +20,7 @@ Each forbidden step is a separate `Agent*` action, enabled only when its `Barrie
 | `NoEditBeforeClassify` | No edit before the size is printed. | holds | breaks (1 step) | text only |
 | `BigNeedsApproval` | Large/Critical never get code before Brayan approves. | holds | breaks | text only |
 | `EditNeedsZninjaOrReason` | Every edit is zNinja or `inline: <reason>`. | holds | breaks (3 steps) | `route-audit.sh` exits 1 after the fact; does not block |
-| `MediumUpIndependentReview` | Medium+ never reaches a PR without zSensei. | holds | breaks (6 steps) | `route-audit.sh` detects after the fact; does not block |
+| `LargeCriticalIndependentReview` | Large or Critical never reaches a PR, merge, or client draft without zSensei. | holds | breaks (6 steps) | `route-audit.sh` detects after the fact; does not block |
 | `ClientNeverPublishes` | The agent never posts a client PR/MR. | holds | breaks (6 steps) | text only |
 | `OnlyBrayanMerges` | Only Brayan merges. | holds | breaks (7 steps) | text only; branch protection needs a green check but does not stop the agent's token from merging |
 

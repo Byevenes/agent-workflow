@@ -19,6 +19,14 @@ Applies only when the task comes from a client user story (HU) in an external tr
 
 `to-analysis` → questions to the TL/PO (`to-questionnaire`) → Brayan pastes the answers in `.scratch/answers.md` (Jira and Confluence are read-only: never comment, edit or transition) → `grill-with-docs` if gaps remain → `to-techspec` → then the normal size path (Small/Medium/Large/Critical). The TechSpec accompanies the user story as input for the spec. External PRD/TD documents are optional, only when the client asks for them.
 
+### System map
+
+At the start of `to-analysis`, before the detailed analysis, write a short system map. If that step already produces this map, keep one map and apply these rules there.
+
+Name the affected modules, the boundaries between them, and the dependencies. List each branch to compare and why, or say none apply. Read the names from the repo or the task. Do not assume branch names.
+
+Separate what was observed from what is still unconfirmed, and cite the source of each line. The map limits the later walk. It does not redesign the system. A short case is `docs/examples/system-map.md`.
+
 Client KDBs (mandatory in every client task, HU or not). Read `~/.config/zstack/clients.toml` (contract: `docs/examples/clients.toml.example`). Pick the client whose `root` is a prefix of the worktree path. From its `kdb_dir`, read the KDBs that apply to the task (skip `exclude`; `team_lessons` is local team notes, read them, never send them to an external tool). If `confluence_guidelines` is set, read that page (read-only). Right under the classification line, write `kdb: <files read>`, or `kdb: none found (<reason>)` when there is no map, no matching root, or no KDB applies. A matching root with no `kdb:` line is a violation. Pass the same paths to zNinja and zSensei.
 
 If `to-analysis`, `to-questionnaire` or `to-techspec` is missing, stop and tell Brayan (`scripts/setup-check.sh` reports them). Attachments: Brayan downloads them by hand into the task folder; read them there, never fetch them with API tokens. Client work happens with the company worktree tool from PATH (or a path defined only in local config); Brayan must approve the worktree before use.

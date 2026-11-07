@@ -107,7 +107,7 @@ link_new "$skill_src" "$HOME_DIR/.agents/skills/zstack"
 resolve_skill route-work
 route_src="$skill_src"
 link_force "$route_src" "$HOME_DIR/.cursor/skills/route-work"
-for w in zgrill zspec ztickets zpr zretro to-techspec blast-radius; do
+for w in zgrill zspec ztickets zpr zretro zwrite to-techspec blast-radius; do
   resolve_skill "$w"
   link_force "$skill_src" "$HOME_DIR/.cursor/skills/$w"
   link_force "$skill_src" "$HOME_DIR/.config/opencode/skills/$w"

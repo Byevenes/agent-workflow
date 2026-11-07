@@ -39,7 +39,7 @@ check_link() {
 if [ "$(git -C "$ROOT" config --bool core.bare 2>/dev/null || true)" = true ]; then echo "fail agent-workflow: core.bare=true (a fixture wrote to this repo; git -C $ROOT config core.bare false)"; fail=1; fi
 check_link "$HOME/.cursor/skills/zstack"
 check_link "$HOME/.cursor/skills/route-work"
-for pair in zgrill:grill-me zgrill:grill-with-docs zspec:to-spec ztickets:to-tickets zpr:pr zretro:retro; do
+for pair in zgrill:grill-me zgrill:grill-with-docs zspec:to-spec ztickets:to-tickets zpr:pr zretro:retro zwrite:writing-for-agents; do
   w=${pair%%:*}
   m=${pair#*:}
   if [ ! -f "$HOME/.cursor/skills/$w/SKILL.md" ]; then echo "missing wrapper $w (run scripts/link.sh)"; fail=1

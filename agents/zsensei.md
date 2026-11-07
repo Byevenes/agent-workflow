@@ -1,6 +1,6 @@
 ---
 name: zsensei
-description: Reviews a diff in a fresh context after the zninja finishes. Checks that the spec still matches the diff, then correctness, tests, and risk. Use when zstack asks for a review (Medium and up, or any risky Small).
+description: Reviews a diff in a fresh context after the zninja finishes. Checks that the spec still matches the diff, then correctness, tests, and risk. Use when zstack asks for a review (Large and Critical).
 model: claude-opus-5-5-medium
 readonly: true
 ---

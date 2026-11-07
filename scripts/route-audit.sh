@@ -21,7 +21,9 @@ for f in $files; do
   fi
   if grep -Eq '"name":"(StrReplace|Write|Edit|MultiEdit|EditNotebook|Delete)"' "$f"; then
     case $size in
-      medium|large|critical)
+      medium)
+        grep -Eq '"subagent_type":"(zninja|implementer)"' "$f" || mupinline=$((mupinline + 1)) ;;
+      large|critical)
         grep -q '"subagent_type":"zsensei"' "$f" || norev=$((norev + 1))
         grep -Eq '"subagent_type":"(zninja|implementer)"' "$f" || mupinline=$((mupinline + 1)) ;;
       *) ;;
@@ -40,10 +42,10 @@ echo "  edited inline, no reason: $nowhy"
 echo "  no edits: $noedit"
 echo "poteto-mode loaded (zninja or inline): $pm"
 echo "poteto-agent delegates: $pa"
-echo "medium+ edited without zsensei: $norev"
+echo "large or critical edited without zsensei: $norev"
 echo "medium+ inline (edited without zninja): $mupinline"
 echo "size undetected (no classification line): $nosize"
 echo "size in a legacy format (not the canonical zstack line): $legacy"
 if [ "$nowhy" -gt 0 ] || [ "$norev" -gt 0 ] || [ "$mupinline" -gt 0 ] || [ "$nosize" -gt 0 ]; then
-  echo "route-audit: FAIL (inline edits without a reason, medium+ without zsensei, medium+ inline, or size undetected)"; exit 1
+  echo "route-audit: FAIL (inline edits without a reason, large or critical without zsensei, medium+ inline, or size undetected)"; exit 1
 fi

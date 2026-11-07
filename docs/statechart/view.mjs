@@ -2,7 +2,7 @@ const P = {requested:"Request received", classified:"Classified (size printed)",
  approved:"Plan approved by Brayan", implemented:"Code written", reviewed:"Reviewed", retro_done:"Checks green + retro",
  pr_open:"PR open (zpr body)", merged:"Merged", draft_ready:"Client: PR body drafted in .scratch"};
 const I = {zninja:"by zNinja", inline_reason:"inline, reason recorded", inline_noreason:"inline, no reason"};
-const R = {zsensei:"zSensei", self_check:"self-check only", diff_read:"diff read"};
+const R = {zsensei:"zSensei", self_check:"self-check only", diff_read:"diff read", light:"light review"};
 export const title = "zStack workflow (agent-workflow @ d447961)";
 export const state = (v) => {
   let s = P[v.phase]; if (v.phase === "requested" && v.edited) s = "Edited before classifying";
@@ -14,7 +14,7 @@ export const state = (v) => {
 export const group = (v) => ["implemented","reviewed"].includes(v.phase) ? "code" :
   ["retro_done","pr_open","merged","draft_ready"].includes(v.phase) ? "deliver" : "plan";
 export const colors = { plan: "blue", code: "orange", deliver: "teal" };
-const L = { AgentEditsBeforeClassify:"the agent edits before classifying", AgentEditsBeforeApproval:"the agent codes before Brayan approves [Large or Critical]", AgentEditsInlineNoReason:"the agent codes inline without a reason", AgentSkipsReview:"the agent skips zSensei [Medium and up]", AgentPublishesClientPR:"the agent posts the client PR", AgentMerges:"the agent merges", Classify:"zStack classifies the task", Plan:"zgrill / zspec / ztickets plan it",
+const L = { AgentEditsBeforeClassify:"the agent edits before classifying", AgentEditsBeforeApproval:"the agent codes before Brayan approves [Large or Critical]", AgentEditsInlineNoReason:"the agent codes inline without a reason", AgentSkipsReview:"the agent skips zSensei [Large or Critical]", AgentPublishesClientPR:"the agent posts the client PR", AgentMerges:"the agent merges", Classify:"zStack classifies the task", Plan:"zgrill / zspec / ztickets plan it",
  BrayanApprovesPlan:"Brayan approves the plan [Large or Critical]", LaunchZninja:"zNinja writes the code",
  EditInlineWithReason:"the agent codes inline and writes the reason",
  Review:"the change is reviewed", ChecksAndRetro:"pre-commit, CI and zretro pass", OpenPR:"zpr opens the PR [personal repo]",

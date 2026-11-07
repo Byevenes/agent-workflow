@@ -126,10 +126,10 @@ When a host that is not Cursor can still launch zNinja and zSensei, keep the siz
 
 ## 4. Check (after code)
 
-Review follows the size, not the path (decision: option B). On the inline path, Small gets a second author pass (`reviewers: inline self-check`). Medium, Large and Critical (always zNinja) get `zsensei` exactly as below. If zsensei cannot be launched, set `reviewers: none (zsensei unavailable: <reason>)` and do not open the PR until Brayan reviews it. On a host that is not Cursor, follow `### Inline without Cursor` instead. A separate reviewer receives only the diff. Plugin loads ignore the `model` frontmatter, so the Task argument selects the model. The review role never runs on another model.
+Review follows the size, not the path (decision: option B). On the inline path, Small gets a second author pass (`reviewers: inline self-check`). Small and Medium get deterministic checks and a light review, and do not launch zsensei. Large and Critical (always zNinja) get `zsensei` exactly as below. If zsensei cannot be launched, set `reviewers: none (zsensei unavailable: <reason>)` and do not open the PR until Brayan reviews it. On a host that is not Cursor, follow `### Inline without Cursor` instead. A separate reviewer receives only the diff. Plugin loads ignore the `model` frontmatter, so the Task argument selects the model. The review role never runs on another model.
 
-- **Small.** Read the diff and the checks it ran. No review agent.
-- **Medium.** `zsensei` on the diff, with the spec path. It must confirm the spec still matches the diff. Every Task call to zsensei passes model: claude-opus-5-5-medium.
+- **Small.** Deterministic checks and a light review. Read the diff and the checks it ran. No review agent. Do not launch zsensei.
+- **Medium.** Deterministic checks and a light review on the diff, with the spec path. The light review confirms the spec still matches the diff. Do not launch zsensei.
 - **Large.** `blast-radius` (`skills/blast-radius/SKILL.md`), then `zsensei` with the spec and tickets. That step runs `scripts/blast-radius-callers.sh`. The report lists every in-module caller, including private methods and indirect callers. The check fails when the report misses one. Every Task call to zsensei passes model: claude-opus-5-5-medium.
 
 Prefer automatic barriers (lint, checks, hooks, CI) over more skill text. Each repo should have its own verification skill (`create-verification-skill`, then `verify-<app>`). Client repos: only the checks they already have, and the verification skill lives locally outside the repo.
@@ -179,7 +179,7 @@ zstack check
 - not verified automatically: <none | item → how to check by hand>
 - zninja launched: <yes | no (inline: <reason>)>
 - poteto-mode loaded: <yes/no> (<zninja | inline>)
-- reviewers: <none | zsensei | zsensei + security-auditor | inline self-check (small only) | independent (no Cursor)>
+- reviewers: <none | light review | zsensei | zsensei + security-auditor | inline self-check (small only) | independent (no Cursor)>
 - summary: <short pseudocode>
 - flow: <mermaid | none>
 - evidence: <command → real result and limit | did not run: reason>

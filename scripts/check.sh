@@ -156,8 +156,37 @@ grep -qF "$pin_back" docs/scripts.md || bad "scripts.md: return to main missing"
 grep -qF "$pin_back" README.md || bad "README: return to main missing"
 grep -qF 'fetch-depth: 0' .github/workflows/check.yml || bad "check.yml: fetch-depth 0 missing"
 
+for s in to-analysis client-questionnaire; do
+  got=$(awk '/^name:/{ sub(/^name:[[:space:]]*/, ""); gsub(/"/, ""); sub(/[[:space:]]*$/, ""); print; exit }' "skills/$s/SKILL.md" 2>/dev/null || true)
+  [ "$got" = "$s" ] || bad "skills/$s: set name to the directory"
+done
+qfile=skills/client-questionnaire/SKILL.md
+if [ ! -f "$qfile" ] \
+  || ! grep -q '^## Preguntas$' "$qfile" \
+  || ! grep -q '^## Prioridad$' "$qfile" \
+  || ! grep -q '^## Bloqueantes$' "$qfile" \
+  || ! grep -qE '^Q[0-9]+\. .+ dueño:[A-Za-z]+$' "$qfile" \
+  || grep -qE '^## (TL|PO|Infra|QA)$' "$qfile"
+then
+  bad "client-questionnaire: use headings ## Preguntas, ## Prioridad and ## Bloqueantes, one idea per line, owner at line end as dueño:<rol>"
+fi
+section0=$(awk '/^## 0\. / { p=1 } /^## 1\. / { p=0 } p' skills/zstack/SKILL.md)
+if ! printf '%s\n' "$section0" | grep -q 'client-questionnaire' || printf '%s\n' "$section0" | grep -q 'to-questionnaire'; then
+  bad "zstack section 0: client questions use client-questionnaire, not to-questionnaire"
+fi
+pre_stage=$(awk '/^for s in / { print; exit }' scripts/setup-check.sh)
+case $pre_stage in
+  *client-questionnaire*) ;;
+  *) bad "setup-check.sh: list client-questionnaire in the pre-stage for-loop, not to-questionnaire" ;;
+esac
+case $pre_stage in
+  *to-questionnaire*) bad "setup-check.sh: list client-questionnaire in the pre-stage for-loop, not to-questionnaire" ;;
+esac
+git check-ignore -q -- .scratch/answers.md || bad ".gitignore: add .scratch/ so scratch notes stay untracked"
 tmp=$(mktemp -d)
 mkdir -p "$tmp/.cursor/skills/realdir" "$tmp/.config/opencode/skills"
+mkdir -p "$tmp/.cursor/skills/to-analysis"
+printf 'loose copy\n' > "$tmp/.cursor/skills/to-analysis/SKILL.md"
 ln -s "$tmp/nowhere" "$tmp/.cursor/skills/broken"
 ln -s "$tmp/nowhere" "$tmp/.config/opencode/skills/broken"
 mkdir -p "$tmp/.cursor/plugins/local/other-plugin" "$tmp/.cursor/plugins/local/zstack-agents/agents"
@@ -168,6 +197,18 @@ unset LINK_SKILL_VERSIONS
 HOME=$tmp scripts/link.sh >/dev/null
 if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/broken" ]; then bad "link.sh: keeps a broken skill symlink"; fi
 [ -d "$tmp/.cursor/skills/realdir" ] || bad "link.sh: removed a real skill folder"
+link_root=$(CDPATH='' pwd)
+for p in .cursor/skills/to-analysis .config/opencode/skills/to-analysis; do
+  if [ ! -L "$tmp/$p" ] || [ "$(readlink "$tmp/$p")" != "$link_root/skills/to-analysis" ] || [ ! -f "$tmp/$p/SKILL.md" ] || grep -qx 'loose copy' "$tmp/$p/SKILL.md"; then
+    bad "link.sh: loose to-analysis survived; remove the real directory before link_force so the repo skill replaces it"
+  fi
+done
+grep -rqx 'loose copy' "$tmp/.cache/agent-workflow/replaced-skills" 2>/dev/null || bad "link.sh: a loose skill folder was deleted; move it under ~/.cache/agent-workflow/replaced-skills instead"
+for p in .cursor/skills/client-questionnaire .config/opencode/skills/client-questionnaire; do
+  if [ ! -L "$tmp/$p" ] || [ ! -f "$tmp/$p/SKILL.md" ]; then
+    bad "link.sh: client-questionnaire not force-linked; add it next to to-techspec in the link_force loop"
+  fi
+done
 for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/skills/blast-radius .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/skills/blast-radius .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done

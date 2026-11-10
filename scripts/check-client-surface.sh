@@ -28,6 +28,11 @@ if [ ! -f "$private" ]; then
   exit 1
 fi
 
+conn_fail='fail surface: connection string in the deliverable'
+conn_uri='(postgres(ql)?|mysql|mariadb|mongodb(\+srv)?|rediss?|amqps?|mssql|sqlserver|oracle|neo4j|bolt|couchbase|cassandra)://|jdbc:(postgresql|mysql|mariadb|oracle|sqlserver|jtds):|://[^ :/@]+:[^ @]+@'
+conn_secret='(^|[^[:alnum:]_])(password|pwd)[[:space:]]*='
+conn_where='(^|[^[:alnum:]_])(data source|user id|username|user|uid|host|server)[[:space:]]*='
+
 while IFS= read -r line || [ -n "$line" ]; do
   case $line in
     *INTERNO:*)
@@ -41,6 +46,25 @@ while IFS= read -r line || [ -n "$line" ]; do
       exit 1
       ;;
   esac
+  status=0
+  printf '%s\n' "$line" | grep -E -i -q -e "$conn_uri" || status=$?
+  if [ "$status" -ne 1 ]; then
+    printf '%s\n' "$conn_fail" >&2
+    exit 1
+  fi
+  status=0
+  printf '%s\n' "$line" | grep -E -i -q -e "$conn_secret" || status=$?
+  if [ "$status" -eq 0 ]; then
+    where=0
+    printf '%s\n' "$line" | grep -E -i -q -e "$conn_where" || where=$?
+    if [ "$where" -ne 1 ]; then
+      printf '%s\n' "$conn_fail" >&2
+      exit 1
+    fi
+  elif [ "$status" -ne 1 ]; then
+    printf '%s\n' "$conn_fail" >&2
+    exit 1
+  fi
 done < "$deliverable"
 
 printf '%s\n' "ok surface: $deliverable"

@@ -23,7 +23,7 @@ Applies only when the task comes from a client user story (HU) in an external tr
 
 At the start of `to-analysis`, before the detailed analysis, write a short system map. If that step already produces this map, keep one map and apply these rules there.
 
-Name the affected modules, the boundaries between them, and the dependencies. List each branch to compare and why, or say none apply. Read the names from the repo or the task. Do not assume branch names.
+Name the affected modules, the boundaries between them, and the dependencies. `scripts/check-unmerged-branches.sh` requires each branch not merged into `--base` (default `main`) to be named in the draft, or the exact line `ramas-fuera-de-base: ninguna`.
 
 Separate what was observed from what is still unconfirmed, and cite the source of each line. The map limits the later walk. It does not redesign the system. A short case is `docs/examples/system-map.md`.
 

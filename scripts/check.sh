@@ -391,6 +391,43 @@ if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/an-login.md" 
 grep -qF 'fail topic sesion: concluded without repo auth-spi' "$err" || bad "prestage: topic conclusion stderr"
 printf '%s\n' '## Resumen' 'Q1. ¿Dónde está el login? repo-ausente: auth-spi' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/an-q.md"
 (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/an-q.md" >/dev/null) || bad "prestage: topic question should pass"
+er=$(mktemp -d)
+git init -q -b main "$er/r"
+git -C "$er/r" config user.email t@t
+git -C "$er/r" config user.name t
+mkdir -p "$er/r/helm"
+printf '%s\n' 'widgetFlag: on' > "$er/r/helm/values.yaml"
+git -C "$er/r" add helm/values.yaml
+git -C "$er/r" commit -q -m 'keep widgetFlag on purpose'
+git -C "$er/r" checkout -q -b other
+printf '%s\n' x > "$er/r/extra"
+git -C "$er/r" add extra
+git -C "$er/r" commit -q -m extra
+git -C "$er/r" checkout -q main
+probe=$(sh "$root/scripts/evidence-probe.sh" --repo "$er/r" --token widgetFlag)
+printf '%s\n' "$probe" | grep -qF 'config: found helm/values.yaml' || bad "probe: values path: $probe"
+printf '%s\n' "$probe" | grep -qF 'history: found keep widgetFlag on purpose' || bad "probe: history subject: $probe"
+printf '%s\n' '## Resumen' 'el token' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/nofence.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/nofence.md" >/dev/null 2>"$err"; then bad "claims: missing fence should fail"; fi
+grep -qF 'fail claims: add a claims fence' "$err" || bad "claims: missing fence stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` está ausente' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/ausente.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/ausente.md" >/dev/null 2>"$err"; then bad "claims: ausente in values should fail"; fi
+grep -qF 'fail evidence: widgetFlag is in deploy values' "$err" || bad "claims: ausente stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bug.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bug.md" >/dev/null 2>"$err"; then bad "claims: bug without subject should fail"; fi
+grep -qF 'fail evidence: quote the git log -S subject' "$err" || bad "claims: bug stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' 'keep widgetFlag on purpose' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bugok.md"
+sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bugok.md" >/dev/null || bad "claims: bug with subject should pass"
+printf '%s\n' '## Resumen' nada '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro 'ramas-fuera-de-base: ninguna' > "$d/nobr.md"
+if sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/nobr.md" >/dev/null 2>"$err"; then bad "branches: unnamed other should fail"; fi
+grep -qF 'fail branches: other not named' "$err" || bad "branches: unnamed stderr"
+printf '%s\n' '## Resumen' 'rama other' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/named.md"
+sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/named.md" >/dev/null || bad "branches: named other should pass"
+printf '%s\n' "$er/r" > "$d/.scratch/present-repos.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/ausente.md" >/dev/null 2>"$err"); then bad "prestage: ausente claim should fail"; fi
+grep -qF 'fail evidence: widgetFlag is in deploy values' "$err" || bad "prestage: ausente stderr"
+grep -qF 'fail branches: other not named' "$err" || bad "prestage: should also name the unmerged branch"
+rm -rf "$er"
 rm -rf "$d"
 trap - EXIT
 ra=$(mktemp -d)
@@ -643,7 +680,7 @@ grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh scripts/retro-log.sh scripts/check-prestage-kdb.sh scripts/prestage-handoff.sh scripts/check-topic-repos.sh scripts/check-client-surface.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh scripts/retro-log.sh scripts/check-prestage-kdb.sh scripts/prestage-handoff.sh scripts/check-topic-repos.sh scripts/check-client-surface.sh scripts/evidence-probe.sh scripts/check-claims.sh scripts/check-unmerged-branches.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then

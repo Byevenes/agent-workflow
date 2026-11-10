@@ -349,6 +349,7 @@ printf 'kdb: %s\n' "$d/missing.md" > "$d/side.txt"
 if sh "$root/scripts/check-prestage-kdb.sh" "$d/side.txt" >/dev/null 2>"$err"; then bad "kdb: absent path should fail"; fi
 grep -qF "fail kdb: $d/missing.md is not a file" "$err" || bad "kdb: absent path stderr"
 mkdir -p "$d/.scratch"
+printf '%s\n' 'ninguno' > "$d/.scratch/privado.md"
 printf '%s\n' 'kdb: notes.md' > "$d/.scratch/kdb-used.txt"
 (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/es.md" >/dev/null) || bad "prestage: spanish draft with sidecar should pass"
 rm -f "$d/.scratch/kdb-used.txt"
@@ -362,6 +363,44 @@ rm -f "$d/.scratch/kdb-used.txt"
 if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/context.md" >/dev/null 2>"$err"); then bad "prestage: both checks should fail"; fi
 grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "prestage: both should name Resumen"
 grep -qF 'fail kdb: missing .scratch/kdb-used.txt; write kdb: <files read> or kdb: none found (<reason>)' "$err" || bad "prestage: both should name the sidecar"
+printf '%s\n' '```topics' "$(printf 'sesion\tlogin,otp,lockout\tauth-spi')" '```' > "$d/topics.md"
+printf '%s\n' 'El login probablemente vive en el sitio base.' > "$d/concl.md"
+if sh "$root/scripts/check-topic-repos.sh" --kdb "$d/topics.md" --draft "$d/concl.md" >/dev/null 2>"$err"; then bad "topic: conclusion without repo should fail"; fi
+grep -qF 'fail topic sesion: concluded without repo auth-spi' "$err" || bad "topic: conclusion stderr"
+printf '%s\n' 'Q1. ¿Dónde está el login? repo-ausente: auth-spi' > "$d/qtopic.md"
+sh "$root/scripts/check-topic-repos.sh" --kdb "$d/topics.md" --draft "$d/qtopic.md" >/dev/null || bad "topic: Q repo-ausente should pass"
+mkdir -p "$d/present/auth-spi"
+sh "$root/scripts/check-topic-repos.sh" --kdb "$d/topics.md" --draft "$d/concl.md" --present "$d/present/auth-spi" >/dev/null || bad "topic: present repo should allow a conclusion"
+sh "$root/scripts/check-topic-repos.sh" --kdb "$d/notes.md" --draft "$d/concl.md" >/dev/null || bad "topic: kdb without a topics fence should pass"
+printf '%s\n' '## Resumen' visible '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/clean.md"
+printf '%s\n' 'ninguno' > "$d/priv-none.md"
+sh "$root/scripts/check-client-surface.sh" "$d/clean.md" "$d/priv-none.md" >/dev/null || bad "surface: clean deliverable should pass"
+printf '%s\n' '## Resumen' 'INTERNO: detalle que se queda en el scratch' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/interno.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/interno.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: INTERNO in the deliverable should fail"; fi
+grep -qF 'fail surface: INTERNO line belongs in the private file' "$err" || bad "surface: INTERNO stderr"
+printf '%s\n' 'INTERNO: detalle que se queda en el scratch' > "$d/priv.md"
+sh "$root/scripts/check-client-surface.sh" "$d/clean.md" "$d/priv.md" >/dev/null || bad "surface: INTERNO only in the private file should pass"
+printf '%s\n' '## Resumen' "$(printf '%s\n' '-----BEGIN '"PRIVATE KEY"'-----')" '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/key.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/key.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: key block should fail"; fi
+grep -qF 'fail surface: key block belongs in the private file' "$err" || bad "surface: key block stderr"
+printf '%s\n' '## Resumen' "$(printf '%s%s%s' 'postgres' '://app:' 'pw@db.example.test/app')" '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-uri.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/conn-uri.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: connection uri should fail"; fi
+grep -qF 'fail surface: connection string in the deliverable' "$err" || bad "surface: connection uri stderr"
+printf '%s\n' '## Resumen' 'Server=db.example.test;User ID=app;Password=pw;' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-kv.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/conn-kv.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: key-value connection should fail"; fi
+grep -qF 'fail surface: connection string in the deliverable' "$err" || bad "surface: key-value connection stderr"
+printf '%s\n' '## Resumen' 'The password is not in the code. See https://example.test/docs' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-ok.md"
+sh "$root/scripts/check-client-surface.sh" "$d/conn-ok.md" "$d/priv-none.md" >/dev/null || bad "surface: https url without a connection string should pass"
+printf '%s\n' '## Resumen' 'password=pw and guid=abc' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-guid.md"
+sh "$root/scripts/check-client-surface.sh" "$d/conn-guid.md" "$d/priv-none.md" >/dev/null || bad "surface: guid assignment should pass"
+if sh "$root/scripts/check-client-surface.sh" "$d/clean.md" "$d/missing-priv.md" >/dev/null 2>"$err"; then bad "surface: missing privado should fail"; fi
+grep -qF 'fail surface: write .scratch/privado.md (even if ninguno)' "$err" || bad "surface: missing privado stderr"
+printf '%s\n' '## Resumen' 'El login probablemente vive en el sitio base.' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/an-login.md"
+printf 'kdb: %s\n' "$d/topics.md" > "$d/.scratch/kdb-used.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/an-login.md" >/dev/null 2>"$err"); then bad "prestage: topic conclusion should fail"; fi
+grep -qF 'fail topic sesion: concluded without repo auth-spi' "$err" || bad "prestage: topic conclusion stderr"
+printf '%s\n' '## Resumen' 'Q1. ¿Dónde está el login? repo-ausente: auth-spi' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/an-q.md"
+(cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/an-q.md" >/dev/null) || bad "prestage: topic question should pass"
 rm -rf "$d"
 trap - EXIT
 ra=$(mktemp -d)
@@ -614,7 +653,7 @@ grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh scripts/retro-log.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh scripts/retro-log.sh scripts/check-prestage-kdb.sh scripts/prestage-handoff.sh scripts/check-topic-repos.sh scripts/check-client-surface.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then

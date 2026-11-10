@@ -20,7 +20,7 @@ No diseña la solución final ni escribe código. Reúne evidencia y deja claro 
 
 1. **Ticket.** Lee el ticket, **todos** sus comentarios y los adjuntos o requerimientos enlazados con el MCP de Atlassian, solo lectura. Nunca comentes, edites ni transiciones. Si el requerimiento cambia de versión, registra qué cambió.
 2. **KDBs.** Lee los KDBs/guidelines del cliente que apliquen (arquitectura, persistencia, testing, despliegue, seguridad). El resultado es la línea de `.scratch/kdb-used.txt`.
-3. **Repos.** Identifica los repos involucrados desde el inventario del cliente e inspecciónalos: stack y versión del framework, endpoints y clientes HTTP existentes, modelo de datos, jobs/workers, tests y CI. **Cita cada hallazgo** (archivo, clase, endpoint, tabla). Lo que no encuentres en código es supuesto o pregunta, nunca un hecho.
+3. **Repos.** Identifica los repos involucrados desde el inventario del cliente e inspecciónalos: stack y versión del framework, endpoints y clientes HTTP existentes, modelo de datos, jobs/workers, tests y CI. **Cita cada hallazgo** (archivo, clase, endpoint, tabla). Si un tema del KDB apunta a un repo ausente, `scripts/check-topic-repos.sh` exige la forma `Qn. … repo-ausente: <repo>`. Lo que no encuentres en código es supuesto o pregunta, nunca un hecho.
 4. **AS-IS / TO-BE.** Describe el comportamiento actual con evidencia y diagrama mermaid (usa `mermaid-diagrams` si está disponible). Propone alternativas TO-BE preliminares con su trade-off, sin cerrarlas.
 5. **Preguntas.** Redáctalas con `client-questionnaire`. Marca en este análisis lo que ya resolviste leyendo el código.
 
@@ -47,6 +47,7 @@ Ticket, comentarios, adjuntos y cada cita de código. Las preguntas las produce 
 ## Reglas
 
 - No inventes valores ni contratos. Lo desconocido va como pregunta o como "Por definir" con dueño.
-- No incluyas secretos, credenciales ni connection strings.
+- Los hallazgos marcados INTERNO van en `.scratch/privado.md`. `scripts/check-client-surface.sh` rechaza `INTERNO:`, bloques de clave y cadenas de conexión en el entregable.
+- Un secreto suelto en prosa, sin esquema de URI y sin asignación de usuario, contraseña o host, sigue prohibido en el entregable. El script no lo cubre.
 - Si la nota ya existe, haz respaldo antes de editarla y agrega una sección de actualización fechada en vez de reescribirla.
 - Cuando lleguen las respuestas, ejecuta `to-techspec`. Usa `grill-with-docs` antes si quedan huecos de diseño.

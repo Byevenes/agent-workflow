@@ -332,7 +332,38 @@ grep -qF 'fail questionnaire: extra heading ## QA; put the owner at line end as 
 printf '%s\n' '## Preguntas' 'Q1. falta el rol' '## Prioridad' '## Bloqueantes' > "$d/nodueno.md"
 if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/nodueno.md" >/dev/null 2>"$err"; then bad "questionnaire: missing dueño should fail"; fi
 grep -qF 'has no dueño; add dueño:<rol> at line end' "$err" || bad "questionnaire: dueño stderr"
+printf '%s\n' "$section0" | grep -qF 'the parent runs scripts/prestage-handoff.sh' || bad "zstack section 0: parent runs prestage-handoff"
+root=$(pwd)
+trap 'rm -rf "$d"' EXIT
+if (cd "$d" && sh "$root/scripts/check-prestage-kdb.sh" >/dev/null 2>"$err"); then bad "kdb: missing sidecar should fail"; fi
+grep -qF 'fail kdb: missing .scratch/kdb-used.txt; write kdb: <files read> or kdb: none found (<reason>)' "$err" || bad "kdb: missing sidecar stderr"
+printf 'n\n' > "$d/notes.md"
+printf 'o\n' > "$d/other.md"
+printf 'kdb: %s\n' "$d/notes.md" > "$d/side.txt"
+sh "$root/scripts/check-prestage-kdb.sh" "$d/side.txt" >/dev/null || bad "kdb: one file should pass"
+printf 'kdb: %s, %s\n' "$d/notes.md" "$d/other.md" > "$d/side.txt"
+sh "$root/scripts/check-prestage-kdb.sh" "$d/side.txt" >/dev/null || bad "kdb: two files should pass"
+printf '%s\n' 'kdb: none found (no matching root)' > "$d/side.txt"
+sh "$root/scripts/check-prestage-kdb.sh" "$d/side.txt" >/dev/null || bad "kdb: none found should pass"
+printf 'kdb: %s\n' "$d/missing.md" > "$d/side.txt"
+if sh "$root/scripts/check-prestage-kdb.sh" "$d/side.txt" >/dev/null 2>"$err"; then bad "kdb: absent path should fail"; fi
+grep -qF "fail kdb: $d/missing.md is not a file" "$err" || bad "kdb: absent path stderr"
+mkdir -p "$d/.scratch"
+printf '%s\n' 'kdb: notes.md' > "$d/.scratch/kdb-used.txt"
+(cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/es.md" >/dev/null) || bad "prestage: spanish draft with sidecar should pass"
+rm -f "$d/.scratch/kdb-used.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/es.md" >/dev/null 2>"$err"); then bad "prestage: missing sidecar should fail"; fi
+grep -qF 'fail kdb: missing .scratch/kdb-used.txt; write kdb: <files read> or kdb: none found (<reason>)' "$err" || bad "prestage: missing sidecar stderr"
+printf '%s\n' '## Context' > "$d/context.md"
+printf '%s\n' 'kdb: notes.md' > "$d/.scratch/kdb-used.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/context.md" >/dev/null 2>"$err"); then bad "prestage: context-only draft should fail"; fi
+grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "prestage: context-only stderr"
+rm -f "$d/.scratch/kdb-used.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/context.md" >/dev/null 2>"$err"); then bad "prestage: both checks should fail"; fi
+grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "prestage: both should name Resumen"
+grep -qF 'fail kdb: missing .scratch/kdb-used.txt; write kdb: <files read> or kdb: none found (<reason>)' "$err" || bad "prestage: both should name the sidecar"
 rm -rf "$d"
+trap - EXIT
 ra=$(mktemp -d)
 mkdir -p "$ra/p/agent-transcripts"
 printf '%s\n' 'zstack: small, full verifiable' '"name":"Write"' 'zninja launched: no (inline: Task tool absent)' > "$ra/p/agent-transcripts/ok.jsonl"

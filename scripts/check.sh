@@ -301,6 +301,38 @@ check_project_agents
 rm -rf "$tmp"
 
 sh scripts/check-draft-sections.sh --example docs/examples/unslop-before-after.md >/dev/null || bad "unslop: required sections missing"
+d=$(mktemp -d)
+err=$d/err
+printf '%s\n' '## Resumen' uno '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/es.md"
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh analysis "$d/es.md" >/dev/null || bad "analysis: Spanish headings should pass"
+printf '%s\n' '## Resumen de la HU' '## Hallazgos' '## Incertidumbres' '## Fuentes' > "$d/sub.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh analysis "$d/sub.md" >/dev/null 2>"$err"; then bad "analysis: a longer heading must not satisfy ## Resumen"; fi
+grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "analysis: substring heading should name ## Resumen"
+printf '%s\n' '## Context' '## Findings' '## Uncertainties' '## Sources' > "$d/en.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh analysis "$d/en.md" >/dev/null 2>"$err"; then bad "analysis: English headings should fail"; fi
+grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "analysis: English stderr should name ## Resumen"
+awk 'BEGIN{print "## Preguntas"; for(i=1;i<=12;i++) printf "Q%d. item %d dueño:QA\n", i, i; print "## Prioridad"; print "## Bloqueantes"}' > "$d/q12.md"
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/q12.md" >/dev/null || bad "questionnaire: 12 for one owner should pass"
+awk 'BEGIN{print "## Preguntas"; for(i=1;i<=16;i++) printf "Q%d. item %d dueño:QA\n", i, i; print "## Prioridad"; print "## Bloqueantes"}' > "$d/q16.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/q16.md" >/dev/null 2>"$err"; then bad "questionnaire: 16 for one owner should fail"; fi
+grep -qF 'fail questionnaire: dueño:QA has 16 questions, max 15 (set ZSTACK_MAX_QUESTIONS_PER_OWNER)' "$err" || bad "questionnaire: cap stderr"
+ZSTACK_MAX_QUESTIONS_PER_OWNER=0 sh scripts/check-draft-sections.sh questionnaire "$d/q16.md" >/dev/null || bad "questionnaire: cap 0 should disable"
+awk 'BEGIN{print "## Preguntas"; for(i=1;i<=15;i++) printf "Q%d. qa %d dueño:QA\n", i, i; for(i=16;i<=30;i++) printf "Q%d. tl %d dueño:TL\n", i, i; print "## Prioridad"; print "## Bloqueantes"}' > "$d/both.md"
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/both.md" >/dev/null || bad "questionnaire: 15 per owner should pass"
+printf '%s\n' '## Preguntas' 'Q1. ¿El informe incluye filas? dueño:QA' 'Q2. el informe incluye filas dueño:TL' '## Prioridad' '## Bloqueantes' > "$d/dup.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/dup.md" >/dev/null 2>"$err"; then bad "questionnaire: duplicate questions should fail"; fi
+grep -qF 'duplicates an earlier question; drop the copy' "$err" || bad "questionnaire: duplicate stderr"
+printf '%s\n' '## Supuestos' '¿El informe incluye filas?' '## Fuentes' ticket > "$d/sup.md"
+printf '%s\n' '## Preguntas' 'Q1. El informe incluye filas. dueño:QA' '## Prioridad' '## Bloqueantes' > "$d/rep.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/rep.md" --analysis "$d/sup.md" >/dev/null 2>"$err"; then bad "questionnaire: a supuesto repeat should fail"; fi
+grep -qF 'fail questionnaire: Q1 repeats a supuesto' "$err" || bad "questionnaire: supuesto stderr"
+printf '%s\n' '## Preguntas' '## QA' '## Prioridad' '## Bloqueantes' > "$d/extra.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/extra.md" >/dev/null 2>"$err"; then bad "questionnaire: extra heading should fail"; fi
+grep -qF 'fail questionnaire: extra heading ## QA; put the owner at line end as dueño:<rol>' "$err" || bad "questionnaire: extra heading stderr"
+printf '%s\n' '## Preguntas' 'Q1. falta el rol' '## Prioridad' '## Bloqueantes' > "$d/nodueno.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/nodueno.md" >/dev/null 2>"$err"; then bad "questionnaire: missing dueño should fail"; fi
+grep -qF 'has no dueño; add dueño:<rol> at line end' "$err" || bad "questionnaire: dueño stderr"
+rm -rf "$d"
 ra=$(mktemp -d)
 mkdir -p "$ra/p/agent-transcripts"
 printf '%s\n' 'zstack: small, full verifiable' '"name":"Write"' 'zninja launched: no (inline: Task tool absent)' > "$ra/p/agent-transcripts/ok.jsonl"

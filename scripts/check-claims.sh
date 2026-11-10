@@ -11,6 +11,32 @@ ere() {
   printf '%s' "$1" | sed -e 's/[][\\.^$*+?(){}|]/\\&/g'
 }
 
+subject_named() {
+  printf '%s\n' "$2" | SUBJ="$1" awk '
+    function trim(s) {
+      sub(/^[ \t]+/, "", s)
+      sub(/[ \t]+$/, "", s)
+      return s
+    }
+    BEGIN {
+      subj = ENVIRON["SUBJ"]
+      bt = "`"
+      dq = "\""
+      sq = "\047"
+      cbt = bt subj bt
+      cdq = dq subj dq
+      csq = sq subj sq
+      found = 0
+    }
+    {
+      if (trim($0) == subj) found = 1
+      if (index($0, cbt) || index($0, cdq) || index($0, csq)) found = 1
+    }
+    END { exit found ? 0 : 1 }
+  ' && return 0
+  return 1
+}
+
 repo=
 draft=
 while [ "$#" -gt 0 ]; do
@@ -82,7 +108,7 @@ while IFS= read -r token || [ -n "$token" ]; do
     fi
     if printf '%s\n' "$line" | grep -F -q -- "$bt$token$bt" && printf '%s\n' "$line" | grep -iE "(^|[^[:alnum:]_])(bug|defecto)([^[:alnum:]_]|$)" >/dev/null; then
       subj=${history#found }
-      if [ "$history" = absent ] || [ -z "$subj" ] || ! printf '%s\n' "$draft_text" | grep -F -q -- "$subj"; then
+      if [ "$history" = absent ] || [ -z "$subj" ] || ! subject_named "$subj" "$draft_text"; then
         printf '%s\n' 'fail evidence: quote the git log -S subject' >&2
         exit 1
       fi

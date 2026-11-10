@@ -428,11 +428,26 @@ if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bug.md" >/dev/n
 grep -qF 'fail evidence: quote the git log -S subject' "$err" || bad "claims: bug stderr"
 printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' 'keep widgetFlag on purpose' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bugok.md"
 sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bugok.md" >/dev/null || bad "claims: bug with subject should pass"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' 'the commit keep widgetFlag on purpose landed yesterday' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bugsent.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bugsent.md" >/dev/null 2>"$err"; then bad "claims: subject in a sentence should fail"; fi
+grep -qF 'fail evidence: quote the git log -S subject' "$err" || bad "claims: sentence stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' 'keep widgetFlag on purposely' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bugpart.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bugpart.md" >/dev/null 2>"$err"; then bad "claims: partial subject should fail"; fi
+grep -qF 'fail evidence: quote the git log -S subject' "$err" || bad "claims: partial stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' '`keep widgetFlag on purpose`' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bugcite.md"
+sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bugcite.md" >/dev/null || bad "claims: backtick citation should pass"
 printf '%s\n' '## Resumen' nada '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro 'ramas-fuera-de-base: ninguna' > "$d/nobr.md"
 if sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/nobr.md" >/dev/null 2>"$err"; then bad "branches: unnamed other should fail"; fi
 grep -qF 'fail branches: other not named' "$err" || bad "branches: unnamed stderr"
 printf '%s\n' '## Resumen' 'rama other' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/named.md"
 sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/named.md" >/dev/null || bad "branches: named other should pass"
+printf '%s\n' '## Resumen' 'another' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/substr.md"
+if sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/substr.md" >/dev/null 2>"$err"; then bad "branches: another should not name other"; fi
+grep -qF 'fail branches: other not named' "$err" || bad "branches: substring stderr"
+if sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/named.md" --base missing >/dev/null 2>"$err"; then bad "branches: missing base should fail"; fi
+grep -qF 'fail branches: base missing is missing' "$err" || bad "branches: missing base stderr"
+printf '%s\n' 'ramas-fuera-de-base: ninguna' > "$d/baseother.md"
+sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/baseother.md" --base other >/dev/null || bad "branches: --base other should pass"
 printf '%s\n' "$er/r" > "$d/.scratch/present-repos.txt"
 if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/ausente.md" >/dev/null 2>"$err"); then bad "prestage: ausente claim should fail"; fi
 grep -qF 'fail evidence: widgetFlag is in deploy values' "$err" || bad "prestage: ausente stderr"

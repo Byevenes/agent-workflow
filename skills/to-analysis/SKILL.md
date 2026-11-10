@@ -13,12 +13,13 @@ No diseña la solución final ni escribe código. Reúne evidencia y deja claro 
 ## Insumos
 
 - **Obligatorio:** texto de la HU o clave del ticket.
-- **Opcionales:** inventario de repositorios del cliente, KDBs/guidelines del cliente, repos ya clonados, análisis o PRDs previos, notas de reunión y cualquier insumo extra que entregue el usuario.
+- **Obligatorio:** `.scratch/kdb-used.txt` con una línea `kdb: <archivos leídos>` o `kdb: none found (<motivo>)`. El padre corre `scripts/prestage-handoff.sh` y este skill no corre scripts.
+- **Opcionales:** inventario de repositorios del cliente, repos ya clonados, análisis o PRDs previos, notas de reunión y cualquier insumo extra que entregue el usuario.
 
 ## Proceso
 
 1. **Ticket.** Lee el ticket, **todos** sus comentarios y los adjuntos o requerimientos enlazados con el MCP de Atlassian, solo lectura. Nunca comentes, edites ni transiciones. Si el requerimiento cambia de versión, registra qué cambió.
-2. **KDBs.** Lee los KDBs/guidelines del cliente que apliquen (arquitectura, persistencia, testing, despliegue, seguridad).
+2. **KDBs.** Lee los KDBs/guidelines del cliente que apliquen (arquitectura, persistencia, testing, despliegue, seguridad). El resultado es la línea de `.scratch/kdb-used.txt`.
 3. **Repos.** Identifica los repos involucrados desde el inventario del cliente e inspecciónalos: stack y versión del framework, endpoints y clientes HTTP existentes, modelo de datos, jobs/workers, tests y CI. **Cita cada hallazgo** (archivo, clase, endpoint, tabla). Lo que no encuentres en código es supuesto o pregunta, nunca un hecho.
 4. **AS-IS / TO-BE.** Describe el comportamiento actual con evidencia y diagrama mermaid (usa `mermaid-diagrams` si está disponible). Propone alternativas TO-BE preliminares con su trade-off, sin cerrarlas.
 5. **Preguntas.** Redáctalas con `client-questionnaire`. Marca en este análisis lo que ya resolviste leyendo el código.

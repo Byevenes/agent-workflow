@@ -107,10 +107,17 @@ link_new "$skill_src" "$HOME_DIR/.agents/skills/zstack"
 resolve_skill route-work
 route_src="$skill_src"
 link_force "$route_src" "$HOME_DIR/.cursor/skills/route-work"
-for w in zgrill zspec ztickets zpr zretro zwrite to-techspec blast-radius; do
+for w in zgrill zspec ztickets zpr zretro zwrite to-techspec blast-radius to-analysis client-questionnaire; do
   resolve_skill "$w"
-  link_force "$skill_src" "$HOME_DIR/.cursor/skills/$w"
-  link_force "$skill_src" "$HOME_DIR/.config/opencode/skills/$w"
+  for dest in "$HOME_DIR/.cursor/skills/$w" "$HOME_DIR/.config/opencode/skills/$w"; do
+    if [ -d "$dest" ] && [ ! -L "$dest" ]; then
+      keep="$HOME_DIR/.cache/agent-workflow/replaced-skills/$w-$(date +%Y%m%d%H%M%S)-$$-$(basename "$(dirname "$(dirname "$dest")")")"
+      mkdir -p "$(dirname "$keep")"
+      mv "$dest" "$keep"
+      echo "moved loose $dest to $keep"
+    fi
+    link_force "$skill_src" "$dest"
+  done
 done
 link_force "$route_src" "$HOME_DIR/.config/opencode/skills/route-work"
 

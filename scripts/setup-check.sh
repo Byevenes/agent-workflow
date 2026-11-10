@@ -101,7 +101,7 @@ for a in zstack zninja zsensei; do
   if [ -f "$f" ] && grep -Eq '^model: *"?opencode/' "$f"; then echo "fail opencode $a: model opencode/* (Zen); client code must not go to Zen"; fail=1
   elif [ -f "$f" ]; then echo "ok opencode $a: no opencode/* model"; fi
 done
-for s in to-analysis to-questionnaire to-techspec; do
+for s in to-analysis client-questionnaire to-techspec; do
   for d in "$HOME/.cursor/skills" "$HOME/.config/opencode/skills"; do
     if [ -f "$d/$s/SKILL.md" ]; then echo "ok pre-stage $s in $d"; else echo "warn pre-stage $s missing in $d (zstack section 0 stops and tells Brayan)"; fi
   done

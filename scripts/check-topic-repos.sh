@@ -19,12 +19,16 @@ trap 'rm -f "$present_list"' EXIT
 while [ "$#" -gt 0 ]; do
   case $1 in
     --kdb)
-      [ "$#" -ge 2 ] && [ -z "$kdb" ] || usage
+      if [ "$#" -lt 2 ] || [ -n "$kdb" ]; then
+        usage
+      fi
       kdb=$2
       shift 2
       ;;
     --draft)
-      [ "$#" -ge 2 ] && [ -z "$draft" ] || usage
+      if [ "$#" -lt 2 ] || [ -n "$draft" ]; then
+        usage
+      fi
       draft=$2
       shift 2
       ;;
@@ -46,7 +50,9 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-[ -n "$kdb" ] && [ -n "$draft" ] || usage
+if [ -z "$kdb" ] || [ -z "$draft" ]; then
+  usage
+fi
 if [ ! -f "$draft" ]; then
   printf '%s\n' "fail topic: $draft is not a file" >&2
   exit 1

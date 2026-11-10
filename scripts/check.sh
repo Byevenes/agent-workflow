@@ -383,6 +383,16 @@ sh "$root/scripts/check-client-surface.sh" "$d/clean.md" "$d/priv.md" >/dev/null
 printf '%s\n' '## Resumen' "$(printf '%s\n' '-----BEGIN '"PRIVATE KEY"'-----')" '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/key.md"
 if sh "$root/scripts/check-client-surface.sh" "$d/key.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: key block should fail"; fi
 grep -qF 'fail surface: key block belongs in the private file' "$err" || bad "surface: key block stderr"
+printf '%s\n' '## Resumen' "$(printf '%s%s%s' 'postgres' '://app:' 'pw@db.example.test/app')" '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-uri.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/conn-uri.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: connection uri should fail"; fi
+grep -qF 'fail surface: connection string in the deliverable' "$err" || bad "surface: connection uri stderr"
+printf '%s\n' '## Resumen' 'Server=db.example.test;User ID=app;Password=pw;' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-kv.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/conn-kv.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: key-value connection should fail"; fi
+grep -qF 'fail surface: connection string in the deliverable' "$err" || bad "surface: key-value connection stderr"
+printf '%s\n' '## Resumen' 'The password is not in the code. See https://example.test/docs' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-ok.md"
+sh "$root/scripts/check-client-surface.sh" "$d/conn-ok.md" "$d/priv-none.md" >/dev/null || bad "surface: https url without a connection string should pass"
+printf '%s\n' '## Resumen' 'password=pw and guid=abc' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-guid.md"
+sh "$root/scripts/check-client-surface.sh" "$d/conn-guid.md" "$d/priv-none.md" >/dev/null || bad "surface: guid assignment should pass"
 if sh "$root/scripts/check-client-surface.sh" "$d/clean.md" "$d/missing-priv.md" >/dev/null 2>"$err"; then bad "surface: missing privado should fail"; fi
 grep -qF 'fail surface: write .scratch/privado.md (even if ninguno)' "$err" || bad "surface: missing privado stderr"
 printf '%s\n' '## Resumen' 'El login probablemente vive en el sitio base.' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/an-login.md"

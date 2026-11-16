@@ -291,6 +291,27 @@ printf '%s\n' '{"text":"zstack: **Large**, partial verifiable — migración"}' 
 ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh | grep -q 'size undetected (no classification line): 0' || bad "route-audit: misses a canonical line with bold size"
 rm -rf "$ra"
 
+cd_t=$(mktemp -d)
+printf '%s\n' '#!/bin/sh' 'printf "%s\n" "$@" >"$CD_ARGS"' 'echo "{\"type\":\"result\",\"result\":\"ok\"}"' >"$cd_t/agent"
+printf '%s\n' '#!/bin/sh' 'sleep 30 &' 'echo $! >"$CD_CHILD"' 'wait' >"$cd_t/slow"
+chmod +x "$cd_t/agent" "$cd_t/slow"
+echo 'task' >"$cd_t/p.md"
+CD_ARGS=$cd_t/args AGENT_BIN=$cd_t/agent scripts/cursor-delegate.sh --workspace "$cd_t" --prompt "$cd_t/p.md" --out "$cd_t/o.jsonl" || bad "cursor-delegate: fails a clean run"
+grep -qx -- '--trust' "$cd_t/args" || bad "cursor-delegate: --trust missing"
+grep -A1 -x -- '--sandbox' "$cd_t/args" | grep -qx enabled || bad "cursor-delegate: --sandbox enabled missing by default"
+if grep -Eqx -- '--force|--yolo|-f' "$cd_t/args"; then bad "cursor-delegate: passes a force flag"; fi
+grep -qF 'no harness or script in `/tmp`' "$cd_t/args" || bad "cursor-delegate: prompt lacks the no-improvised-runner rule"
+grep -qx 'exit=0' "$cd_t/o.jsonl.meta" || bad "cursor-delegate: meta lacks exit=0"
+CD_ARGS=$cd_t/args AGENT_BIN=$cd_t/agent scripts/cursor-delegate.sh --workspace "$cd_t" --prompt "$cd_t/p.md" --out "$cd_t/a.jsonl" --approval auto-review || bad "cursor-delegate: fails an auto-review run"
+grep -qx -- '--auto-review' "$cd_t/args" || bad "cursor-delegate: --auto-review not passed"
+if CD_ARGS=$cd_t/args AGENT_BIN=$cd_t/agent scripts/cursor-delegate.sh --workspace "$cd_t" --prompt "$cd_t/p.md" --out "$cd_t/x.jsonl" --model m-fast 2>/dev/null; then bad "cursor-delegate: accepts a -fast model"; fi
+rc=0
+CD_CHILD=$cd_t/child AGENT_BIN=$cd_t/slow DELEGATE_IDLE=2 scripts/cursor-delegate.sh --workspace "$cd_t" --prompt "$cd_t/p.md" --out "$cd_t/s.jsonl" 2>/dev/null || rc=$?
+[ "$rc" = 124 ] || bad "cursor-delegate: idle run not killed with 124 (got $rc)"
+grep -q '^exit=killed(idle' "$cd_t/s.jsonl.meta" || bad "cursor-delegate: meta lacks killed(idle)"
+if [ -s "$cd_t/child" ] && kill -0 "$(cat "$cd_t/child")" 2>/dev/null; then bad "cursor-delegate: idle kill left the agent's child running"; fi
+rm -rf "$cd_t"
+
 cg=$(mktemp -d)
 git init -q "$cg/r"
 (cd "$cg/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/Byevenes/x.git >/dev/null) || bad "client-guard: blocks a personal GitHub push"

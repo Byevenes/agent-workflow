@@ -44,7 +44,14 @@ A personal repo that is mostly a language CodeQL supports may add CodeQL there. 
 
 ## Future / optional
 
-A developer may later run SonarQube Community in Docker on their own machine, outside every client repo. The compose file and any local quality profile live under personal tooling, never under a client worktree. Client quality profiles arrive only by export from the client Sonar instance or by SonarQube for IDE connected mode. Do not invent a client quality profile in git. Until that optional step exists, SonarQube for IDE plus the branch-vs-base gitleaks gate above is enough for the local path.
+A developer may later run SonarQube Community in Docker on their own machine, outside every client repo. The compose file and any local quality profile live under personal tooling, never under a client worktree. Client quality profiles arrive only by export from the client Sonar instance or by SonarQube for IDE connected mode. Do not invent a client quality profile in git. When that instance is up, the zStack Pre-push gate adds one optional step:
+
+1. Run the stack's scanner from the worktree root with a **local** project key. The scanner command and the token live in personal tooling; the token goes only in the environment (`SONAR_TOKEN`), never on the command line or in git.
+2. Run `scripts/sonar-diff-issues.sh <base> --fetch <local-key>` from the same worktree. It reads the open issues of that key from the local instance and prints only those on lines that `<base>...HEAD` added or changed (`path:line`, severity, rule, message).
+
+Exit 0: no finding on our lines. Exit 1: findings on our lines; fix them with a new commit. Exit 2: usage or a bad response. Exit 3: no instance answered at `SONAR_HOST_URL` (default `http://localhost:9000`); the step is recorded as not run, not as passed. Findings outside the diff are known debt and stay out of the gate. `scripts/sonar-diff-issues.sh <base> <issues.json>` does the same on a saved response.
+
+Without that instance, SonarQube for IDE plus the branch-vs-base gitleaks gate above is enough for the local path.
 
 ## Where each piece lives
 

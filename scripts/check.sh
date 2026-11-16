@@ -788,5 +788,42 @@ out=$(sh scripts/run-log.sh 2>/dev/null) || st=$?
 rm -rf "$rn"
 trap - EXIT
 
+sq=$(mktemp -d)
+sqs=$PWD/scripts/sonar-diff-issues.sh
+git -C "$sq" init -q -b main
+printf 'a\nb\nc\n' > "$sq/A.cs"
+printf 'x\n' > "$sq/Old.cs"
+git -C "$sq" add -A
+git -C "$sq" -c user.name=t -c user.email=t@t commit -q -m base
+git -C "$sq" checkout -q -b feat
+printf 'a\nB\nc\nd\n' > "$sq/A.cs"
+git -C "$sq" -c user.name=t -c user.email=t@t commit -q -am change
+cat > "$sq/issues.json" <<'JSON'
+{"total":4,"issues":[
+{"component":"local-k:A.cs","line":1,"severity":"MAJOR","rule":"r:old","message":"old line"},
+{"component":"local-k:A.cs","line":2,"severity":"MAJOR","rule":"r:changed","message":"changed line"},
+{"component":"local-k:A.cs","line":4,"severity":"MINOR","rule":"r:added","message":"added line"},
+{"component":"local-k:Old.cs","line":1,"severity":"BLOCKER","rule":"r:untouched","message":"untouched file"},
+{"component":"local-k:A.cs","severity":"INFO","rule":"r:file","message":"file level"}]}
+JSON
+printf '{"total":0,"issues":[]}\n' > "$sq/none.json"
+st=0
+sqout=$(cd "$sq" && sh "$sqs" main issues.json) || st=$?
+[ "$st" -eq 1 ] || bad "sonar-diff: issues on changed lines exit $st"
+[ "$(printf '%s\n' "$sqout" | wc -l | tr -d ' ')" = 2 ] || bad "sonar-diff: expected 2 lines, got: $sqout"
+printf '%s\n' "$sqout" | grep -qF 'A.cs:2' || bad "sonar-diff: changed line missing"
+printf '%s\n' "$sqout" | grep -qF 'A.cs:4' || bad "sonar-diff: added line missing"
+case $sqout in *r:old*|*r:untouched*|*r:file*) bad "sonar-diff: reported an issue outside the diff" ;; esac
+(cd "$sq" && sh "$sqs" main none.json >/dev/null) || bad "sonar-diff: no issues should exit 0"
+st=0; (cd "$sq" && sh "$sqs" main >/dev/null 2>&1) || st=$?
+[ "$st" -eq 2 ] || bad "sonar-diff: usage exit $st"
+st=0; (cd "$sq" && sh "$sqs" nope issues.json >/dev/null 2>&1) || st=$?
+[ "$st" -eq 2 ] || bad "sonar-diff: unknown base exit $st"
+st=0; (cd "$sq" && SONAR_HOST_URL=http://127.0.0.1:9 sh "$sqs" main --fetch local-k >/dev/null 2>&1) || st=$?
+[ "$st" -eq 3 ] || bad "sonar-diff: unreachable host should exit 3, got $st"
+rm -rf "$sq"
+grep -qF 'scripts/sonar-diff-issues.sh' skills/zstack/SKILL.md || bad "zstack: pre-push must name sonar-diff-issues.sh"
+grep -qF 'scripts/sonar-diff-issues.sh' docs/security-scan.md || bad "security-scan: missing sonar-diff-issues.sh"
+
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

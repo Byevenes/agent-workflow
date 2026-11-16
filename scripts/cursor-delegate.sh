@@ -39,7 +39,7 @@ while [ $# -gt 0 ]; do
   shift 2
 done
 
-[ -n "$ws" ] && [ -n "$prompt" ] && [ -n "$out" ] || usage
+if [ -z "$ws" ] || [ -z "$prompt" ] || [ -z "$out" ]; then usage; fi
 [ -d "$ws" ] || { echo "cursor-delegate: workspace not found: $ws" >&2; exit 2; }
 [ -f "$prompt" ] || { echo "cursor-delegate: prompt not found: $prompt" >&2; exit 2; }
 [ -f "$RULES" ] || { echo "cursor-delegate: rules missing: $RULES" >&2; exit 2; }
@@ -64,10 +64,15 @@ start=$(date +%Y-%m-%dT%H:%M:%S%z)
 : >"$out"
 printf 'start=%s\nmodel=%s\napproval=%s\nidle=%s\nmax=%s\n' "$start" "$model" "$approval" "$idle" "$max" >"$meta"
 
-set -m
+kill_tree() {
+  for child in $(pgrep -P "$2" 2>/dev/null || true); do
+    kill_tree "$1" "$child"
+  done
+  kill "-$1" "$2" 2>/dev/null || true
+}
+
 "$bin" "$@" >"$out" 2>"$out.err" &
 pid=$!
-set +m
 
 last=-1
 quiet=0
@@ -88,9 +93,9 @@ while kill -0 "$pid" 2>/dev/null; do
 done
 
 if [ -n "$why" ]; then
-  kill -TERM -- "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
+  kill_tree TERM "$pid"
   sleep 2
-  kill -KILL -- "-$pid" 2>/dev/null || true
+  kill_tree KILL "$pid"
   wait "$pid" 2>/dev/null || true
   printf 'exit=killed(%s)\nend=%s\n' "$why" "$(date +%Y-%m-%dT%H:%M:%S%z)" >>"$meta"
   echo "cursor-delegate: killed after $why without output; run the stuck step outside the sandbox" >&2

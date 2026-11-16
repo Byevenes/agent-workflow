@@ -16,7 +16,7 @@ The orchestrator then runs, outside the sandbox and in the same worktree, every 
 
 ## Watchdog
 
-The launcher asks for `stream-json`, so a live run keeps writing events. When the output file stops growing for `--idle` seconds (default 900), the launcher kills the whole process group, writes `exit=killed(idle Ns)` to `<out>.meta`, and exits 124. `--max` adds a hard wall-clock limit. After a kill, read the last events in `<out>` to see the stuck step, and run that step outside the sandbox.
+The launcher asks for `stream-json`, so a live run keeps writing events. When the output file stops growing for `--idle` seconds (default 900), the launcher kills the agent and every child process, writes `exit=killed(idle Ns)` to `<out>.meta`, and exits 124. `--max` adds a hard wall-clock limit. After a kill, read the last events in `<out>` to see the stuck step, and run that step outside the sandbox.
 
 ## Proposal, not applied: `cli-config.json`
 

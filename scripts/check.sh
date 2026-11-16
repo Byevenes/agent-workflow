@@ -146,7 +146,7 @@ for f in scripts/*.sh .githooks/* hooks/client-guard/*; do
   if awk 'NR>1 && /^[[:space:]]*#/ && !/https?:\/\/|SPDX|[Ll]icense/' "$f" | grep -q .; then bad "$f: comment without issue/RFC link or license"; fi
 done
 
-if command -v shellcheck >/dev/null 2>&1; then shellcheck -e SC2016 scripts/*.sh .githooks/* hooks/client-guard/* || bad shellcheck; else bad "shellcheck missing (brew install shellcheck)"; fi
+if command -v shellcheck >/dev/null 2>&1; then shellcheck -e SC2016 scripts/*.sh skills/*/scripts/*.sh .githooks/* hooks/client-guard/* || bad shellcheck; else bad "shellcheck missing (brew install shellcheck)"; fi
 
 if [ "$(date +%Y%m%d)" -ge 20261201 ] && { [ -e skills/route-work ] || grep -q route-work scripts/link.sh; }; then bad "route-work alias expired 2026-12-01: delete skills/route-work and its link.sh lines"; fi
 
@@ -168,6 +168,9 @@ unset LINK_SKILL_VERSIONS
 HOME=$tmp scripts/link.sh >/dev/null
 if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/broken" ]; then bad "link.sh: keeps a broken skill symlink"; fi
 [ -d "$tmp/.cursor/skills/realdir" ] || bad "link.sh: removed a real skill folder"
+for p in .cursor/skills/zstack/scripts/route-audit.sh .config/opencode/skills/zstack/scripts/route-audit.sh; do
+  [ -x "$tmp/$p" ] || bad "link.sh smoke: $p not executable through the zstack link"
+done
 for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/skills/blast-radius .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/skills/blast-radius .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done
@@ -289,6 +292,7 @@ ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null || bad "route-audit: fail
 rm "$ra/p/agent-transcripts/mupin.jsonl"
 printf '%s\n' '{"text":"zstack: **Large**, partial verifiable — migración"}' > "$ra/p/agent-transcripts/canon.jsonl"
 ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh | grep -q 'size undetected (no classification line): 0' || bad "route-audit: misses a canonical line with bold size"
+ROUTE_AUDIT_BASE=$ra skills/zstack/scripts/route-audit.sh >/dev/null || bad "route-audit: skill copy fails on a clean fixture"
 rm -rf "$ra"
 
 cg=$(mktemp -d)

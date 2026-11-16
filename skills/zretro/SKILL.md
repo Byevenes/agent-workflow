@@ -27,3 +27,9 @@ Read `~/.agents/skills/retro/SKILL.md` and follow it, with these overrides:
 - Client repos: write the proposal to `.scratch/retro-<date>.md` only. Brayan approves before anything changes.
 
 If Matt's file does not exist, use the overrides above with the seven retro categories: navigation, automated checks, coding standards, steering files, tool economy, no-ops, information access.
+
+## Metric and limits
+
+- Measure a retro by outcome, not by process: which repeated mistake did the last change prevent, and how many defects escaped to review, CI or the user since the last retro. Write both in the retro. A change that prevented nothing is a candidate to remove.
+- Keep at most 3 open PRs per repo. Merge or close one before you open another.
+- No new gate (check.sh guard, hook, script or skill rule) unless the same change removes one, or the proposal names the escaped defect it would have caught. Remove unused gates at the next retro.

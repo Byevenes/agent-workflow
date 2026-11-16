@@ -186,7 +186,7 @@ zstack check
 - tdd: <red and green commands with real results | not used>
 ```
 
-Before reporting done, run `scripts/route-audit.sh` from this repo (Byevenes/agent-workflow). It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, a Large or Critical session edited without zsensei, or a Medium+ session edited without launching zninja (`medium+ inline`). A non-zero exit is a retro input, not something to explain away.
+Before reporting done, run `sh ~/.cursor/skills/zstack/scripts/route-audit.sh [project-filter] [days]` (OpenCode: `~/.config/opencode/skills/zstack/scripts/route-audit.sh`). The script ships in this skill folder; in the agent-workflow repo `scripts/route-audit.sh` runs the same file. It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, a Large or Critical session edited without zsensei, or a Medium+ session edited without launching zninja (`medium+ inline`). A non-zero exit is a retro input, not something to explain away.
 
 ### Unslop before handoff
 

@@ -8,9 +8,9 @@ Genera una **TechSpec**: el documento que **acompaña a la HU** (historia de usu
 
 ## Posición en el flujo
 
-HU → análisis técnico con preguntas por prioridad (`to-questionnaire`) → respuestas del TL/PO (en el ticket) → `grill-with-docs` para cerrar huecos → **TechSpec** → PRD → TD → `prd-td-coherence` valida al final que PRD y TD respeten la TechSpec.
+HU → análisis técnico con preguntas por prioridad (`client-questionnaire`) → respuestas del TL/PO (en el ticket) → `grill-with-docs` para cerrar huecos → **TechSpec** → PRD → TD → `prd-td-coherence` valida al final que PRD y TD respeten la TechSpec.
 
-Si aún no hay respuestas del TL/PO, no generes la TechSpec: propone primero `to-questionnaire`.
+Si aún no hay respuestas del TL/PO, no generes la TechSpec: propone primero `client-questionnaire`.
 
 ## Insumos
 

@@ -156,8 +156,37 @@ grep -qF "$pin_back" docs/scripts.md || bad "scripts.md: return to main missing"
 grep -qF "$pin_back" README.md || bad "README: return to main missing"
 grep -qF 'fetch-depth: 0' .github/workflows/check.yml || bad "check.yml: fetch-depth 0 missing"
 
+for s in to-analysis client-questionnaire; do
+  got=$(awk '/^name:/{ sub(/^name:[[:space:]]*/, ""); gsub(/"/, ""); sub(/[[:space:]]*$/, ""); print; exit }' "skills/$s/SKILL.md" 2>/dev/null || true)
+  [ "$got" = "$s" ] || bad "skills/$s: set name to the directory"
+done
+qfile=skills/client-questionnaire/SKILL.md
+if [ ! -f "$qfile" ] \
+  || ! grep -q '^## Preguntas$' "$qfile" \
+  || ! grep -q '^## Prioridad$' "$qfile" \
+  || ! grep -q '^## Bloqueantes$' "$qfile" \
+  || ! grep -qE '^Q[0-9]+\. .+ dueño:[A-Za-z]+$' "$qfile" \
+  || grep -qE '^## (TL|PO|Infra|QA)$' "$qfile"
+then
+  bad "client-questionnaire: use headings ## Preguntas, ## Prioridad and ## Bloqueantes, one idea per line, owner at line end as dueño:<rol>"
+fi
+section0=$(awk '/^## 0\. / { p=1 } /^## 1\. / { p=0 } p' skills/zstack/SKILL.md)
+if ! printf '%s\n' "$section0" | grep -q 'client-questionnaire' || printf '%s\n' "$section0" | grep -q 'to-questionnaire'; then
+  bad "zstack section 0: client questions use client-questionnaire, not to-questionnaire"
+fi
+pre_stage=$(awk '/^for s in / { print; exit }' scripts/setup-check.sh)
+case $pre_stage in
+  *client-questionnaire*) ;;
+  *) bad "setup-check.sh: list client-questionnaire in the pre-stage for-loop, not to-questionnaire" ;;
+esac
+case $pre_stage in
+  *to-questionnaire*) bad "setup-check.sh: list client-questionnaire in the pre-stage for-loop, not to-questionnaire" ;;
+esac
+git check-ignore -q -- .scratch/answers.md || bad ".gitignore: add .scratch/ so scratch notes stay untracked"
 tmp=$(mktemp -d)
 mkdir -p "$tmp/.cursor/skills/realdir" "$tmp/.config/opencode/skills"
+mkdir -p "$tmp/.cursor/skills/to-analysis"
+printf 'loose copy\n' > "$tmp/.cursor/skills/to-analysis/SKILL.md"
 ln -s "$tmp/nowhere" "$tmp/.cursor/skills/broken"
 ln -s "$tmp/nowhere" "$tmp/.config/opencode/skills/broken"
 mkdir -p "$tmp/.cursor/plugins/local/other-plugin" "$tmp/.cursor/plugins/local/zstack-agents/agents"
@@ -168,6 +197,18 @@ unset LINK_SKILL_VERSIONS
 HOME=$tmp scripts/link.sh >/dev/null
 if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/broken" ]; then bad "link.sh: keeps a broken skill symlink"; fi
 [ -d "$tmp/.cursor/skills/realdir" ] || bad "link.sh: removed a real skill folder"
+link_root=$(CDPATH='' pwd)
+for p in .cursor/skills/to-analysis .config/opencode/skills/to-analysis; do
+  if [ ! -L "$tmp/$p" ] || [ "$(readlink "$tmp/$p")" != "$link_root/skills/to-analysis" ] || [ ! -f "$tmp/$p/SKILL.md" ] || grep -qx 'loose copy' "$tmp/$p/SKILL.md"; then
+    bad "link.sh: loose to-analysis survived; remove the real directory before link_force so the repo skill replaces it"
+  fi
+done
+grep -rqx 'loose copy' "$tmp/.cache/agent-workflow/replaced-skills" 2>/dev/null || bad "link.sh: a loose skill folder was deleted; move it under ~/.cache/agent-workflow/replaced-skills instead"
+for p in .cursor/skills/client-questionnaire .config/opencode/skills/client-questionnaire; do
+  if [ ! -L "$tmp/$p" ] || [ ! -f "$tmp/$p/SKILL.md" ]; then
+    bad "link.sh: client-questionnaire not force-linked; add it next to to-techspec in the link_force loop"
+  fi
+done
 for p in .cursor/skills/zstack/scripts/route-audit.sh .config/opencode/skills/zstack/scripts/route-audit.sh; do
   [ -x "$tmp/$p" ] || bad "link.sh smoke: $p not executable through the zstack link"
 done
@@ -263,6 +304,160 @@ check_project_agents
 rm -rf "$tmp"
 
 sh scripts/check-draft-sections.sh --example docs/examples/unslop-before-after.md >/dev/null || bad "unslop: required sections missing"
+d=$(mktemp -d)
+err=$d/err
+printf '%s\n' '## Resumen' uno '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/es.md"
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh analysis "$d/es.md" >/dev/null || bad "analysis: Spanish headings should pass"
+printf '%s\n' '## Resumen de la HU' '## Hallazgos' '## Incertidumbres' '## Fuentes' > "$d/sub.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh analysis "$d/sub.md" >/dev/null 2>"$err"; then bad "analysis: a longer heading must not satisfy ## Resumen"; fi
+grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "analysis: substring heading should name ## Resumen"
+printf '%s\n' '## Context' '## Findings' '## Uncertainties' '## Sources' > "$d/en.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh analysis "$d/en.md" >/dev/null 2>"$err"; then bad "analysis: English headings should fail"; fi
+grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "analysis: English stderr should name ## Resumen"
+awk 'BEGIN{print "## Preguntas"; for(i=1;i<=12;i++) printf "Q%d. item %d dueño:QA\n", i, i; print "## Prioridad"; print "## Bloqueantes"}' > "$d/q12.md"
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/q12.md" >/dev/null || bad "questionnaire: 12 for one owner should pass"
+awk 'BEGIN{print "## Preguntas"; for(i=1;i<=16;i++) printf "Q%d. item %d dueño:QA\n", i, i; print "## Prioridad"; print "## Bloqueantes"}' > "$d/q16.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/q16.md" >/dev/null 2>"$err"; then bad "questionnaire: 16 for one owner should fail"; fi
+grep -qF 'fail questionnaire: dueño:QA has 16 questions, max 15 (set ZSTACK_MAX_QUESTIONS_PER_OWNER)' "$err" || bad "questionnaire: cap stderr"
+ZSTACK_MAX_QUESTIONS_PER_OWNER=0 sh scripts/check-draft-sections.sh questionnaire "$d/q16.md" >/dev/null || bad "questionnaire: cap 0 should disable"
+awk 'BEGIN{print "## Preguntas"; for(i=1;i<=15;i++) printf "Q%d. qa %d dueño:QA\n", i, i; for(i=16;i<=30;i++) printf "Q%d. tl %d dueño:TL\n", i, i; print "## Prioridad"; print "## Bloqueantes"}' > "$d/both.md"
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/both.md" >/dev/null || bad "questionnaire: 15 per owner should pass"
+printf '%s\n' '## Preguntas' 'Q1. ¿El informe incluye filas? dueño:QA' 'Q2. el informe incluye filas dueño:TL' '## Prioridad' '## Bloqueantes' > "$d/dup.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/dup.md" >/dev/null 2>"$err"; then bad "questionnaire: duplicate questions should fail"; fi
+grep -qF 'duplicates an earlier question; drop the copy' "$err" || bad "questionnaire: duplicate stderr"
+printf '%s\n' '## Supuestos' '¿El informe incluye filas?' '## Fuentes' ticket > "$d/sup.md"
+printf '%s\n' '## Preguntas' 'Q1. El informe incluye filas. dueño:QA' '## Prioridad' '## Bloqueantes' > "$d/rep.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/rep.md" --analysis "$d/sup.md" >/dev/null 2>"$err"; then bad "questionnaire: a supuesto repeat should fail"; fi
+grep -qF 'fail questionnaire: Q1 repeats a supuesto' "$err" || bad "questionnaire: supuesto stderr"
+printf '%s\n' '## Preguntas' '## QA' '## Prioridad' '## Bloqueantes' > "$d/extra.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/extra.md" >/dev/null 2>"$err"; then bad "questionnaire: extra heading should fail"; fi
+grep -qF 'fail questionnaire: extra heading ## QA; put the owner at line end as dueño:<rol>' "$err" || bad "questionnaire: extra heading stderr"
+printf '%s\n' '## Preguntas' 'Q1. falta el rol' '## Prioridad' '## Bloqueantes' > "$d/nodueno.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/nodueno.md" >/dev/null 2>"$err"; then bad "questionnaire: missing dueño should fail"; fi
+grep -qF 'has no dueño; add dueño:<rol> at line end' "$err" || bad "questionnaire: dueño stderr"
+printf '%s\n' "$section0" | grep -qF 'the parent runs scripts/prestage-handoff.sh' || bad "zstack section 0: parent runs prestage-handoff"
+root=$(pwd)
+trap 'rm -rf "$d"' EXIT
+if (cd "$d" && sh "$root/scripts/check-prestage-kdb.sh" >/dev/null 2>"$err"); then bad "kdb: missing sidecar should fail"; fi
+grep -qF 'fail kdb: missing .scratch/kdb-used.txt; write kdb: <files read> or kdb: none found (<reason>)' "$err" || bad "kdb: missing sidecar stderr"
+printf 'n\n' > "$d/notes.md"
+printf 'o\n' > "$d/other.md"
+printf 'kdb: %s\n' "$d/notes.md" > "$d/side.txt"
+sh "$root/scripts/check-prestage-kdb.sh" "$d/side.txt" >/dev/null || bad "kdb: one file should pass"
+printf 'kdb: %s, %s\n' "$d/notes.md" "$d/other.md" > "$d/side.txt"
+sh "$root/scripts/check-prestage-kdb.sh" "$d/side.txt" >/dev/null || bad "kdb: two files should pass"
+printf '%s\n' 'kdb: none found (no matching root)' > "$d/side.txt"
+sh "$root/scripts/check-prestage-kdb.sh" "$d/side.txt" >/dev/null || bad "kdb: none found should pass"
+printf 'kdb: %s\n' "$d/missing.md" > "$d/side.txt"
+if sh "$root/scripts/check-prestage-kdb.sh" "$d/side.txt" >/dev/null 2>"$err"; then bad "kdb: absent path should fail"; fi
+grep -qF "fail kdb: $d/missing.md is not a file" "$err" || bad "kdb: absent path stderr"
+mkdir -p "$d/.scratch"
+printf '%s\n' 'ninguno' > "$d/.scratch/privado.md"
+printf '%s\n' 'kdb: notes.md' > "$d/.scratch/kdb-used.txt"
+(cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/es.md" >/dev/null) || bad "prestage: spanish draft with sidecar should pass"
+rm -f "$d/.scratch/kdb-used.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/es.md" >/dev/null 2>"$err"); then bad "prestage: missing sidecar should fail"; fi
+grep -qF 'fail kdb: missing .scratch/kdb-used.txt; write kdb: <files read> or kdb: none found (<reason>)' "$err" || bad "prestage: missing sidecar stderr"
+printf '%s\n' '## Context' > "$d/context.md"
+printf '%s\n' 'kdb: notes.md' > "$d/.scratch/kdb-used.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/context.md" >/dev/null 2>"$err"); then bad "prestage: context-only draft should fail"; fi
+grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "prestage: context-only stderr"
+rm -f "$d/.scratch/kdb-used.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/context.md" >/dev/null 2>"$err"); then bad "prestage: both checks should fail"; fi
+grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "prestage: both should name Resumen"
+grep -qF 'fail kdb: missing .scratch/kdb-used.txt; write kdb: <files read> or kdb: none found (<reason>)' "$err" || bad "prestage: both should name the sidecar"
+printf '%s\n' '```topics' "$(printf 'sesion\tlogin,otp,lockout\tauth-spi')" '```' > "$d/topics.md"
+printf '%s\n' 'El login probablemente vive en el sitio base.' > "$d/concl.md"
+if sh "$root/scripts/check-topic-repos.sh" --kdb "$d/topics.md" --draft "$d/concl.md" >/dev/null 2>"$err"; then bad "topic: conclusion without repo should fail"; fi
+grep -qF 'fail topic sesion: concluded without repo auth-spi' "$err" || bad "topic: conclusion stderr"
+printf '%s\n' 'Q1. ¿Dónde está el login? repo-ausente: auth-spi' > "$d/qtopic.md"
+sh "$root/scripts/check-topic-repos.sh" --kdb "$d/topics.md" --draft "$d/qtopic.md" >/dev/null || bad "topic: Q repo-ausente should pass"
+mkdir -p "$d/present/auth-spi"
+sh "$root/scripts/check-topic-repos.sh" --kdb "$d/topics.md" --draft "$d/concl.md" --present "$d/present/auth-spi" >/dev/null || bad "topic: present repo should allow a conclusion"
+sh "$root/scripts/check-topic-repos.sh" --kdb "$d/notes.md" --draft "$d/concl.md" >/dev/null || bad "topic: kdb without a topics fence should pass"
+printf '%s\n' '## Resumen' visible '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/clean.md"
+printf '%s\n' 'ninguno' > "$d/priv-none.md"
+sh "$root/scripts/check-client-surface.sh" "$d/clean.md" "$d/priv-none.md" >/dev/null || bad "surface: clean deliverable should pass"
+printf '%s\n' '## Resumen' 'INTERNO: detalle que se queda en el scratch' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/interno.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/interno.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: INTERNO in the deliverable should fail"; fi
+grep -qF 'fail surface: INTERNO line belongs in the private file' "$err" || bad "surface: INTERNO stderr"
+printf '%s\n' 'INTERNO: detalle que se queda en el scratch' > "$d/priv.md"
+sh "$root/scripts/check-client-surface.sh" "$d/clean.md" "$d/priv.md" >/dev/null || bad "surface: INTERNO only in the private file should pass"
+printf '%s\n' '## Resumen' "$(printf '%s\n' '-----BEGIN '"PRIVATE KEY"'-----')" '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/key.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/key.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: key block should fail"; fi
+grep -qF 'fail surface: key block belongs in the private file' "$err" || bad "surface: key block stderr"
+printf '%s\n' '## Resumen' "$(printf '%s%s%s' 'postgres' '://app:' 'pw@db.example.test/app')" '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-uri.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/conn-uri.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: connection uri should fail"; fi
+grep -qF 'fail surface: connection string in the deliverable' "$err" || bad "surface: connection uri stderr"
+printf '%s\n' '## Resumen' 'Server=db.example.test;User ID=app;Password=pw;' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-kv.md"
+if sh "$root/scripts/check-client-surface.sh" "$d/conn-kv.md" "$d/priv-none.md" >/dev/null 2>"$err"; then bad "surface: key-value connection should fail"; fi
+grep -qF 'fail surface: connection string in the deliverable' "$err" || bad "surface: key-value connection stderr"
+printf '%s\n' '## Resumen' 'The password is not in the code. See https://example.test/docs' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-ok.md"
+sh "$root/scripts/check-client-surface.sh" "$d/conn-ok.md" "$d/priv-none.md" >/dev/null || bad "surface: https url without a connection string should pass"
+printf '%s\n' '## Resumen' 'password=pw and guid=abc' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/conn-guid.md"
+sh "$root/scripts/check-client-surface.sh" "$d/conn-guid.md" "$d/priv-none.md" >/dev/null || bad "surface: guid assignment should pass"
+if sh "$root/scripts/check-client-surface.sh" "$d/clean.md" "$d/missing-priv.md" >/dev/null 2>"$err"; then bad "surface: missing privado should fail"; fi
+grep -qF 'fail surface: write .scratch/privado.md (even if ninguno)' "$err" || bad "surface: missing privado stderr"
+printf '%s\n' '## Resumen' 'El login probablemente vive en el sitio base.' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/an-login.md"
+printf 'kdb: %s\n' "$d/topics.md" > "$d/.scratch/kdb-used.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/an-login.md" >/dev/null 2>"$err"); then bad "prestage: topic conclusion should fail"; fi
+grep -qF 'fail topic sesion: concluded without repo auth-spi' "$err" || bad "prestage: topic conclusion stderr"
+printf '%s\n' '## Resumen' 'Q1. ¿Dónde está el login? repo-ausente: auth-spi' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/an-q.md"
+(cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/an-q.md" >/dev/null) || bad "prestage: topic question should pass"
+er=$(mktemp -d)
+git init -q -b main "$er/r"
+git -C "$er/r" config user.email t@t
+git -C "$er/r" config user.name t
+mkdir -p "$er/r/helm"
+printf '%s\n' 'widgetFlag: on' > "$er/r/helm/values.yaml"
+git -C "$er/r" add helm/values.yaml
+git -C "$er/r" commit -q -m 'keep widgetFlag on purpose'
+git -C "$er/r" checkout -q -b other
+printf '%s\n' x > "$er/r/extra"
+git -C "$er/r" add extra
+git -C "$er/r" commit -q -m extra
+git -C "$er/r" checkout -q main
+probe=$(sh "$root/scripts/evidence-probe.sh" --repo "$er/r" --token widgetFlag)
+printf '%s\n' "$probe" | grep -qF 'config: found helm/values.yaml' || bad "probe: values path: $probe"
+printf '%s\n' "$probe" | grep -qF 'history: found keep widgetFlag on purpose' || bad "probe: history subject: $probe"
+printf '%s\n' '## Resumen' 'el token' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/nofence.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/nofence.md" >/dev/null 2>"$err"; then bad "claims: missing fence should fail"; fi
+grep -qF 'fail claims: add a claims fence' "$err" || bad "claims: missing fence stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` está ausente' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/ausente.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/ausente.md" >/dev/null 2>"$err"; then bad "claims: ausente in values should fail"; fi
+grep -qF 'fail evidence: widgetFlag is in deploy values' "$err" || bad "claims: ausente stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bug.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bug.md" >/dev/null 2>"$err"; then bad "claims: bug without subject should fail"; fi
+grep -qF 'fail evidence: quote the git log -S subject' "$err" || bad "claims: bug stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' 'keep widgetFlag on purpose' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bugok.md"
+sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bugok.md" >/dev/null || bad "claims: bug with subject should pass"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' 'the commit keep widgetFlag on purpose landed yesterday' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bugsent.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bugsent.md" >/dev/null 2>"$err"; then bad "claims: subject in a sentence should fail"; fi
+grep -qF 'fail evidence: quote the git log -S subject' "$err" || bad "claims: sentence stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' 'keep widgetFlag on purposely' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bugpart.md"
+if sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bugpart.md" >/dev/null 2>"$err"; then bad "claims: partial subject should fail"; fi
+grep -qF 'fail evidence: quote the git log -S subject' "$err" || bad "claims: partial stderr"
+printf '%s\n' '## Resumen' 'el `widgetFlag` es un bug' '`keep widgetFlag on purpose`' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/bugcite.md"
+sh "$root/scripts/check-claims.sh" --repo "$er/r" --draft "$d/bugcite.md" >/dev/null || bad "claims: backtick citation should pass"
+printf '%s\n' '## Resumen' nada '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro 'ramas-fuera-de-base: ninguna' > "$d/nobr.md"
+if sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/nobr.md" >/dev/null 2>"$err"; then bad "branches: unnamed other should fail"; fi
+grep -qF 'fail branches: other not named' "$err" || bad "branches: unnamed stderr"
+printf '%s\n' '## Resumen' 'rama other' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/named.md"
+sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/named.md" >/dev/null || bad "branches: named other should pass"
+printf '%s\n' '## Resumen' 'another' '```claims' ninguno '```' '## Hallazgos' dos '## Incertidumbres' tres '## Fuentes' cuatro > "$d/substr.md"
+if sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/substr.md" >/dev/null 2>"$err"; then bad "branches: another should not name other"; fi
+grep -qF 'fail branches: other not named' "$err" || bad "branches: substring stderr"
+if sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/named.md" --base missing >/dev/null 2>"$err"; then bad "branches: missing base should fail"; fi
+grep -qF 'fail branches: base missing is missing' "$err" || bad "branches: missing base stderr"
+printf '%s\n' 'ramas-fuera-de-base: ninguna' > "$d/baseother.md"
+sh "$root/scripts/check-unmerged-branches.sh" --repo "$er/r" --draft "$d/baseother.md" --base other >/dev/null || bad "branches: --base other should pass"
+printf '%s\n' "$er/r" > "$d/.scratch/present-repos.txt"
+if (cd "$d" && sh "$root/scripts/prestage-handoff.sh" analysis "$d/ausente.md" >/dev/null 2>"$err"); then bad "prestage: ausente claim should fail"; fi
+grep -qF 'fail evidence: widgetFlag is in deploy values' "$err" || bad "prestage: ausente stderr"
+grep -qF 'fail branches: other not named' "$err" || bad "prestage: should also name the unmerged branch"
+rm -rf "$er"
+rm -rf "$d"
+trap - EXIT
 ra=$(mktemp -d)
 mkdir -p "$ra/p/agent-transcripts"
 printf '%s\n' 'zstack: small, full verifiable' '"name":"Write"' 'zninja launched: no (inline: Task tool absent)' > "$ra/p/agent-transcripts/ok.jsonl"
@@ -561,7 +756,7 @@ grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
 grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
 grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
 
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh scripts/retro-log.sh; do
+for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh scripts/retro-log.sh scripts/check-prestage-kdb.sh scripts/prestage-handoff.sh scripts/check-topic-repos.sh scripts/check-client-surface.sh scripts/evidence-probe.sh scripts/check-claims.sh scripts/check-unmerged-branches.sh; do
   sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
 done
 if [ -z "${CHECK_NESTED:-}" ]; then
@@ -905,6 +1100,31 @@ rm -rf "$rt"
 grep -qF 'scripts/check-remote-tests.sh' skills/zstack/SKILL.md || bad "zstack: test gates must name check-remote-tests.sh"
 grep -qF 'scripts/check-export-package.sh' skills/zstack/SKILL.md || bad "zstack: export packages must name check-export-package.sh"
 grep -qF 'scripts/check-required-claims.sh' skills/to-techspec/SKILL.md || bad "to-techspec: must run check-required-claims.sh"
+
+md=$(mktemp -d)
+mkdir -p "$md/C/acme/r" "$md/C/beta/r" "$md/C/gamma" "$md/P/x"
+printf 'clients_root = "%s/C"\n[clients.acme]\nroot = "%s/C/acme"\nmode = "plan-only"\n[clients.beta]\nroot = "%s/C/beta"\n' "$md" "$md" "$md" > "$md/c.toml"
+mf() { env -u CLIENTS_ROOT -u ZSTACK_MODE ZSTACK_CLIENTS_TOML="$md/c.toml" sh scripts/mode-for.sh "$@" 2>/dev/null; }
+mf "$md/C/acme/r" | grep -q '^mode: plan-only ' || bad "mode-for: client mode not read"
+mf "$md/C/beta/r" | grep -q '^mode: ask-first ' || bad "mode-for: client without mode must be ask-first"
+mf "$md/C/gamma" | grep -q '^mode: ask-first ' || bad "mode-for: clients root must be ask-first"
+mf "$md/P/x" | grep -q '^mode: accept-edits ' || bad "mode-for: personal default must be accept-edits"
+env -u CLIENTS_ROOT ZSTACK_MODE=plan-only ZSTACK_CLIENTS_TOML="$md/c.toml" sh scripts/mode-for.sh "$md/P/x" | grep -q '^mode: plan-only ' || bad "mode-for: stricter override ignored"
+env -u CLIENTS_ROOT ZSTACK_MODE=accept-edits ZSTACK_CLIENTS_TOML="$md/c.toml" sh scripts/mode-for.sh "$md/C/beta/r" 2>/dev/null | grep -q '^mode: ask-first ' || bad "mode-for: looser override must not apply"
+printf '[clients.bad]\nroot = "%s/C/acme"\nmode = "yolo"\n' "$md" > "$md/bad.toml"
+st=0; env -u CLIENTS_ROOT ZSTACK_CLIENTS_TOML="$md/bad.toml" sh scripts/mode-for.sh "$md/C/acme/r" >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "mode-for: unknown mode exit $st"
+st=0; mf >/dev/null || st=$?
+[ "$st" -eq 2 ] || bad "mode-for: usage exit $st"
+rm -rf "$md"
+grep -qF 'scripts/mode-for.sh' skills/zstack/SKILL.md || bad "zstack: classify must run mode-for.sh"
+grep -qF 'scripts/mode-for.sh' agents/opencode/zstack.md || bad "opencode zstack: must run mode-for.sh"
+grep -qF 'mode = ' docs/examples/clients.toml.example || bad "clients.toml.example: mode missing"
+
+[ -f docs/routing.md ] || bad "routing: docs/routing.md missing"
+if grep -nE 'grok-|claude-|opus|gpt-|[0-9]{3} changed lines' docs/routing.md >/dev/null; then bad "routing: docs/routing.md copies a model slug or threshold"; fi
+for s in 'docs/model-matrix.md' 'section 0' 'section 4' 'section 5'; do grep -qF "$s" docs/routing.md || bad "routing: missing pointer $s"; done
+grep -qF 'follow section 0' agents/opencode/zstack.md || bad "opencode zstack: 2a must point at section 0"
 
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

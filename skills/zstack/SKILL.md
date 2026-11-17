@@ -17,19 +17,19 @@ Load only the skills named for the chosen size. Ignore any other router, spec ch
 
 Applies only when the task comes from a client user story (HU) in an external tracker. Personal and internal projects skip this section and start at Classify.
 
-`to-analysis` → questions to the TL/PO (`to-questionnaire`) → Brayan pastes the answers in `.scratch/answers.md` (Jira and Confluence are read-only: never comment, edit or transition) → `grill-with-docs` if gaps remain → `to-techspec` → then the normal size path (Small/Medium/Large/Critical). The TechSpec accompanies the user story as input for the spec. External PRD/TD documents are optional, only when the client asks for them.
+`to-analysis` → questions to the TL/PO (`client-questionnaire`) → Brayan pastes the answers in `.scratch/answers.md` (Jira and Confluence are read-only: never comment, edit or transition) → `grill-with-docs` if gaps remain → `to-techspec` → then the normal size path (Small/Medium/Large/Critical). The TechSpec accompanies the user story as input for the spec. External PRD/TD documents are optional, only when the client asks for them. The client analysis child runs as Cursor `agent -p` without the CLI `--force` and does not run scripts, so the parent runs scripts/prestage-handoff.sh.
 
 ### System map
 
 At the start of `to-analysis`, before the detailed analysis, write a short system map. If that step already produces this map, keep one map and apply these rules there.
 
-Name the affected modules, the boundaries between them, and the dependencies. List each branch to compare and why, or say none apply. Read the names from the repo or the task. Do not assume branch names.
+Name the affected modules, the boundaries between them, and the dependencies. `scripts/check-unmerged-branches.sh` requires each branch not merged into `--base` (default `main`) to be named in the draft, or the exact line `ramas-fuera-de-base: ninguna`.
 
 Separate what was observed from what is still unconfirmed, and cite the source of each line. The map limits the later walk. It does not redesign the system. A short case is `docs/examples/system-map.md`.
 
-Client KDBs (mandatory in every client task, HU or not). Read `~/.config/zstack/clients.toml` (contract: `docs/examples/clients.toml.example`). Pick the client whose `root` is a prefix of the worktree path. From its `kdb_dir`, read the KDBs that apply to the task (skip `exclude`; `team_lessons` is local team notes, read them, never send them to an external tool). If `confluence_guidelines` is set, read that page (read-only). Right under the classification line, write `kdb: <files read>`, or `kdb: none found (<reason>)` when there is no map, no matching root, or no KDB applies. A matching root with no `kdb:` line is a violation. Pass the same paths to zNinja and zSensei.
+Client KDBs (mandatory in every client task, HU or not). Read `~/.config/zstack/clients.toml` (contract: `docs/examples/clients.toml.example`). Pick the client whose `root` is a prefix of the worktree path. From its `kdb_dir`, read the KDBs that apply to the task (skip `exclude`; `team_lessons` is local team notes, read them, never send them to an external tool). If `confluence_guidelines` is set, read that page (read-only). Write one line to `.scratch/kdb-used.txt` (`kdb: <files read>` or `kdb: none found (<reason>)` when there is no map, no matching root, or no KDB applies). `scripts/prestage-handoff.sh` checks that sidecar through `scripts/check-prestage-kdb.sh`. Client tasks outside this pre-stage still pass those same paths to zNinja and zSensei.
 
-If `to-analysis`, `to-questionnaire` or `to-techspec` is missing, stop and tell Brayan (`scripts/setup-check.sh` reports them). Attachments: Brayan downloads them by hand into the task folder; read them there, never fetch them with API tokens. Client work happens with the company worktree tool from PATH (or a path defined only in local config); Brayan must approve the worktree before use.
+If `to-analysis`, `client-questionnaire` or `to-techspec` is missing, stop and tell Brayan (`scripts/setup-check.sh` reports them). Attachments: Brayan downloads them by hand into the task folder; read them there, never fetch them with API tokens. Client work happens with the company worktree tool from PATH (or a path defined only in local config); Brayan must approve the worktree before use.
 
 ## 1. Classify
 
@@ -56,6 +56,14 @@ Besides size, record verifiability, with the reason. On every task, ask how the 
 - **Partial.** Pixel-perfect UI, copy or visual changes, behavior depending on external systems or data not available locally, or manual flows. The final report lists exactly what could not be verified automatically and how to check each item by hand. The task cannot be marked done without explicit human review. A partial answer blocks code until a written verification plan exists.
 
 Say the size, verifiability, and reason in one line before anything else: `zstack: <size>, <full|partial> verifiable — <reason>`, size one of Small, Medium, Large, Critical. `route-audit.sh` fails a session without it. The old prefix `route-work:` is still accepted until 2026-12-01. A run delegated through `scripts/cursor-delegate.sh` gets this line, plus `zstack delegated: <impl|fix|review>`, from the orchestrator and keeps that size. A hand fix by the orchestrator after a delegated run stays in test files and records `zninja launched: no (orchestrator-fix: <reason>)`; anything larger is a new delegated `fix` run. Details: `docs/delegated-runs.md`.
+
+Right under that line, print the output of `scripts/mode-for.sh <worktree>` (`mode: <mode> (<source>)`). The mode sets how much runs without asking; section 5 still sets which git steps need Brayan's order in every mode.
+
+- `plan-only`: read, analyze and write under `.scratch/` only. No edit to tracked files, no commit.
+- `ask-first`: show the plan and wait for Brayan's ok before the first edit. Default under the clients root.
+- `accept-edits`: edit, test and commit without asking. Default outside the clients root.
+
+`ZSTACK_MODE` may only make the mode stricter for one session; a looser value is ignored with a warning.
 
 ## 2. Plan (before code)
 
@@ -194,4 +202,4 @@ Before reporting done, run `sh ~/.cursor/skills/zstack/scripts/route-audit.sh [p
 
 ### Unslop before handoff
 
-After the draft and before handoff, unslop `to-analysis`, `to-questionnaire`, `to-techspec`, the client delivery note, and a ticket-comment draft. Cut filler and stock phrases. Keep facts, uncertainties, requirements, technical terms, and every required heading. Run `scripts/check-draft-sections.sh <kind> <draft>` with kind `analysis`, `questionnaire`, `techspec`, `delivery-note`, or `ticket-comment`. A missing heading fails the check. Example: `docs/examples/unslop-before-after.md`. A ticket-comment draft is not published.
+After the draft and before handoff, unslop `to-analysis`, `client-questionnaire`, `to-techspec`, the client delivery note, and a ticket-comment draft. Cut filler and stock phrases. Keep facts, uncertainties, requirements, technical terms, and every required heading. For analysis and questionnaire the parent runs `scripts/prestage-handoff.sh`. For techspec, delivery-note, and ticket-comment, run `scripts/check-draft-sections.sh <kind> <draft>` directly. A missing heading fails the check. Example: `docs/examples/unslop-before-after.md`. A ticket-comment draft is not published.

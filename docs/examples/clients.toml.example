@@ -14,6 +14,8 @@ kdb_dir = "~/Notes/Acme/Guidelines"
 # Paste-ready lessons for that KDB live under docs/examples/ (kdb-lesson-timezone.md is one). A human pastes the one that applies. This repo does not write into a client KDB.
 exclude = ["README.md", "*.bak*", "Propuestas KDB/"]
 team_lessons = "Lecciones del equipo.md"
+# Optional approval mode for this root: plan-only, ask-first or accept-edits. Unset means ask-first. scripts/mode-for.sh reads it.
+mode = "ask-first"
 # When set, setup-check fails unless user.email is exactly this value. It wins over git_email_domains.
 # zstack section 5 also requires git config user.email to equal it before a local slice commit. Without git_email, zstack aborts on a personal-looking email.
 # git_email = "dev@acme.example"

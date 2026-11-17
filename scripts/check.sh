@@ -876,5 +876,35 @@ rm -rf "$sq"
 grep -qF 'scripts/sonar-diff-issues.sh' skills/zstack/SKILL.md || bad "zstack: pre-push must name sonar-diff-issues.sh"
 grep -qF 'scripts/sonar-diff-issues.sh' docs/security-scan.md || bad "security-scan: missing sonar-diff-issues.sh"
 
+rt=$(mktemp -d)
+mkdir -p "$rt/pkg" "$rt/r/tests" "$rt/r/node_modules"
+printf '{"values":[{"key":"baseUrl","value":"http://localhost:1"},{"key":"token","value":""},{"key":"auth","value":"{{token}}"}]}\n' > "$rt/pkg/env.json"
+printf '{"item":[{"request":{"header":[{"key":"Authorization","value":"{{token}}"}]}}]}\n' > "$rt/pkg/coll.json"
+sh scripts/check-export-package.sh "$rt/pkg" >/dev/null || bad "export-package: clean package should pass"
+printf '{"values":[{"key":"password","value":"x1"}],"x":{"client_secret":"abc"}}\n' > "$rt/pkg/bad.json"
+st=0; rtout=$(sh scripts/check-export-package.sh "$rt/pkg") || st=$?
+[ "$st" -eq 1 ] || bad "export-package: secret values exit $st"
+printf '%s\n' "$rtout" | grep -qF 'key=password' || bad "export-package: password value not named"
+printf '%s\n' "$rtout" | grep -qF 'x.client_secret' || bad "export-package: nested secret not named"
+st=0; sh scripts/check-export-package.sh "$rt/missing" >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "export-package: usage exit $st"
+printf 'var u = "https://api.example.com/x"; var l = "http://localhost:5000";\n' > "$rt/r/tests/AOkTest.cs"
+printf 'var c = new HttpClient(); var b = Configuration["Base"];\n' > "$rt/r/tests/BRemoteTest.cs"
+printf 'var u = "https://svc.internal.corp/api";\n' > "$rt/r/tests/CUrlTest.cs"
+printf 'var u = "https://svc.internal.corp/api";\n' > "$rt/r/node_modules/DTest.cs"
+st=0; rtout=$(sh scripts/check-remote-tests.sh "$rt/r") || st=$?
+[ "$st" -eq 1 ] || bad "remote-tests: remote tests exit $st"
+[ "$rtout" = "$(printf 'tests/BRemoteTest.cs\tconfigured-http\ntests/CUrlTest.cs\tremote-url')" ] || bad "remote-tests: wrong list: $rtout"
+rm "$rt/r/tests/BRemoteTest.cs" "$rt/r/tests/CUrlTest.cs"
+sh scripts/check-remote-tests.sh "$rt/r" >/dev/null || bad "remote-tests: local-only tests should pass"
+printf '| campo `a` | obligatorio |\n| campo `b` | obligatorio, fuente: esquema nullable=NO |\nLa sección es obligatoria.\n```\ncampo x obligatorio\n```\n' > "$rt/s.md"
+st=0; rtout=$(sh scripts/check-required-claims.sh "$rt/s.md") || st=$?
+[ "$st" -eq 1 ] || bad "required-claims: unsourced claim exit $st"
+[ "$rtout" = "fail required-claim line 1: cite the evidence with fuente: (schema, migration or query)" ] || bad "required-claims: wrong report: $rtout"
+rm -rf "$rt"
+grep -qF 'scripts/check-remote-tests.sh' skills/zstack/SKILL.md || bad "zstack: test gates must name check-remote-tests.sh"
+grep -qF 'scripts/check-export-package.sh' skills/zstack/SKILL.md || bad "zstack: export packages must name check-export-package.sh"
+grep -qF 'scripts/check-required-claims.sh' skills/to-techspec/SKILL.md || bad "to-techspec: must run check-required-claims.sh"
+
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

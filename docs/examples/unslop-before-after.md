@@ -6,37 +6,37 @@ One pass after the draft and before handoff. The after text keeps facts, uncerta
 
 <!-- before -->
 
-## Context
+## Resumen
 
 It is important to note that the intake path serves as a pivotal gateway, ensuring seamless onboarding.
 
-## Findings
+## Hallazgos
 
 `src/Intake/DateParser.cs` rejects a bad date, exits with code 2, and writes nothing. Additionally, this underscores a robust commitment to quality.
 
-## Uncertainties
+## Incertidumbres
 
 Whether the cutoff follows UTC is still open. The future looks bright.
 
-## Sources
+## Fuentes
 
 The behavior is in `src/Intake/DateParser.cs`.
 
 <!-- after -->
 
-## Context
+## Resumen
 
 The intake path reads the date field.
 
-## Findings
+## Hallazgos
 
 `src/Intake/DateParser.cs` rejects a bad date, exits with code 2, and writes nothing.
 
-## Uncertainties
+## Incertidumbres
 
 Whether the cutoff follows UTC is still open.
 
-## Sources
+## Fuentes
 
 The behavior is in `src/Intake/DateParser.cs`.
 
@@ -51,29 +51,29 @@ The behavior is in `src/Intake/DateParser.cs`.
 
 <!-- before -->
 
-## Questions
+## Preguntas
 
 Great question! Should a failed write retry 3 times? Certainly, this showcases resilience.
 
-## Priority
+## Prioridad
 
 The retry limit of 3 blocks release. Additionally, this is a crucial part of the landscape.
 
-## Blocking
+## Bloqueantes
 
 A fourth attempt is still open. I hope this helps!
 
 <!-- after -->
 
-## Questions
+## Preguntas
 
 Should a failed write retry 3 times?
 
-## Priority
+## Prioridad
 
 The retry limit of 3 blocks release.
 
-## Blocking
+## Bloqueantes
 
 A fourth attempt is still open.
 
@@ -263,29 +263,29 @@ Falta confirmar si el corte del ambiente de pruebas sigue UTC.
 
 <!-- before -->
 
-## Requirement
+## Requerimiento
 
 Certainly! It is important to note the rule. The handler must return 409 when the key already exists. I hope this helps!
 
-## Evidence
+## Evidencia
 
 A second POST with the same key returns 409 and writes nothing. Additionally, this underscores robustness.
 
-## Open
+## Abierto
 
 Confirm the 409 response body before sending this draft. The future looks bright.
 
 <!-- after -->
 
-## Requirement
+## Requerimiento
 
 The handler must return 409 when the key already exists.
 
-## Evidence
+## Evidencia
 
 A second POST with the same key returns 409 and writes nothing.
 
-## Open
+## Abierto
 
 Confirm the 409 response body before sending this draft.
 

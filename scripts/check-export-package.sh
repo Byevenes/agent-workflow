@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX
 
 if [ "$#" -ne 1 ] || [ ! -d "$1" ]; then
   echo "usage: scripts/check-export-package.sh <package-dir>" >&2

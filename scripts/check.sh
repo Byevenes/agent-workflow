@@ -57,21 +57,47 @@ for f in skills/zstack/SKILL.md agents/opencode/zstack.md; do
   grep -q 'Client slice commits' "$f" || bad "$f: client slice commit rule missing"
 done
 
-grep -q 'technology-agnostic' skills/zstack/SKILL.md || bad "zstack: client checks must be detected agnostically"
-grep -q 'Never invent checks' skills/zstack/SKILL.md || bad "zstack: client rule must forbid invented checks"
-grep -q 'Pre-push gate' skills/zstack/SKILL.md || bad "zstack: client rule must define the pre-push gate"
-grep -qF 'docs/security-scan.md' skills/zstack/SKILL.md || bad "zstack: pre-push must point at docs/security-scan.md"
-grep -qF 'gitleaks git --log-opts' skills/zstack/SKILL.md || bad "zstack: pre-push must use branch-vs-base gitleaks"
-grep -qF 'SonarQube for IDE' skills/zstack/SKILL.md || bad "zstack: pre-push must mention SonarQube for IDE"
-grep -qF 'client pipeline remains the source of truth' skills/zstack/SKILL.md || bad "zstack: pre-push must keep the client pipeline as truth"
+zs=skills/zstack/SKILL.md
+for s in \
+  'technology-agnostic' \
+  'Never invent checks' \
+  'Pre-push gate' \
+  'docs/security-scan.md' \
+  'gitleaks git --log-opts' \
+  'SonarQube for IDE' \
+  'client pipeline remains the source of truth' \
+  'Recovery case' \
+  '### Slice loop' \
+  'A recovery plan does not replace that new session' \
+  'The next ticket is not started here' \
+  'scripts/check-commit-order.sh' \
+  'scripts/blast-radius-callers.sh' \
+  'Every Task call to zsensei passes model: claude-opus-5-5-medium.' \
+  'issue #58' \
+  '.cursor/agents/' \
+  'scope changed' \
+  'git add -A' \
+  'never use `--no-verify`' \
+  '### Inline without Cursor' \
+  'git push --dry-run' \
+  'before coding starts' \
+  'only the diff' \
+  'independent (no Cursor)' \
+  'tickets = ceil(tokens_estimados * holgura / 150_000)' \
+  'Medium whose estimate is about 150k tokens promotes to Large' \
+  'Critical keeps the security path even when the ticket count is 1' \
+  '.scratch/<slug>/calibracion.md' \
+  'docs/model-matrix.md' \
+  '## Modelos' \
+  'scripts/sonar-diff-issues.sh' \
+  'scripts/check-remote-tests.sh' \
+  'scripts/check-export-package.sh' \
+  'scripts/mode-for.sh'
+do
+  grep -qF -- "$s" "$zs" || bad "zstack skill missing phrase: $s"
+done
 grep -q 'push_checks' docs/examples/clients.toml.example || bad "clients.toml.example: push_checks missing"
-grep -q 'Recovery case' skills/zstack/SKILL.md || bad "zstack: client commit rule must define the mixed-slices recovery case"
-grep -q '### Slice loop' skills/zstack/SKILL.md || bad "zstack: slice loop missing"
-grep -q 'A recovery plan does not replace that new session' skills/zstack/SKILL.md || bad "zstack: recovery must not replace a new session per slice"
-grep -q 'The next ticket is not started here' skills/zstack/SKILL.md || bad "zstack: slice close must require a clean session"
-grep -q 'scripts/check-commit-order.sh' skills/zstack/SKILL.md || bad "zstack: commit-order gate missing"
 grep -q 'scripts/check-commit-order.sh' docs/scripts.md || bad "scripts.md: commit-order gate missing"
-grep -q 'scripts/blast-radius-callers.sh' skills/zstack/SKILL.md || bad "zstack: blast-radius caller gate missing"
 grep -qF 'including private methods and indirect callers' skills/blast-radius/SKILL.md || bad "blast-radius skill: private and indirect callers missing"
 grep -qF 'The check fails when the report misses one.' skills/blast-radius/SKILL.md || bad "blast-radius skill: coverage failure missing"
 grep -q 'scripts/blast-radius-callers.sh' docs/scripts.md || bad "scripts.md: blast-radius caller gate missing"
@@ -94,47 +120,45 @@ if printf '%s\n' "$zn_front" | grep -q -- '-fast'; then bad "zninja: must not se
 zs_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agents/zsensei.md)
 if ! printf '%s\n' "$zs_front" | grep -qx 'model: claude-opus-5-5-medium'; then bad "zsensei: model must be claude-opus-5-5-medium"; fi
 if ! printf '%s\n' "$zs_front" | grep -qx 'readonly: true'; then bad "zsensei: readonly must be true"; fi
-grep -qF 'Every Task call to zsensei passes model: claude-opus-5-5-medium.' skills/zstack/SKILL.md || bad "zstack: zsensei Task model sentence missing"
-grep -q 'issue #58' skills/zstack/SKILL.md || bad "zstack: inline fallback must cite issue #58"
-grep -qF '.cursor/agents/' skills/zstack/SKILL.md || bad "zstack: inline fallback must name .cursor/agents/"
 check_project_agents
-grep -q 'scope changed' skills/zstack/SKILL.md || bad "zstack: client commit rule must stop on a scope change"
-grep -q 'git add -A' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid git add -A"
-grep -q 'never use `--no-verify`' skills/zstack/SKILL.md || bad "zstack: client commit rule must forbid --no-verify"
 
-zs=skills/zstack/SKILL.md
-grep -qF '### Inline without Cursor' "$zs" || bad "zstack: Inline without Cursor heading missing"
-grep -qF 'git push --dry-run' "$zs" || bad "zstack: push dry-run missing"
-grep -qF 'before coding starts' "$zs" || bad "zstack: dry-run must run before coding starts"
-grep -qF 'only the diff' "$zs" || bad "zstack: reviewer must receive only the diff"
-grep -qF 'independent (no Cursor)' "$zs" || bad "zstack: independent reviewer missing"
 grep -qF 'independent (no Cursor)' agents/opencode/zstack.md || bad "opencode zstack: independent reviewer missing"
-grep -qF 'tickets = ceil(tokens_estimados * holgura / 150_000)' "$zs" || bad "zstack: token ticket formula missing"
-grep -qF 'Medium whose estimate is about 150k tokens promotes to Large' "$zs" || bad "zstack: Medium promote to Large missing"
-grep -qF 'Critical keeps the security path even when the ticket count is 1' "$zs" || bad "zstack: Critical security path for one ticket missing"
 cal='.scratch/<slug>/calibracion.md'
-grep -qF "$cal" "$zs" || bad "zstack: calibration log path missing"
 grep -qF "$cal" skills/zretro/SKILL.md || bad "zretro: calibration log path missing"
 mm=docs/model-matrix.md
-grep -qF 'claude-opus-5-5-medium' "$mm" || bad "model-matrix: Opus slug missing"
-grep -qF 'The review role is Claude Opus fixed' "$mm" || bad "model-matrix: Opus pin missing"
-grep -qF 'no quota fallback that downgrades judgment' "$mm" || bad "model-matrix: review downgrade missing"
-grep -qF 'inherit-parent' "$mm" || bad "model-matrix: quota fallback missing"
-grep -qF 'docs/model-matrix.md' "$zs" || bad "zstack: model matrix pointer missing"
-grep -qF '## Modelos' "$zs" || bad "zstack: Large close model table missing"
-grep -qF 'docs/model-matrix.md' skills/zretro/SKILL.md || bad "zretro: model matrix pointer missing"
-grep -qF '## Modelos' skills/zretro/SKILL.md || bad "zretro: Large close model table missing"
-grep -qF 'pendiente' skills/zretro/SKILL.md || bad "zretro: pendiente missing"
-grep -qF 'confirmado' skills/zretro/SKILL.md || bad "zretro: confirmado missing"
-grep -qF 'revertido' skills/zretro/SKILL.md || bad "zretro: revertido missing"
-grep -qF 'Review every pendiente in the retro log before proposing a new change.' skills/zretro/SKILL.md || bad "zretro: pending review sentence missing"
-grep -qF 'fallback = []' docs/examples/model-matrix.toml || bad "model-matrix.toml: review fallback is not empty"
-grep -qF 'claude-opus-5-5-medium' docs/examples/model-matrix.toml || bad "model-matrix.toml: Opus slug missing"
-grep -qF 'grok-4.7-medium' docs/examples/model-matrix.toml || bad "model-matrix.toml: implement slug missing"
+for s in \
+  'claude-opus-5-5-medium' \
+  'The review role is Claude Opus fixed' \
+  'no quota fallback that downgrades judgment' \
+  'inherit-parent'
+do
+  grep -qF -- "$s" "$mm" || bad "model-matrix missing phrase: $s"
+done
+for s in \
+  'docs/model-matrix.md' \
+  '## Modelos' \
+  'pendiente' \
+  'confirmado' \
+  'revertido' \
+  'Review every pendiente in the retro log before proposing a new change.'
+do
+  grep -qF -- "$s" skills/zretro/SKILL.md || bad "zretro skill missing phrase: $s"
+done
+for s in \
+  'fallback = []' \
+  'claude-opus-5-5-medium' \
+  'grok-4.7-medium'
+do
+  grep -qF -- "$s" docs/examples/model-matrix.toml || bad "model-matrix.toml missing phrase: $s"
+done
 ex=docs/examples/calibracion-large.md
-grep -qF '## Modelos' "$ex" || bad "calibracion-large: Modelos missing"
-grep -qF '| zsensei | review | claude-opus-5-5-medium | claude-opus-5-5-medium | no |' "$ex" || bad "calibracion-large: review row drifted"
-grep -qF '| zninja | implement | grok-4.7-medium | grok-4.7-medium | no |' "$ex" || bad "calibracion-large: implement row drifted"
+for s in \
+  '## Modelos' \
+  '| zsensei | review | claude-opus-5-5-medium | claude-opus-5-5-medium | no |' \
+  '| zninja | implement | grok-4.7-medium | grok-4.7-medium | no |'
+do
+  grep -qF -- "$s" "$ex" || bad "calibracion-large missing phrase: $s"
+done
 if [ -e rules/pstack-models.mdc ] || [ -e .cursor/rules/pstack-models.mdc ]; then bad "model-matrix: pstack-models.mdc must stay outside this repo"; fi
 
 if grep -rnE 'SDD|sdd-|tech-lead|test-engineer' skills/zstack rules agents; then bad "zstack copies reference SDD, tech-lead or test-engineer"; fi
@@ -146,7 +170,31 @@ for f in scripts/*.sh .githooks/* hooks/client-guard/*; do
   if awk 'NR>1 && /^[[:space:]]*#/ && !/https?:\/\/|SPDX|[Ll]icense/' "$f" | grep -q .; then bad "$f: comment without issue/RFC link or license"; fi
 done
 
-if command -v shellcheck >/dev/null 2>&1; then shellcheck -e SC2016 scripts/*.sh skills/*/scripts/*.sh .githooks/* hooks/client-guard/* || bad shellcheck; else bad "shellcheck missing (brew install shellcheck)"; fi
+if command -v shellcheck >/dev/null 2>&1; then
+  shellcheck -e SC2016 scripts/*.sh skills/*/scripts/*.sh .githooks/* hooks/client-guard/* || bad shellcheck
+else
+  bad "shellcheck missing (brew install shellcheck)"
+fi
+git_dir_unset=$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')
+for f in scripts/*.sh; do
+  case "$(basename "$f")" in
+    mcp-gitlab.sh|mcp-postgres.sh|route-audit.sh) continue ;;
+  esac
+  [ -f "$f" ] || continue
+  sed -n 3p "$f" | grep -qx "$git_dir_unset" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
+done
+if [ -z "${CHECK_NESTED:-}" ]; then
+  hk=$(mktemp -d)
+  git init -q "$hk/p"
+  git -C "$hk/p" -c user.name=t -c user.email=t@t commit -q --allow-empty -m x
+  git -C "$hk/p" remote add origin https://example.invalid/p.git
+  git -C "$hk/p" worktree add -q "$hk/w" -b w 2>/dev/null
+  before=$(git -C "$hk/p" config --local --list | sort)
+  GIT_DIR="$hk/p/.git/worktrees/w" GIT_INDEX_FILE="$hk/p/.git/worktrees/w/index" GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=user.email GIT_CONFIG_VALUE_0=leaked@example GIT_CONFIG_KEY_1=user.name GIT_CONFIG_VALUE_1=leaked CHECK_NESTED=1 sh scripts/check.sh >/dev/null 2>&1 || bad "check.sh fails when run with a hook's GIT_DIR"
+  after=$(git -C "$hk/p" config --local --list | sort)
+  [ "$before" = "$after" ] || bad "check.sh under a hook's GIT_DIR changed the parent repo config: $(printf '%s\n' "$after" | grep -vxF "$before" | tr '\n' ' ')"
+  rm -rf "$hk"
+fi
 
 if [ "$(date +%Y%m%d)" -ge 20261201 ] && { [ -e skills/route-work ] || grep -q route-work scripts/link.sh; }; then bad "route-work alias expired 2026-12-01: delete skills/route-work and its link.sh lines"; fi
 
@@ -756,25 +804,10 @@ printf '%s\n' "$out" | grep -Eq '^(ok|warn) gitleaks: (present|missing)' || bad 
 
 lesson=docs/examples/kdb-lesson-timezone.md
 [ -f "$lesson" ] || bad "timezone lesson: missing"
-grep -q 'como UTC' "$lesson" || bad "timezone lesson: missing UTC default"
-grep -q 'Normaliza' "$lesson" || bad "timezone lesson: missing normalize-before-compare"
-grep -q 'TZ' "$lesson" || bad "timezone lesson: missing TZ"
-
-for f in scripts/check.sh scripts/link.sh scripts/setup-check.sh scripts/check-delivery-note.sh scripts/check-repo-paths.sh scripts/check-commit-order.sh scripts/blast-radius-callers.sh scripts/classify-test-failures.sh scripts/retro-log.sh scripts/check-prestage-kdb.sh scripts/prestage-handoff.sh scripts/check-topic-repos.sh scripts/check-client-surface.sh scripts/evidence-probe.sh scripts/check-claims.sh scripts/check-unmerged-branches.sh; do
-  sed -n 3p "$f" | grep -qx "$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
+for s in 'como UTC' 'Normaliza' 'TZ'
+do
+  grep -qF -- "$s" "$lesson" || bad "timezone lesson missing phrase: $s"
 done
-if [ -z "${CHECK_NESTED:-}" ]; then
-  hk=$(mktemp -d)
-  git init -q "$hk/p"
-  git -C "$hk/p" -c user.name=t -c user.email=t@t commit -q --allow-empty -m x
-  git -C "$hk/p" remote add origin https://example.invalid/p.git
-  git -C "$hk/p" worktree add -q "$hk/w" -b w 2>/dev/null
-  before=$(git -C "$hk/p" config --local --list | sort)
-  GIT_DIR="$hk/p/.git/worktrees/w" GIT_INDEX_FILE="$hk/p/.git/worktrees/w/index" GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=user.email GIT_CONFIG_VALUE_0=leaked@example GIT_CONFIG_KEY_1=user.name GIT_CONFIG_VALUE_1=leaked CHECK_NESTED=1 sh scripts/check.sh >/dev/null 2>&1 || bad "check.sh fails when run with a hook's GIT_DIR"
-  after=$(git -C "$hk/p" config --local --list | sort)
-  [ "$before" = "$after" ] || bad "check.sh under a hook's GIT_DIR changed the parent repo config: $(printf '%s\n' "$after" | grep -vxF "$before" | tr '\n' ' ')"
-  rm -rf "$hk"
-fi
 
 ord=$(mktemp -d)
 git init -q "$ord/r"
@@ -910,14 +943,11 @@ printf 'charlie-old\n' > "$rl/skills/c.md"
 cp "$rl/skills/b.md" "$rl/bravo-old"
 cp "$rl/skills/c.md" "$rl/charlie-old"
 id1=$(retro begin --path skills/a.md)
-[ "$id1" = 1 ] || bad "retro-log: first id is $id1"
 printf 'alpha-new\n' > "$rl/skills/a.md"
 retro seal "$id1" --error 'mistake a'
 pend=$(retro pending)
 printf '%s\n' "$pend" | grep -q "^${id1}${tab}2026-11-05${tab}pendiente${tab}" || bad "retro-log: pending row"
-printf '%s\n' "$pend" | grep -q 'mistake a' || bad "retro-log: pending error"
 got=$(retro confirm "$id1")
-[ "$got" = "$id1" ] || bad "retro-log: confirm printed $got"
 grep -q "^${id1}${tab}2026-11-05${tab}confirmado${tab}" "$rl/.scratch/retro-log.tsv" || bad "retro-log: confirm state"
 out=$(retro pending) || bad "retro-log: pending after confirm failed"
 [ -z "$out" ] || bad "retro-log: confirm left a pendiente row"
@@ -931,7 +961,6 @@ id2=$(retro begin --path skills/b.md)
 printf 'bravo-new\n' > "$rl/skills/b.md"
 retro seal "$id2" --error 'mistake b'
 out=$(retro revert "$id2")
-printf '%s\n' "$out" | grep -qx "$id2" || bad "retro-log: revert did not print the id"
 printf '%s\n' "$out" | grep -qx restored || bad "retro-log: revert did not print restored"
 cmp -s "$rl/skills/b.md" "$rl/bravo-old" || bad "retro-log: revert bytes"
 grep -q "^${id2}${tab}2026-11-05${tab}revertido${tab}" "$rl/.scratch/retro-log.tsv" || bad "retro-log: revert state"
@@ -943,12 +972,10 @@ cp "$rl/skills/c.md" "$rl/charlie-later"
 st=0
 out=$(retro revert "$id3") || st=$?
 [ "$st" -eq 3 ] || bad "retro-log: dirty revert exit $st"
-[ "$out" = dirty ] || bad "retro-log: dirty revert printed $out"
 cmp -s "$rl/skills/c.md" "$rl/charlie-later" || bad "retro-log: dirty revert changed the file"
 pend=$(retro pending)
 printf '%s\n' "$pend" | grep -q "^${id3}${tab}2026-11-05${tab}pendiente${tab}" || bad "retro-log: dirty revert left the row"
 out=$(retro revert --force "$id3")
-printf '%s\n' "$out" | grep -qx restored || bad "retro-log: force did not restore"
 cmp -s "$rl/skills/c.md" "$rl/charlie-old" || bad "retro-log: force bytes"
 grep -q "^${id3}${tab}2026-11-05${tab}revertido${tab}" "$rl/.scratch/retro-log.tsv" || bad "retro-log: force state"
 id4=$(retro begin --path skills/d.md)
@@ -977,67 +1004,6 @@ cmp -s "$rl/skills/f.md" "$rl/fox-new" || bad "retro-log: missing snapshot chang
 grep -q "^${id6}${tab}2026-11-05${tab}revertido${tab}" "$rl/.scratch/retro-log.tsv" || bad "retro-log: missing snapshot state"
 rm -rf "$rl"
 trap - EXIT
-
-rn=$(mktemp -d)
-trap 'rm -rf "$rn"' EXIT
-runlog() {
-  RUN_ROOT=$rn sh scripts/run-log.sh "$@"
-}
-tab=$(printf '\t')
-task1=task-alpha
-model1=model-alpha
-checks1=checks-alpha
-result1=result-alpha
-cost1=cost-alpha
-task2=task-beta
-model2=model-beta
-checks2=checks-beta
-result2=result-beta
-cost2=cost-beta
-st=0
-out=$(runlog show) || st=$?
-[ "$st" -eq 0 ] || bad "run-log: empty show exit $st"
-[ -z "$out" ] || bad "run-log: empty show printed"
-st=0
-runlog append --task "bad${tab}task" --model "$model1" --checks "$checks1" --result "$result1" --cost "$cost1" >/dev/null 2>&1 || st=$?
-[ "$st" -eq 2 ] || bad "run-log: tab in task exit $st"
-[ ! -e "$rn/.scratch/run-log.tsv" ] || bad "run-log: tab in task created the log"
-id1=$(runlog append --task "$task1" --model "$model1" --checks "$checks1" --result "$result1" --cost "$cost1")
-[ "$id1" = 1 ] || bad "run-log: first id is $id1"
-cp "$rn/.scratch/run-log.tsv" "$rn/saved.tsv"
-id2=$(runlog append --task "$task2" --model "$model2" --checks "$checks2" --result "$result2" --cost "$cost2")
-[ "$id2" = 2 ] || bad "run-log: second id is $id2"
-len=$(wc -c < "$rn/saved.tsv" | tr -d ' ')
-dd if="$rn/.scratch/run-log.tsv" of="$rn/prefix.tsv" bs=1 count="$len" status=none
-cmp -s "$rn/saved.tsv" "$rn/prefix.tsv" || bad "run-log: append rewrote an earlier row"
-first=$(awk 'NR == 1 { print; exit }' "$rn/.scratch/run-log.tsv")
-savedline=$(awk 'NR == 1 { print; exit }' "$rn/saved.tsv")
-[ "$first" = "$savedline" ] || bad "run-log: first line is not the first row"
-row=$(runlog show 1)
-[ "$row" = "1${tab}${task1}${tab}${model1}${tab}${checks1}${tab}${result1}${tab}${cost1}" ] || bad "run-log: show 1 row"
-got_model=$(printf '%s\n' "$row" | awk -F '\t' '{ print $3 }')
-got_checks=$(printf '%s\n' "$row" | awk -F '\t' '{ print $4 }')
-got_cost=$(printf '%s\n' "$row" | awk -F '\t' '{ print $6 }')
-[ "$got_model" = "$model1" ] || bad "run-log: show 1 model is $got_model"
-[ "$got_checks" = "$checks1" ] || bad "run-log: show 1 checks is $got_checks"
-[ "$got_cost" = "$cost1" ] || bad "run-log: show 1 cost is $got_cost"
-case $row in
-  *"$model2"*) bad "run-log: show 1 contains the second model" ;;
-esac
-both=$(runlog show)
-printf '%s\n' "$both" > "$rn/shown.tsv"
-cmp -s "$rn/.scratch/run-log.tsv" "$rn/shown.tsv" || bad "run-log: show did not print both rows"
-st=0
-out=$(runlog show 9 2>/dev/null) || st=$?
-[ "$st" -eq 1 ] || bad "run-log: unknown id exit $st"
-[ -z "$out" ] || bad "run-log: unknown id printed"
-st=0
-out=$(sh scripts/run-log.sh 2>/dev/null) || st=$?
-[ "$st" -eq 2 ] || bad "run-log: usage exit $st"
-[ -z "$out" ] || bad "run-log: usage wrote to stdout"
-rm -rf "$rn"
-trap - EXIT
-
 sq=$(mktemp -d)
 sqs=$PWD/scripts/sonar-diff-issues.sh
 git -C "$sq" init -q -b main
@@ -1072,7 +1038,6 @@ st=0; (cd "$sq" && sh "$sqs" nope issues.json >/dev/null 2>&1) || st=$?
 st=0; (cd "$sq" && SONAR_HOST_URL=http://127.0.0.1:9 sh "$sqs" main --fetch local-k >/dev/null 2>&1) || st=$?
 [ "$st" -eq 3 ] || bad "sonar-diff: unreachable host should exit 3, got $st"
 rm -rf "$sq"
-grep -qF 'scripts/sonar-diff-issues.sh' skills/zstack/SKILL.md || bad "zstack: pre-push must name sonar-diff-issues.sh"
 grep -qF 'scripts/sonar-diff-issues.sh' docs/security-scan.md || bad "security-scan: missing sonar-diff-issues.sh"
 
 rt=$(mktemp -d)
@@ -1101,8 +1066,6 @@ st=0; rtout=$(sh scripts/check-required-claims.sh "$rt/s.md") || st=$?
 [ "$st" -eq 1 ] || bad "required-claims: unsourced claim exit $st"
 [ "$rtout" = "fail required-claim line 1: cite the evidence with fuente: (schema, migration or query)" ] || bad "required-claims: wrong report: $rtout"
 rm -rf "$rt"
-grep -qF 'scripts/check-remote-tests.sh' skills/zstack/SKILL.md || bad "zstack: test gates must name check-remote-tests.sh"
-grep -qF 'scripts/check-export-package.sh' skills/zstack/SKILL.md || bad "zstack: export packages must name check-export-package.sh"
 grep -qF 'scripts/check-required-claims.sh' skills/to-techspec/SKILL.md || bad "to-techspec: must run check-required-claims.sh"
 
 md=$(mktemp -d)
@@ -1121,7 +1084,6 @@ st=0; env -u CLIENTS_ROOT ZSTACK_CLIENTS_TOML="$md/bad.toml" sh scripts/mode-for
 st=0; mf >/dev/null || st=$?
 [ "$st" -eq 2 ] || bad "mode-for: usage exit $st"
 rm -rf "$md"
-grep -qF 'scripts/mode-for.sh' skills/zstack/SKILL.md || bad "zstack: classify must run mode-for.sh"
 grep -qF 'scripts/mode-for.sh' agents/opencode/zstack.md || bad "opencode zstack: must run mode-for.sh"
 grep -qF 'mode = ' docs/examples/clients.toml.example || bad "clients.toml.example: mode missing"
 

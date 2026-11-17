@@ -1101,5 +1101,25 @@ grep -qF 'scripts/check-remote-tests.sh' skills/zstack/SKILL.md || bad "zstack: 
 grep -qF 'scripts/check-export-package.sh' skills/zstack/SKILL.md || bad "zstack: export packages must name check-export-package.sh"
 grep -qF 'scripts/check-required-claims.sh' skills/to-techspec/SKILL.md || bad "to-techspec: must run check-required-claims.sh"
 
+md=$(mktemp -d)
+mkdir -p "$md/C/acme/r" "$md/C/beta/r" "$md/C/gamma" "$md/P/x"
+printf 'clients_root = "%s/C"\n[clients.acme]\nroot = "%s/C/acme"\nmode = "plan-only"\n[clients.beta]\nroot = "%s/C/beta"\n' "$md" "$md" "$md" > "$md/c.toml"
+mf() { env -u CLIENTS_ROOT -u ZSTACK_MODE ZSTACK_CLIENTS_TOML="$md/c.toml" sh scripts/mode-for.sh "$@" 2>/dev/null; }
+mf "$md/C/acme/r" | grep -q '^mode: plan-only ' || bad "mode-for: client mode not read"
+mf "$md/C/beta/r" | grep -q '^mode: ask-first ' || bad "mode-for: client without mode must be ask-first"
+mf "$md/C/gamma" | grep -q '^mode: ask-first ' || bad "mode-for: clients root must be ask-first"
+mf "$md/P/x" | grep -q '^mode: accept-edits ' || bad "mode-for: personal default must be accept-edits"
+env -u CLIENTS_ROOT ZSTACK_MODE=plan-only ZSTACK_CLIENTS_TOML="$md/c.toml" sh scripts/mode-for.sh "$md/P/x" | grep -q '^mode: plan-only ' || bad "mode-for: stricter override ignored"
+env -u CLIENTS_ROOT ZSTACK_MODE=accept-edits ZSTACK_CLIENTS_TOML="$md/c.toml" sh scripts/mode-for.sh "$md/C/beta/r" 2>/dev/null | grep -q '^mode: ask-first ' || bad "mode-for: looser override must not apply"
+printf '[clients.bad]\nroot = "%s/C/acme"\nmode = "yolo"\n' "$md" > "$md/bad.toml"
+st=0; env -u CLIENTS_ROOT ZSTACK_CLIENTS_TOML="$md/bad.toml" sh scripts/mode-for.sh "$md/C/acme/r" >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "mode-for: unknown mode exit $st"
+st=0; mf >/dev/null || st=$?
+[ "$st" -eq 2 ] || bad "mode-for: usage exit $st"
+rm -rf "$md"
+grep -qF 'scripts/mode-for.sh' skills/zstack/SKILL.md || bad "zstack: classify must run mode-for.sh"
+grep -qF 'scripts/mode-for.sh' agents/opencode/zstack.md || bad "opencode zstack: must run mode-for.sh"
+grep -qF 'mode = ' docs/examples/clients.toml.example || bad "clients.toml.example: mode missing"
+
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

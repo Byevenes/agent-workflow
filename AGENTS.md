@@ -14,7 +14,7 @@ Single-context layout: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `
 
 ## Who does what
 
-Every coding task starts with `skills/zstack` (always on through `rules/zstack.mdc`). Map: `docs/software-factory.md`.
+Every coding task starts with `skills/zstack` (always on through `rules/zstack.mdc`). Map: `docs/software-factory.md`. Host routing: `docs/routing.md`.
 
 - `zstack` classifies, plans, and checks. The inline trigger is in section 3 of `skills/zstack/SKILL.md`. Otherwise the `zninja` subagent writes the code.
 - `agents/zninja.md` writes the code for every size and loads `poteto-mode` first (`poteto-mode: loaded`), as a subagent or on that inline fallback.

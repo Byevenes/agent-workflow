@@ -1121,5 +1121,10 @@ grep -qF 'scripts/mode-for.sh' skills/zstack/SKILL.md || bad "zstack: classify m
 grep -qF 'scripts/mode-for.sh' agents/opencode/zstack.md || bad "opencode zstack: must run mode-for.sh"
 grep -qF 'mode = ' docs/examples/clients.toml.example || bad "clients.toml.example: mode missing"
 
+[ -f docs/routing.md ] || bad "routing: docs/routing.md missing"
+if grep -nE 'grok-|claude-|opus|gpt-|[0-9]{3} changed lines' docs/routing.md >/dev/null; then bad "routing: docs/routing.md copies a model slug or threshold"; fi
+for s in 'docs/model-matrix.md' 'section 0' 'section 4' 'section 5'; do grep -qF "$s" docs/routing.md || bad "routing: missing pointer $s"; done
+grep -qF 'follow section 0' agents/opencode/zstack.md || bad "opencode zstack: 2a must point at section 0"
+
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

@@ -85,4 +85,14 @@ if [ -f .scratch/kdb-used.txt ]; then
       ;;
   esac
 fi
+
+if [ -f .scratch/present-repos.txt ]; then
+  while IFS= read -r dir || [ -n "$dir" ]; do
+    [ -n "$dir" ] || continue
+    if [ -d "$dir" ]; then
+      sh "$bin/check-claims.sh" --repo "$dir" --draft "$draft" || fail=1
+      sh "$bin/check-unmerged-branches.sh" --repo "$dir" --draft "$draft" || fail=1
+    fi
+  done < .scratch/present-repos.txt
+fi
 exit "$fail"

@@ -5,7 +5,7 @@ ROOT=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
 RULES=$ROOT/docs/delegated-run-rules.md
 
 usage() {
-  echo "usage: scripts/cursor-delegate.sh --workspace <dir> --prompt <file> --out <file> [--model <slug>] [--approval sandbox|auto-review] [--idle <seconds>] [--max <seconds>]" >&2
+  echo "usage: scripts/cursor-delegate.sh --workspace <dir> --prompt <file> --out <file> --role impl|fix|review --size Small|Medium|Large|Critical --verifiable full|partial --reason <text> [--model <slug>] [--approval sandbox|auto-review] [--idle <seconds>] [--max <seconds>]" >&2
   exit 2
 }
 
@@ -23,6 +23,10 @@ approval=sandbox
 idle=${DELEGATE_IDLE:-900}
 max=${DELEGATE_MAX:-0}
 bin=${AGENT_BIN:-agent}
+role=''
+size=''
+verifiable=''
+reason=''
 
 while [ $# -gt 0 ]; do
   [ $# -ge 2 ] || usage
@@ -34,6 +38,10 @@ while [ $# -gt 0 ]; do
     --approval) approval=$2 ;;
     --idle) idle=$2 ;;
     --max) max=$2 ;;
+    --role) role=$2 ;;
+    --size) size=$2 ;;
+    --verifiable) verifiable=$2 ;;
+    --reason) reason=$2 ;;
     *) usage ;;
   esac
   shift 2
@@ -43,13 +51,25 @@ if [ -z "$ws" ] || [ -z "$prompt" ] || [ -z "$out" ]; then usage; fi
 [ -d "$ws" ] || { echo "cursor-delegate: workspace not found: $ws" >&2; exit 2; }
 [ -f "$prompt" ] || { echo "cursor-delegate: prompt not found: $prompt" >&2; exit 2; }
 [ -f "$RULES" ] || { echo "cursor-delegate: rules missing: $RULES" >&2; exit 2; }
+case $role in impl|fix|review) ;; *) usage ;; esac
+case $size in
+  [Ss]mall) size=Small ;;
+  [Mm]edium) size=Medium ;;
+  [Ll]arge) size=Large ;;
+  [Cc]ritical) size=Critical ;;
+  *) usage ;;
+esac
+case $verifiable in full|partial) ;; *) usage ;; esac
+[ -n "$reason" ] || usage
+case $reason in *"
+"*) usage ;; esac
 number "$idle"
 number "$max"
 case $model in
   *-fast|*-fast\[*) [ "${DELEGATE_ALLOW_FAST:-}" = 1 ] || { echo "cursor-delegate: -fast models need an explicit reason; pass another --model or set DELEGATE_ALLOW_FAST=1" >&2; exit 2; } ;;
 esac
 
-text=$(cat "$RULES"; printf '\n---\n\n'; cat "$prompt")
+text=$(printf 'zstack: %s, %s verifiable — delegated %s: %s\nzstack delegated: %s\n\n' "$size" "$verifiable" "$role" "$reason" "$role"; cat "$RULES"; printf '\n---\n\n'; cat "$prompt")
 
 set -- -p --trust
 case $approval in
@@ -62,7 +82,7 @@ set -- "$@" --workspace "$ws" --model "$model" --output-format stream-json "$tex
 meta=$out.meta
 start=$(date +%Y-%m-%dT%H:%M:%S%z)
 : >"$out"
-printf 'start=%s\nmodel=%s\napproval=%s\nidle=%s\nmax=%s\n' "$start" "$model" "$approval" "$idle" "$max" >"$meta"
+printf 'start=%s\nrole=%s\nsize=%s\nmodel=%s\napproval=%s\nidle=%s\nmax=%s\n' "$start" "$role" "$size" "$model" "$approval" "$idle" "$max" >"$meta"
 
 kill_tree() {
   for child in $(pgrep -P "$2" 2>/dev/null || true); do
@@ -98,7 +118,7 @@ if [ -n "$why" ]; then
   kill_tree KILL "$pid"
   wait "$pid" 2>/dev/null || true
   printf 'exit=killed(%s)\nend=%s\n' "$why" "$(date +%Y-%m-%dT%H:%M:%S%z)" >>"$meta"
-  echo "cursor-delegate: killed after $why without output; run the stuck step outside the sandbox" >&2
+  echo "cursor-delegate: killed ($why); read the last events in $out and run the stuck step outside the sandbox" >&2
   exit 124
 fi
 

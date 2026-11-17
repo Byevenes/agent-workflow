@@ -55,7 +55,7 @@ Besides size, record verifiability, with the reason. On every task, ask how the 
 - **Full.** The repo's automated checks (tests, type checks, lint, others it has) prove it is done. They must run green before done. Record which automatic check covers the change.
 - **Partial.** Pixel-perfect UI, copy or visual changes, behavior depending on external systems or data not available locally, or manual flows. The final report lists exactly what could not be verified automatically and how to check each item by hand. The task cannot be marked done without explicit human review. A partial answer blocks code until a written verification plan exists.
 
-Say the size, verifiability, and reason in one line before anything else: `zstack: <size>, <full|partial> verifiable — <reason>`, size one of Small, Medium, Large, Critical. `route-audit.sh` fails a session without it. The old prefix `route-work:` is still accepted until 2026-12-01.
+Say the size, verifiability, and reason in one line before anything else: `zstack: <size>, <full|partial> verifiable — <reason>`, size one of Small, Medium, Large, Critical. `route-audit.sh` fails a session without it. The old prefix `route-work:` is still accepted until 2026-12-01. A run delegated through `scripts/cursor-delegate.sh` gets this line, plus `zstack delegated: <impl|fix|review>`, from the orchestrator and keeps that size. A hand fix by the orchestrator after a delegated run stays in test files and records `zninja launched: no (orchestrator-fix: <reason>)`; anything larger is a new delegated `fix` run. Details: `docs/delegated-runs.md`.
 
 ## 2. Plan (before code)
 
@@ -186,7 +186,7 @@ zstack check
 - tdd: <red and green commands with real results | not used>
 ```
 
-Before reporting done, run `scripts/route-audit.sh` from this repo (Byevenes/agent-workflow). It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, a Large or Critical session edited without zsensei, or a Medium+ session edited without launching zninja (`medium+ inline`). A non-zero exit is a retro input, not something to explain away.
+Before reporting done, run `sh ~/.cursor/skills/zstack/scripts/route-audit.sh [project-filter] [days]` (OpenCode: `~/.config/opencode/skills/zstack/scripts/route-audit.sh`). The script ships in this skill folder; in the agent-workflow repo `scripts/route-audit.sh` runs the same file. It counts most of the same facts (not verifiability) from Cursor transcripts and exits non-zero when a session edited inline without a reason, a Large or Critical session edited without zsensei, or a Medium+ session edited without launching zninja (`medium+ inline`). A non-zero exit is a retro input, not something to explain away.
 
 ### Unslop before handoff
 

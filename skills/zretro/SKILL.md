@@ -12,7 +12,7 @@ Read `~/.agents/skills/retro/SKILL.md` and follow it, with these overrides:
 - Rule or skill text is the last resort. Write `no structural fix because <reason>` before you add one.
 - An added agent or a written rule is not ready unless the proposal says why a hook, lint, test, or type is not enough.
 - When a barrier replaces a sentence in a skill, rule or AGENTS.md, delete the sentence in the same change.
-- Start from `scripts/route-audit.sh` (agent-workflow): every inline edit without a reason and every Large or Critical edit without zsensei is a mistake to retro.
+- Start from `~/.cursor/skills/zstack/scripts/route-audit.sh` (agent-workflow: `scripts/route-audit.sh`): every inline edit without a reason and every Large or Critical edit without zsensei is a mistake to retro.
 - An error that escapes a Medium review becomes a new deterministic check, not more skill text.
 - Review every pendiente in the retro log before proposing a new change.
 - Confirm the row when the mistake did not return. The state becomes confirmado.

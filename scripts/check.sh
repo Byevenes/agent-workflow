@@ -146,7 +146,7 @@ for f in scripts/*.sh .githooks/* hooks/client-guard/*; do
   if awk 'NR>1 && /^[[:space:]]*#/ && !/https?:\/\/|SPDX|[Ll]icense/' "$f" | grep -q .; then bad "$f: comment without issue/RFC link or license"; fi
 done
 
-if command -v shellcheck >/dev/null 2>&1; then shellcheck -e SC2016 scripts/*.sh .githooks/* hooks/client-guard/* || bad shellcheck; else bad "shellcheck missing (brew install shellcheck)"; fi
+if command -v shellcheck >/dev/null 2>&1; then shellcheck -e SC2016 scripts/*.sh skills/*/scripts/*.sh .githooks/* hooks/client-guard/* || bad shellcheck; else bad "shellcheck missing (brew install shellcheck)"; fi
 
 if [ "$(date +%Y%m%d)" -ge 20261201 ] && { [ -e skills/route-work ] || grep -q route-work scripts/link.sh; }; then bad "route-work alias expired 2026-12-01: delete skills/route-work and its link.sh lines"; fi
 
@@ -168,6 +168,9 @@ unset LINK_SKILL_VERSIONS
 HOME=$tmp scripts/link.sh >/dev/null
 if [ -L "$tmp/.cursor/skills/broken" ] || [ -L "$tmp/.config/opencode/skills/broken" ]; then bad "link.sh: keeps a broken skill symlink"; fi
 [ -d "$tmp/.cursor/skills/realdir" ] || bad "link.sh: removed a real skill folder"
+for p in .cursor/skills/zstack/scripts/route-audit.sh .config/opencode/skills/zstack/scripts/route-audit.sh; do
+  [ -x "$tmp/$p" ] || bad "link.sh smoke: $p not executable through the zstack link"
+done
 for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/skills/blast-radius .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/skills/blast-radius .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done
@@ -289,7 +292,55 @@ ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh >/dev/null || bad "route-audit: fail
 rm "$ra/p/agent-transcripts/mupin.jsonl"
 printf '%s\n' '{"text":"zstack: **Large**, partial verifiable — migración"}' > "$ra/p/agent-transcripts/canon.jsonl"
 ROUTE_AUDIT_BASE=$ra scripts/route-audit.sh | grep -q 'size undetected (no classification line): 0' || bad "route-audit: misses a canonical line with bold size"
+ROUTE_AUDIT_BASE=$ra skills/zstack/scripts/route-audit.sh >/dev/null || bad "route-audit: skill copy fails on a clean fixture"
+ra_case() {
+  rc_dir=$(mktemp -d)
+  mkdir -p "$rc_dir/p/agent-transcripts"
+  rc_n=0
+  for rc_body in "$@"; do
+    rc_n=$((rc_n + 1))
+    printf '%s\n' "$rc_body" | tr '|' '\n' >"$rc_dir/p/agent-transcripts/s$rc_n.jsonl"
+  done
+  rc_rc=0
+  ROUTE_AUDIT_BASE=$rc_dir scripts/route-audit.sh >/dev/null || rc_rc=1
+  rm -rf "$rc_dir"
+  return "$rc_rc"
+}
+w_code='{"name":"Write","input":{"path":"/w/src/App/Service.cs"'
+w_test='{"name":"StrReplace","input":{"path":"/w/test/App.Tests/ServiceTests.cs"'
+w_rep='{"name":"Write","input":{"path":"/w/.scratch/review.md"'
+ra_case "zstack: Critical, full verifiable — delegated fix: x|zstack delegated: fix|$w_code" "zstack: Critical, partial verifiable — delegated review: x|zstack delegated: review|$w_rep" || bad "route-audit: fails a delegated Critical fix with a delegated review"
+if ra_case "zstack: Critical, full verifiable — delegated fix: x|zstack delegated: fix|$w_code"; then bad "route-audit: passes a delegated Critical fix with no review"; fi
+ra_case "zstack: Critical, partial verifiable — review|$w_rep|zninja launched: no (inline: review only)" || bad "route-audit: counts a report under .scratch/ as a code edit"
+ra_case "zstack: Medium, full verifiable — x|$w_test|zninja launched: no (orchestrator-fix: delegated run could not delete an empty test file)" || bad "route-audit: fails an orchestrator test fix with a reason"
+if ra_case "zstack: Medium, full verifiable — x|$w_code|zninja launched: no (orchestrator-fix: quick)"; then bad "route-audit: passes an orchestrator fix outside tests"; fi
+if ra_case "zstack: Medium, full verifiable — x|$w_test"; then bad "route-audit: passes an orchestrator test fix without a reason"; fi
+if ra_case "zstack: Medium, full verifiable — x|zstack delegated: review|$w_code"; then bad "route-audit: passes a delegated review that edited code"; fi
 rm -rf "$ra"
+
+cd_t=$(mktemp -d)
+printf '%s\n' '#!/bin/sh' 'printf "%s\n" "$@" >"$CD_ARGS"' 'echo "{\"type\":\"result\",\"result\":\"ok\"}"' >"$cd_t/agent"
+printf '%s\n' '#!/bin/sh' 'sleep 30 &' 'echo $! >"$CD_CHILD"' 'wait' >"$cd_t/slow"
+chmod +x "$cd_t/agent" "$cd_t/slow"
+echo 'task' >"$cd_t/p.md"
+CD_ARGS=$cd_t/args AGENT_BIN=$cd_t/agent scripts/cursor-delegate.sh --workspace "$cd_t" --prompt "$cd_t/p.md" --role fix --size critical --verifiable full --reason r --out "$cd_t/o.jsonl" || bad "cursor-delegate: fails a clean run"
+grep -qx -- '--trust' "$cd_t/args" || bad "cursor-delegate: --trust missing"
+grep -A1 -x -- '--sandbox' "$cd_t/args" | grep -qx enabled || bad "cursor-delegate: --sandbox enabled missing by default"
+if grep -Eqx -- '--force|--yolo|-f' "$cd_t/args"; then bad "cursor-delegate: passes a force flag"; fi
+grep -qF 'no harness or script in `/tmp`' "$cd_t/args" || bad "cursor-delegate: prompt lacks the no-improvised-runner rule"
+grep -qx 'exit=0' "$cd_t/o.jsonl.meta" || bad "cursor-delegate: meta lacks exit=0"
+grep -qF 'zstack: Critical, full verifiable — delegated fix: r' "$cd_t/args" || bad "cursor-delegate: prompt lacks the canonical zstack line"
+grep -qx 'zstack delegated: fix' "$cd_t/args" || bad "cursor-delegate: prompt lacks the delegated role line"
+if AGENT_BIN=$cd_t/agent scripts/cursor-delegate.sh --workspace "$cd_t" --prompt "$cd_t/p.md" --out "$cd_t/n.jsonl" 2>/dev/null; then bad "cursor-delegate: runs without role and size"; fi
+CD_ARGS=$cd_t/args AGENT_BIN=$cd_t/agent scripts/cursor-delegate.sh --workspace "$cd_t" --prompt "$cd_t/p.md" --role fix --size critical --verifiable full --reason r --out "$cd_t/a.jsonl" --approval auto-review || bad "cursor-delegate: fails an auto-review run"
+grep -qx -- '--auto-review' "$cd_t/args" || bad "cursor-delegate: --auto-review not passed"
+if CD_ARGS=$cd_t/args AGENT_BIN=$cd_t/agent scripts/cursor-delegate.sh --workspace "$cd_t" --prompt "$cd_t/p.md" --role fix --size critical --verifiable full --reason r --out "$cd_t/x.jsonl" --model m-fast 2>/dev/null; then bad "cursor-delegate: accepts a -fast model"; fi
+rc=0
+CD_CHILD=$cd_t/child AGENT_BIN=$cd_t/slow DELEGATE_IDLE=2 scripts/cursor-delegate.sh --workspace "$cd_t" --prompt "$cd_t/p.md" --role fix --size critical --verifiable full --reason r --out "$cd_t/s.jsonl" 2>/dev/null || rc=$?
+[ "$rc" = 124 ] || bad "cursor-delegate: idle run not killed with 124 (got $rc)"
+grep -q '^exit=killed(idle' "$cd_t/s.jsonl.meta" || bad "cursor-delegate: meta lacks killed(idle)"
+if [ -s "$cd_t/child" ] && kill -0 "$(cat "$cd_t/child")" 2>/dev/null; then bad "cursor-delegate: idle kill left the agent's child running"; fi
+rm -rf "$cd_t"
 
 cg=$(mktemp -d)
 git init -q "$cg/r"

@@ -57,6 +57,14 @@ Besides size, record verifiability, with the reason. On every task, ask how the 
 
 Say the size, verifiability, and reason in one line before anything else: `zstack: <size>, <full|partial> verifiable — <reason>`, size one of Small, Medium, Large, Critical. `route-audit.sh` fails a session without it. The old prefix `route-work:` is still accepted until 2026-12-01. A run delegated through `scripts/cursor-delegate.sh` gets this line, plus `zstack delegated: <impl|fix|review>`, from the orchestrator and keeps that size. A hand fix by the orchestrator after a delegated run stays in test files and records `zninja launched: no (orchestrator-fix: <reason>)`; anything larger is a new delegated `fix` run. Details: `docs/delegated-runs.md`.
 
+Right under that line, print the output of `scripts/mode-for.sh <worktree>` (`mode: <mode> (<source>)`). The mode sets how much runs without asking; section 5 still sets which git steps need Brayan's order in every mode.
+
+- `plan-only`: read, analyze and write under `.scratch/` only. No edit to tracked files, no commit.
+- `ask-first`: show the plan and wait for Brayan's ok before the first edit. Default under the clients root.
+- `accept-edits`: edit, test and commit without asking. Default outside the clients root.
+
+`ZSTACK_MODE` may only make the mode stricter for one session; a looser value is ignored with a warning.
+
 ## 2. Plan (before code)
 
 - **Small.** `zgrill` (grill-me) only if a decision is still open, one question at a time. No spec.

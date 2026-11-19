@@ -40,6 +40,14 @@ sections_for() {
     ticket-comment)
       printf '%s\n' '## Requerimiento' '## Evidencia' '## Abierto'
       ;;
+    qa-inputs)
+      printf '%s\n' \
+        '## Funcionalidades modificadas' \
+        '## Dónde se gatillan' \
+        '## Referencia al código' \
+        '## Fuera de alcance' \
+        '## Casos de QA sugeridos'
+      ;;
     *)
       usage
       return 2
@@ -210,7 +218,7 @@ check_questionnaire() {
 
 known_kind() {
   case $1 in
-    analysis|questionnaire|techspec|delivery-note|ticket-comment) return 0 ;;
+    analysis|questionnaire|techspec|delivery-note|ticket-comment|qa-inputs) return 0 ;;
     *) return 1 ;;
   esac
 }

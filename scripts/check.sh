@@ -314,6 +314,10 @@ grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "analysis: substring 
 printf '%s\n' '## Context' '## Findings' '## Uncertainties' '## Sources' > "$d/en.md"
 if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh analysis "$d/en.md" >/dev/null 2>"$err"; then bad "analysis: English headings should fail"; fi
 grep -qF 'fail analysis: missing ## Resumen' "$err" || bad "analysis: English stderr should name ## Resumen"
+sh scripts/check-draft-sections.sh qa-inputs docs/examples/insumos-qa.md >/dev/null || bad "qa-inputs: template should pass"
+grep -vF '## Fuera de alcance' docs/examples/insumos-qa.md > "$d/qa.md"
+if sh scripts/check-draft-sections.sh qa-inputs "$d/qa.md" >/dev/null 2>"$err"; then bad "qa-inputs: missing Fuera de alcance should fail"; fi
+grep -qF 'fail qa-inputs: missing ## Fuera de alcance' "$err" || bad "qa-inputs: stderr should name ## Fuera de alcance"
 awk 'BEGIN{print "## Preguntas"; for(i=1;i<=12;i++) printf "Q%d. item %d dueño:QA\n", i, i; print "## Prioridad"; print "## Bloqueantes"}' > "$d/q12.md"
 env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/q12.md" >/dev/null || bad "questionnaire: 12 for one owner should pass"
 awk 'BEGIN{print "## Preguntas"; for(i=1;i<=16;i++) printf "Q%d. item %d dueño:QA\n", i, i; print "## Prioridad"; print "## Bloqueantes"}' > "$d/q16.md"

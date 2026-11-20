@@ -1309,5 +1309,105 @@ if grep -nE 'grok-|claude-|opus|gpt-|[0-9]{3} changed lines' docs/routing.md >/d
 for s in 'docs/model-matrix.md' 'section 0' 'section 4' 'section 5'; do grep -qF "$s" docs/routing.md || bad "routing: missing pointer $s"; done
 grep -qF 'follow section 0' agents/opencode/zstack.md || bad "opencode zstack: 2a must point at section 0"
 
+revert_rate_commit() {
+  when=$1
+  shift
+  GIT_AUTHOR_DATE="$when" GIT_COMMITTER_DATE="$when" \
+    git -C "$rr" -c user.name=t -c user.email=t@t "$@"
+}
+
+rr=$(mktemp -d)
+git init -q -b main "$rr"
+st=0
+sh scripts/revert-rate.sh -C "$rr" >"$rr/out" 2>"$rr/err" || st=$?
+[ "$st" -eq 0 ] || bad "revert-rate: unborn exit $st"
+[ ! -s "$rr/err" ] || bad "revert-rate: unborn wrote stderr"
+printf '%s\n' 'changes 0, reverts 0, rate 0.0%' 'revert-rate changes=0 reverts=0 rate=0.0' >"$rr/want"
+cmp -s "$rr/want" "$rr/out" || bad "revert-rate: unborn output: $(cat "$rr/out")"
+rm -rf "$rr"
+
+rr=$(mktemp -d)
+git init -q -b main "$rr"
+printf 'a\n' >"$rr/a"
+git -C "$rr" add a
+revert_rate_commit '2024-06-15 12:00:00 +0000' commit -q -m 'add alpha'
+printf 'b\n' >"$rr/b"
+git -C "$rr" add b
+revert_rate_commit '2024-06-15 12:01:00 +0000' commit -q -m 'add beta'
+printf 'c\n' >"$rr/c"
+git -C "$rr" add c
+revert_rate_commit '2024-06-15 12:02:00 +0000' commit -q -m 'add gamma'
+revert_rate_commit '2024-06-15 12:03:00 +0000' revert --no-edit HEAD >/dev/null
+rrsub=$(git -C "$rr" log -1 --format=%s)
+[ "$rrsub" = 'Revert "add gamma"' ] || bad "revert-rate: fixture subject is $rrsub"
+rrsha=$(git -C "$rr" rev-parse HEAD | cut -c1-7)
+st=0
+sh scripts/revert-rate.sh -C "$rr" --since 2020-01-01 >"$rr/out" 2>"$rr/err" || st=$?
+[ "$st" -eq 0 ] || bad "revert-rate: one revert exit $st"
+[ ! -s "$rr/err" ] || bad "revert-rate: one revert wrote stderr"
+printf '%s\n' 'changes 4, reverts 1, rate 25.0%' "$rrsha $rrsub" 'revert-rate changes=4 reverts=1 rate=25.0' >"$rr/want"
+cmp -s "$rr/want" "$rr/out" || bad "revert-rate: one revert output: $(cat "$rr/out")"
+rm -rf "$rr"
+
+rr=$(mktemp -d)
+git init -q -b main "$rr"
+printf 'x\n' >"$rr/f"
+git -C "$rr" add f
+revert_rate_commit '2024-06-15 12:00:00 +0000' commit -q -m 'drop the widget' -m 'This reverts commit abcdef0.'
+rrsha=$(git -C "$rr" rev-parse HEAD | cut -c1-7)
+st=0
+sh scripts/revert-rate.sh -C "$rr" --since 2020-01-01 >"$rr/out" 2>"$rr/err" || st=$?
+[ "$st" -eq 0 ] || bad "revert-rate: body marker exit $st"
+[ ! -s "$rr/err" ] || bad "revert-rate: body marker wrote stderr"
+printf '%s\n' 'changes 1, reverts 1, rate 100.0%' "$rrsha drop the widget" 'revert-rate changes=1 reverts=1 rate=100.0' >"$rr/want"
+cmp -s "$rr/want" "$rr/out" || bad "revert-rate: body marker output: $(cat "$rr/out")"
+if grep -F -q 'Revert "' "$rr/out"; then bad "revert-rate: body marker listed a Revert subject"; fi
+rm -rf "$rr"
+
+rr=$(mktemp -d)
+git init -q -b main "$rr"
+printf 'o\n' >"$rr/old"
+git -C "$rr" add old
+revert_rate_commit '2020-01-15 10:00:00 +0000' commit -q -m 'old base'
+revert_rate_commit '2020-01-15 12:00:00 +0000' revert --no-edit HEAD >/dev/null
+printf 'w\n' >"$rr/win"
+git -C "$rr" add win
+revert_rate_commit '2024-06-15 10:00:00 +0000' commit -q -m 'window feature'
+revert_rate_commit '2024-06-15 12:00:00 +0000' revert --no-edit HEAD >/dev/null
+printf 'l\n' >"$rr/later"
+git -C "$rr" add later
+revert_rate_commit '2026-06-15 10:00:00 +0000' commit -q -m 'later base'
+revert_rate_commit '2026-06-15 12:00:00 +0000' revert --no-edit HEAD >/dev/null
+rrfull=$(git -C "$rr" rev-parse HEAD~2)
+rrsub=$(git -C "$rr" log -1 --format=%s "$rrfull")
+[ "$rrsub" = 'Revert "window feature"' ] || bad "revert-rate: window fixture subject is $rrsub"
+rrsha=$(printf '%.7s' "$rrfull")
+st=0
+sh scripts/revert-rate.sh -C "$rr" --since 2024-01-01 --until 2025-01-01 >"$rr/out" 2>"$rr/err" || st=$?
+[ "$st" -eq 0 ] || bad "revert-rate: window exit $st"
+[ ! -s "$rr/err" ] || bad "revert-rate: window wrote stderr"
+printf '%s\n' 'changes 2, reverts 1, rate 50.0%' "$rrsha $rrsub" 'revert-rate changes=2 reverts=1 rate=50.0' >"$rr/want"
+cmp -s "$rr/want" "$rr/out" || bad "revert-rate: window output: $(cat "$rr/out")"
+if grep -F -q 'Revert "old base"' "$rr/out"; then bad "revert-rate: outside revert before the window"; fi
+if grep -F -q 'Revert "later base"' "$rr/out"; then bad "revert-rate: outside revert after the window"; fi
+rm -rf "$rr"
+
+plain=$(mktemp -d)
+st=0
+sh scripts/revert-rate.sh -C "$plain/missing" >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "revert-rate: missing path exit $st"
+st=0
+sh scripts/revert-rate.sh -C "$plain" >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "revert-rate: not a repo exit $st"
+rm -rf "$plain"
+st=0
+sh scripts/revert-rate.sh --not-a-flag >/dev/null 2>&1 || st=$?
+[ "$st" -eq 2 ] || bad "revert-rate: unknown flag exit $st"
+
+grep -qF 'scripts/revert-rate.sh' docs/scripts.md || bad "scripts.md: revert-rate missing"
+grep -qF 'scripts/revert-rate.sh' skills/zretro/SKILL.md || bad "zretro: revert-rate missing"
+if grep -q 'git fetch' scripts/revert-rate.sh; then bad "revert-rate: git fetch"; fi
+if grep -F -q 'gh ' scripts/revert-rate.sh; then bad "revert-rate: gh"; fi
+
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

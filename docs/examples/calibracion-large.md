@@ -13,5 +13,5 @@ This file is the shape of a Large close. It is not a live task. Copy the fields 
 
 | subagent | role | preferred | effective | quota_fallback |
 | --- | --- | --- | --- | --- |
-| zninja | implement | grok-4.7-medium | grok-4.7-medium | no |
-| zsensei | review | claude-opus-5-5-medium | claude-opus-5-5-medium | no |
+| zninja | implement | grok-4.7-xhigh | grok-4.7-xhigh | no |
+| zsensei | review | claude-opus-5-5-high | claude-opus-5-5-high | no |

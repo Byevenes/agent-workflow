@@ -1,20 +1,24 @@
 # Role matrix for zStack. Example only. Client repos do not load this file.
 # An empty fallback means stop and ask the owner. The review role stays empty.
+# large: slug for Large or Critical tasks (review also uses it before a client push). No fast variants here.
 
 [[roles]]
 id = "implement"
 agent = "zninja"
-preferred = "grok-4.7-medium"
+preferred = "grok-4.7-high"
+large = "grok-4.7-xhigh"
 fallback = ["inherit-parent"]
 
 [[roles]]
 id = "spec"
 agent = "zgrill, zspec, ztickets"
-preferred = "grok-4.7-medium"
+preferred = "grok-4.7-high"
+large = "grok-4.7-xhigh"
 fallback = ["inherit-parent"]
 
 [[roles]]
 id = "review"
 agent = "zsensei"
 preferred = "claude-opus-5-5-medium"
+large = "claude-opus-5-5-high"
 fallback = []

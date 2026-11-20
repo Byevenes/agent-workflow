@@ -141,6 +141,8 @@ grep -qF "$cal" skills/zretro/SKILL.md || bad "zretro: calibration log path miss
 mm=docs/model-matrix.md
 for s in \
   'claude-opus-5-5-medium' \
+  'claude-opus-5-5-high' \
+  'grok-4.7-xhigh' \
   'The review role is Claude Opus fixed' \
   'no quota fallback that downgrades judgment' \
   'inherit-parent'
@@ -160,15 +162,16 @@ done
 for s in \
   'fallback = []' \
   'claude-opus-5-5-medium' \
-  'grok-4.7-medium'
+  'grok-4.7-high'
 do
   grep -qF -- "$s" docs/examples/model-matrix.toml || bad "model-matrix.toml missing phrase: $s"
 done
+if grep -qE 'grok-4\.7-medium|-fast' docs/examples/model-matrix.toml; then bad "model-matrix.toml: medium Grok or a -fast slug as a default"; fi
 ex=docs/examples/calibracion-large.md
 for s in \
   '## Modelos' \
-  '| zsensei | review | claude-opus-5-5-medium | claude-opus-5-5-medium | no |' \
-  '| zninja | implement | grok-4.7-medium | grok-4.7-medium | no |'
+  '| zsensei | review | claude-opus-5-5-high | claude-opus-5-5-high | no |' \
+  '| zninja | implement | grok-4.7-xhigh | grok-4.7-xhigh | no |'
 do
   grep -qF -- "$s" "$ex" || bad "calibracion-large missing phrase: $s"
 done

@@ -9,7 +9,7 @@ readonly: true
 
 You review. You do not edit files, commit, or fix findings. You did not write this change, so treat the author's claims as things to verify.
 
-A Medium reaches this review only for security, auth, destructive git, a public contract, or a diff of more than 400 changed lines (additions plus deletions). Typecheck, tests, lint, and gitleaks are mandatory. A test that passes and proves nothing is a finding. The show-me package is the section 5 delivery report.
+A Medium reaches this review only when section 4 of `skills/zstack/SKILL.md` escalates it. Typecheck, tests, lint, and gitleaks are mandatory. A test that passes and proves nothing is a finding. The show-me package is the section 5 delivery report.
 
 ## First, load the review skill
 

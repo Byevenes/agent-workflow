@@ -52,6 +52,10 @@ check_project_agents() {
 n=$(grep -rlF 'Run inline when the Task tool is absent' --exclude-dir=.git --exclude-dir=.scratch --exclude-dir=retros --exclude=check.sh . | wc -l | tr -d ' ')
 [ "$n" -eq 1 ] || bad "inline-trigger sentence must live only in skills/zstack/SKILL.md (found in $n files)"
 
+for f in AGENTS.md rules/zstack.mdc agents/zigl.md agents/opencode/zstack.md skills/route-work/SKILL.md; do
+  grep -qF 'skills/zstack/SKILL.md' "$f" || bad "$f: must point at skills/zstack/SKILL.md"
+done
+
 for f in skills/zstack/SKILL.md agents/opencode/zstack.md; do
   grep -q -- '--force' "$f" || bad "$f: client rule about --force missing"
   grep -q 'Client slice commits' "$f" || bad "$f: client slice commit rule missing"
@@ -121,8 +125,17 @@ zs_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agen
 if ! printf '%s\n' "$zs_front" | grep -qx 'model: claude-opus-5-5-medium'; then bad "zsensei: model must be claude-opus-5-5-medium"; fi
 if ! printf '%s\n' "$zs_front" | grep -qx 'readonly: true'; then bad "zsensei: readonly must be true"; fi
 check_project_agents
+nmerge=$(grep -rliF 'Never merge' --exclude-dir=.git --exclude-dir=.scratch --exclude-dir=retros --exclude=check.sh . | wc -l | tr -d ' ')
+[ "$nmerge" -eq 1 ] || bad "Never merge must live only in skills/zstack/SKILL.md (found in $nmerge files)"
 
 grep -qF 'independent (no Cursor)' agents/opencode/zstack.md || bad "opencode zstack: independent reviewer missing"
+for f in skills/zstack/SKILL.md skills/zpr/SKILL.md; do
+  grep -qF 'the diff alone is not the review' "$f" || bad "$f: the diff alone is not the review"
+done
+grep -qF '## Evidence' skills/zpr/SKILL.md || bad "zpr: ## Evidence section missing"
+for f in skills/zgrill/SKILL.md skills/zspec/SKILL.md skills/ztickets/SKILL.md; do
+  grep -qF 'In client repos, never' "$f" || bad "$f: client repos must not publish to a tracker"
+done
 cal='.scratch/<slug>/calibracion.md'
 grep -qF "$cal" skills/zretro/SKILL.md || bad "zretro: calibration log path missing"
 mm=docs/model-matrix.md

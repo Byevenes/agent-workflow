@@ -1,0 +1,189 @@
+#!/bin/sh
+set -eu
+
+if [ "$#" -lt 2 ]; then
+  printf '%s\n' 'usage: push-checks <base> <head> [branch]' >&2
+  exit 2
+fi
+
+base=$1
+head=$2
+if [ "$#" -ge 3 ]; then
+  branch=$3
+else
+  branch=$(git rev-parse --abbrev-ref HEAD)
+fi
+
+config_pat=${CLIENT_CONFIG_PATTERNS:-'(^|/)appsettings[^/]*\.json$|(^|/)[^/]*\.csproj$|(^|/)[^/]*\.ya?ml$|(^|/)helm/|(^|/)Dockerfile$|(^|/)\.env|(^|/)[^/]*\.config$'}
+email_allow=${CLIENT_EMAIL_ALLOW:-'@(example\.(com|org)|users\.noreply\.github\.com)$'}
+ticket_re=${CLIENT_TICKET_REGEX:-'[A-Z][A-Z0-9]+-[0-9]+'}
+main_base=${CLIENT_MAIN_BASE:-origin/main}
+rut_re='(^|[^0-9.])[0-9]{1,2}\.?[0-9]{3}\.?[0-9]{3}-[0-9kK]([^0-9A-Za-z]|$)'
+email_re='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+
+failed=0
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+report() {
+  printf '%s %s\n' "$1" "$2"
+  if [ "$1" = fail ]; then
+    failed=1
+  fi
+}
+
+range_base=$base
+case $range_base in
+  *[!0]*) ;;
+  *) range_base='' ;;
+esac
+
+head_hex=$(git rev-parse --verify "$head")
+if [ -n "$range_base" ]; then
+  base_hex=$(git rev-parse --verify "$range_base")
+  git rev-list "$base_hex..$head_hex" >"$work/commits"
+  log_opts="$base_hex..$head_hex"
+else
+  git rev-list "$head_hex" --not --remotes >"$work/commits"
+  log_opts="$head_hex --not --remotes"
+fi
+
+names_from() {
+  list=$1
+  : >"$work/names.raw"
+  while IFS= read -r sha || [ -n "${sha:-}" ]; do
+    if [ -z "$sha" ]; then
+      continue
+    fi
+    git diff-tree --no-commit-id --name-only -r --root "$sha" >>"$work/names.raw"
+  done <"$list"
+  sort -u "$work/names.raw" >"$work/names"
+}
+
+scan_config() {
+  label=$1
+  allow=$2
+  list=$3
+  names_from "$list"
+  while IFS= read -r path || [ -n "${path:-}" ]; do
+    if [ -z "$path" ]; then
+      continue
+    fi
+    if printf '%s\n' "$path" | grep -E -q -e "$config_pat"; then
+      if [ "$allow" = 1 ]; then
+        report warn "$label: $path"
+      else
+        report fail "$label: $path"
+      fi
+    fi
+  done <"$work/names"
+}
+
+scan_sensitive() {
+  allow=$1
+  : >"$work/diff"
+  while IFS= read -r sha || [ -n "${sha:-}" ]; do
+    if [ -z "$sha" ]; then
+      continue
+    fi
+    git diff-tree -p --root -r --no-commit-id "$sha" >>"$work/diff"
+  done <"$work/commits"
+  RUT_RE="$rut_re" EMAIL_RE="$email_re" EMAIL_ALLOW="$email_allow" awk '
+BEGIN {
+  rut = ENVIRON["RUT_RE"]
+  email = ENVIRON["EMAIL_RE"]
+  allow = ENVIRON["EMAIL_ALLOW"]
+  file = ""
+  n = 0
+}
+function flush() {
+  if (file != "" && n > 0) print file "\t" n
+  n = 0
+}
+/^\+\+\+ / {
+  flush()
+  file = substr($0, 5)
+  sub(/^b\//, "", file)
+  if (file == "/dev/null") file = ""
+  next
+}
+/^\+/ {
+  line = substr($0, 2)
+  hit = 0
+  if (line ~ rut) hit = 1
+  s = line
+  while (match(s, email)) {
+    addr = substr(s, RSTART, RLENGTH)
+    if (addr !~ allow) hit = 1
+    s = substr(s, RSTART + RLENGTH)
+  }
+  if (hit) n++
+  next
+}
+END { flush() }
+' "$work/diff" >"$work/sens"
+  tab=$(printf '\t')
+  while IFS=$tab read -r path count || [ -n "${path:-}" ]; do
+    if [ -z "$path" ]; then
+      continue
+    fi
+    if [ "$allow" = 1 ]; then
+      report warn "sensitive: $path $count"
+    else
+      report fail "sensitive: $path $count"
+    fi
+  done <"$work/sens"
+}
+
+cfg_allow=0
+if [ "${CLIENT_ALLOW_CONFIG:-}" = 1 ]; then
+  cfg_allow=1
+fi
+scan_config config "$cfg_allow" "$work/commits"
+
+sens_allow=0
+if [ "${CLIENT_ALLOW_SENSITIVE:-}" = 1 ]; then
+  sens_allow=1
+fi
+scan_sensitive "$sens_allow"
+
+if ! printf '%s\n' "$branch" | grep -E -q -e "$ticket_re"; then
+  if [ "${CLIENT_ALLOW_BRANCH:-}" = 1 ]; then
+    report warn "branch: $branch"
+  else
+    report fail "branch: $branch"
+  fi
+fi
+
+case $branch in
+  *-main)
+    if git rev-parse --verify --quiet "$main_base" >/dev/null 2>&1; then
+      main_allow=0
+      if [ "${CLIENT_ALLOW_MAIN_CONFIG:-}" = 1 ]; then
+        main_allow=1
+      fi
+      main_hex=$(git rev-parse --verify "$main_base")
+      git rev-list "$main_hex..$head_hex" >"$work/main-commits"
+      scan_config main-branch "$main_allow" "$work/main-commits"
+    else
+      report skip "main-branch: $main_base missing"
+    fi
+    ;;
+esac
+
+if [ "${CLIENT_SKIP_GITLEAKS:-}" = 1 ]; then
+  report skip "tokens: CLIENT_SKIP_GITLEAKS"
+elif [ ! -s "$work/commits" ]; then
+  :
+elif ! command -v gitleaks >/dev/null 2>&1; then
+  report skip "tokens: gitleaks missing"
+else
+  if ! gitleaks git --no-banner --log-opts="$log_opts" >/dev/null 2>&1; then
+    report fail "tokens: gitleaks"
+  fi
+fi
+
+if [ "$failed" -ne 0 ]; then
+  exit 1
+fi
+printf '%s\n' 'ok push-checks'

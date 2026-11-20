@@ -19,7 +19,57 @@ for h in $hosts; do
   case $remote_url in *"$h"*) hit="${hit:+$hit, }remote $remote_url" ;; esac
 done
 [ -z "$hit" ] && exit 0
-if [ "${CLIENT_PUSH_OK:-}" = "brayan" ]; then echo "client-guard: push allowed by CLIENT_PUSH_OK=brayan ($hit)"; exit 0; fi
-echo "client-guard: blocked push to a client repo ($hit)."
-echo "Agents never push to client repos. Brayan: CLIENT_PUSH_OK=brayan git push"
-exit 1
+if [ "${CLIENT_PUSH_OK:-}" != "brayan" ]; then
+  echo "client-guard: blocked push to a client repo ($hit)."
+  echo "Agents never push to client repos. Brayan: CLIENT_PUSH_OK=brayan git push"
+  exit 1
+fi
+checks=${CLIENT_GUARD_CHECKS:-"$(dirname "$0")/push-checks"}
+if [ ! -f "$checks" ]; then
+  echo "client-guard: push allowed by CLIENT_PUSH_OK=brayan ($hit)"
+  echo "client-guard: push-checks not installed, content checks skipped"
+  exit 0
+fi
+blocked=0
+buf=
+while read -r local_ref local_sha remote_ref remote_sha || [ -n "${local_ref:-}" ]; do
+  : "${remote_ref:-}"
+  [ -n "${local_ref:-}" ] || continue
+  case ${local_sha:-} in
+    *[!0]*) ;;
+    *) continue ;;
+  esac
+  base=${remote_sha:-}
+  case $base in
+    *[!0]*) ;;
+    *) base='' ;;
+  esac
+  branch=$local_ref
+  case $branch in
+    refs/heads/*) branch=${branch#refs/heads/} ;;
+  esac
+  rc=0
+  piece=$("$checks" "$base" "$local_sha" "$branch" 2>&1) || rc=$?
+  if [ -n "$piece" ]; then
+    if [ -n "$buf" ]; then
+      buf=$(printf '%s\n%s' "$buf" "$piece")
+    else
+      buf=$piece
+    fi
+  fi
+  if [ "$rc" -ne 0 ]; then
+    blocked=1
+  fi
+done
+if [ "$blocked" -ne 0 ]; then
+  echo "client-guard: blocked push, content checks failed ($hit)"
+  if [ -n "$buf" ]; then
+    printf '%s\n' "$buf"
+  fi
+  exit 1
+fi
+echo "client-guard: push allowed by CLIENT_PUSH_OK=brayan ($hit)"
+if [ -n "$buf" ]; then
+  printf '%s\n' "$buf"
+fi
+exit 0

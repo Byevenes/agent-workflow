@@ -33,3 +33,4 @@ If Matt's file does not exist, use the overrides above with the seven retro cate
 - Measure a retro by outcome, not by process: which repeated mistake did the last change prevent, and how many defects escaped to review, CI or the user since the last retro. Write both in the retro. A change that prevented nothing is a candidate to remove.
 - Keep at most 3 open PRs per repo. Merge or close one before you open another.
 - No new gate (check.sh guard, hook, script or skill rule) unless the same change removes one, or the proposal names the escaped defect it would have caught. Remove unused gates at the next retro.
+- The retro may report `scripts/revert-rate.sh` output for the period as a quality metric.

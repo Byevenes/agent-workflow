@@ -596,13 +596,393 @@ if (cd "$cg/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-push"
 mkdir -p "$cg/Clients/c"
 git init -q "$cg/Clients/c/r"
 if (cd "$cg/Clients/c/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-push" origin https://github.com/c/x.git >/dev/null); then bad "client-guard: allows a push under the clients root"; fi
-(cd "$cg/Clients/c/r" && HOME=$cg CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-push" origin x >/dev/null) || bad "client-guard: ignores CLIENT_PUSH_OK=brayan"
+(cd "$cg/Clients/c/r" && HOME=$cg CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-push" origin x </dev/null >/dev/null) || bad "client-guard: ignores CLIENT_PUSH_OK=brayan"
 (cd "$cg/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null) || bad "client-guard pre-commit: blocks a personal repo"
 if (cd "$cg/Clients/c/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null); then bad "client-guard pre-commit: allows a commit under the clients root"; fi
 git -C "$cg/r" remote add origin git@gitlab.com:client/x.git
 if (cd "$cg/r" && HOME=$cg CLIENTS_ROOT='' "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null); then bad "client-guard pre-commit: allows a commit with a gitlab origin"; fi
 (cd "$cg/Clients/c/r" && HOME=$cg CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan "$OLDPWD/hooks/client-guard/pre-commit" >/dev/null) || bad "client-guard pre-commit: ignores CLIENT_PUSH_OK=brayan"
 rm -rf "$cg"
+
+pc=$(mktemp -d)
+pc_repo=$pc/repo
+pc_bin=$PWD/hooks/client-guard/push-checks
+pc_hook=$PWD/hooks/client-guard/pre-push
+pc_run() {
+  pc_rc=0
+  pc_out=$(cd "$pc_repo" && "$@") || pc_rc=$?
+}
+pc_run_all() {
+  pc_rc=0
+  pc_out=$(cd "$pc_repo" && "$@" 2>&1) || pc_rc=$?
+}
+pc_has() {
+  if ! printf '%s\n' "$pc_out" | grep -qF -- "$1"; then
+    bad "push-checks: missing $1"
+  fi
+}
+pc_lacks() {
+  if printf '%s\n' "$pc_out" | grep -qF -- "$1"; then
+    bad "push-checks: unexpected $1"
+  fi
+}
+pc_commit() {
+  git -C "$pc_repo" add "$1"
+  git -C "$pc_repo" -c user.name=Test -c user.email=user@example.com commit -q -m "$2"
+}
+git init -q "$pc_repo"
+git -C "$pc_repo" symbolic-ref HEAD refs/heads/main
+printf 'base\n' > "$pc_repo/readme.txt"
+pc_commit readme.txt base
+b0=$(git -C "$pc_repo" rev-parse HEAD)
+git -C "$pc_repo" checkout -q -B cfg-ok "$b0"
+printf 'more\n' >> "$pc_repo/readme.txt"
+pc_commit readme.txt ok
+c_ok=$(git -C "$pc_repo" rev-parse HEAD)
+git -C "$pc_repo" checkout -q -B cfg-bad "$b0"
+printf '{}\n' > "$pc_repo/appsettings.json"
+pc_commit appsettings.json cfg
+c_cfg=$(git -C "$pc_repo" rev-parse HEAD)
+git -C "$pc_repo" checkout -q -B sens-ok "$b0"
+printf '%s\n' 'user@example.com' > "$pc_repo/note.txt"
+pc_commit note.txt mail
+c_mail=$(git -C "$pc_repo" rev-parse HEAD)
+pc_rut=$(printf '%s.%s.%s-%s' '11' '111' '111' '1')
+pc_bad_mail=$(printf '%s@%s.%s' 'user' 'mail' 'invalid')
+git -C "$pc_repo" checkout -q -B sens-bad "$b0"
+printf '%s\n' "$pc_rut" "$pc_bad_mail" > "$pc_repo/id.txt"
+pc_commit id.txt sens
+c_sens=$(git -C "$pc_repo" rev-parse HEAD)
+git -C "$pc_repo" checkout -q -B sens-del "$c_sens"
+printf 'gone\n' > "$pc_repo/id.txt"
+pc_commit id.txt del
+c_del=$(git -C "$pc_repo" rev-parse HEAD)
+git -C "$pc_repo" checkout -q -B cfg-next "$c_cfg"
+printf 'later\n' >> "$pc_repo/readme.txt"
+pc_commit readme.txt later
+c_cfg2=$(git -C "$pc_repo" rev-parse HEAD)
+pc_run env CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$b0" "$c_ok" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: config pass rc=$pc_rc"
+pc_has "ok push-checks"
+pc_lacks "fail config"
+pc_lacks "fail branch"
+pc_run env CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$b0" "$c_cfg" ABC-123
+[ "$pc_rc" -ne 0 ] || bad "push-checks: config fail expected non-zero"
+pc_has "fail config: appsettings.json"
+pc_lacks "ok push-checks"
+pc_run env CLIENT_SKIP_GITLEAKS=1 CLIENT_ALLOW_CONFIG=1 "$pc_bin" "$b0" "$c_cfg" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: config override rc=$pc_rc"
+pc_has "warn config: appsettings.json"
+pc_has "ok push-checks"
+pc_lacks "fail config"
+pc_run env CLIENT_SKIP_GITLEAKS=1 CLIENT_ALLOW_CONFIG=true "$pc_bin" "$b0" "$c_cfg" ABC-123
+[ "$pc_rc" -ne 0 ] || bad "push-checks: config override must be exact 1"
+pc_has "fail config: appsettings.json"
+pc_run env CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$b0" "$c_mail" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: allowed email rc=$pc_rc"
+pc_lacks "fail sensitive"
+pc_run env CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$b0" "$c_sens" ABC-123
+[ "$pc_rc" -ne 0 ] || bad "push-checks: sensitive fail expected non-zero"
+pc_has "fail sensitive: id.txt 2"
+pc_lacks "ok push-checks"
+if printf '%s\n' "$pc_out" | grep -qF -- "$pc_rut"; then bad "push-checks: output contains a matched value"; fi
+if printf '%s\n' "$pc_out" | grep -qF -- "$pc_bad_mail"; then bad "push-checks: output contains a matched value"; fi
+pc_run env CLIENT_SKIP_GITLEAKS=1 CLIENT_ALLOW_SENSITIVE=1 "$pc_bin" "$b0" "$c_sens" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: sensitive override rc=$pc_rc"
+pc_has "warn sensitive: id.txt 2"
+pc_has "ok push-checks"
+if printf '%s\n' "$pc_out" | grep -qF -- "$pc_rut"; then bad "push-checks: warn output contains a matched value"; fi
+pc_run env CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$c_sens" "$c_del" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: deleted value rc=$pc_rc"
+pc_lacks "fail sensitive"
+pc_run env CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$b0" "$c_ok" topic
+[ "$pc_rc" -ne 0 ] || bad "push-checks: branch fail expected non-zero"
+pc_has "fail branch: topic"
+pc_lacks "ok push-checks"
+pc_run env CLIENT_SKIP_GITLEAKS=1 CLIENT_ALLOW_BRANCH=1 "$pc_bin" "$b0" "$c_ok" topic
+[ "$pc_rc" -eq 0 ] || bad "push-checks: branch override rc=$pc_rc"
+pc_has "warn branch: topic"
+pc_has "ok push-checks"
+mkdir -p "$pc/bin"
+printf '%s\n' '#!/bin/sh' 'printf "%s\n" "$@" >"$GL_ARGS"' 'printf "%s\n" GL-CANARY' 'printf "%s\n" GL-CANARY >&2' 'if [ "${GL_EXIT:-0}" = 1 ]; then exit 1; fi' 'exit 0' > "$pc/bin/gitleaks"
+chmod +x "$pc/bin/gitleaks"
+rm -f "$pc/args"
+pc_run_all env PATH="$pc/bin:/bin:/usr/bin" GL_ARGS="$pc/args" GL_EXIT=0 "$pc_bin" "$b0" "$c_ok" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: tokens pass rc=$pc_rc"
+pc_has "ok push-checks"
+pc_lacks "fail tokens"
+pc_lacks "GL-CANARY"
+grep -qF -- '--no-banner' "$pc/args" || bad "push-checks: gitleaks argv lacks --no-banner"
+grep -qF -- '--log-opts' "$pc/args" || bad "push-checks: gitleaks argv lacks --log-opts"
+grep -qE -- '--log-opts=[0-9a-f]+[.][.][0-9a-f]+$' "$pc/args" || bad "push-checks: log-opts is not a parsed range"
+rm -f "$pc/args"
+pc_run_all env PATH="$pc/bin:/bin:/usr/bin" GL_ARGS="$pc/args" GL_EXIT=1 "$pc_bin" "$b0" "$c_ok" ABC-123
+[ "$pc_rc" -ne 0 ] || bad "push-checks: tokens fail expected non-zero"
+pc_has "fail tokens: gitleaks"
+pc_lacks "ok push-checks"
+pc_lacks "GL-CANARY"
+grep -qF -- '--no-banner' "$pc/args" || bad "push-checks: failing gitleaks argv lacks --no-banner"
+grep -qF -- '--log-opts' "$pc/args" || bad "push-checks: failing gitleaks argv lacks --log-opts"
+rm -f "$pc/args"
+pc_run env PATH="$pc/bin:/bin:/usr/bin" GL_ARGS="$pc/args" CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$b0" "$c_ok" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: skip gitleaks rc=$pc_rc"
+pc_has "skip tokens: CLIENT_SKIP_GITLEAKS"
+[ ! -f "$pc/args" ] || bad "push-checks: CLIENT_SKIP_GITLEAKS ran gitleaks"
+pc_run env PATH="/bin:/usr/bin" "$pc_bin" "$b0" "$c_ok" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: missing gitleaks rc=$pc_rc"
+pc_has "skip tokens: gitleaks missing"
+pc_lacks "fail tokens"
+rm -f "$pc/args"
+pc_run_all env PATH="$pc/bin:/bin:/usr/bin" GL_ARGS="$pc/args" GL_EXIT=1 "$pc_bin" "$b0" "$b0" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: empty range rc=$pc_rc"
+pc_has "ok push-checks"
+pc_lacks "fail tokens"
+[ ! -f "$pc/args" ] || bad "push-checks: empty range ran gitleaks"
+git -C "$pc_repo" checkout -q -B net-empty "$b0"
+pc_net_rut=$(printf '%s.%s.%s-%s' '22' '222' '222' 'k')
+printf '%s\n' "$pc_net_rut" > "$pc_repo/appsettings.json"
+pc_commit appsettings.json net-add
+git -C "$pc_repo" rm -q -- appsettings.json
+git -C "$pc_repo" -c user.name=Test -c user.email=user@example.com commit -q -m net-drop
+c_net=$(git -C "$pc_repo" rev-parse HEAD)
+[ "$(git -C "$pc_repo" rev-parse 'HEAD^{tree}')" = "$(git -C "$pc_repo" rev-parse "$b0^{tree}")" ] || bad "push-checks: cancelled range fixture trees differ"
+rm -f "$pc/args"
+pc_run_all env PATH="$pc/bin:/bin:/usr/bin" GL_ARGS="$pc/args" GL_EXIT=1 "$pc_bin" "$b0" "$c_net" ABC-123
+[ "$pc_rc" -ne 0 ] || bad "push-checks: cancelled range rc=$pc_rc"
+pc_has "fail config: appsettings.json"
+pc_has "fail sensitive: appsettings.json"
+pc_has "fail tokens: gitleaks"
+pc_lacks "ok push-checks"
+if printf '%s\n' "$pc_out" | grep -qF -- "$pc_net_rut"; then bad "push-checks: cancelled range output contains a matched value"; fi
+[ -f "$pc/args" ] || bad "push-checks: cancelled range did not run gitleaks"
+grep -qF -- '--no-banner' "$pc/args" || bad "push-checks: cancelled range gitleaks argv lacks --no-banner"
+grep -qF -- '--log-opts' "$pc/args" || bad "push-checks: cancelled range gitleaks argv lacks --log-opts"
+rm -f "$pc/args"
+pc_run_all env PATH="$pc/bin:/bin:/usr/bin" GL_ARGS="$pc/args" GL_EXIT=0 "$pc_bin" "" "$c_ok" ABC-123
+[ "$pc_rc" -eq 0 ] || bad "push-checks: empty base rc=$pc_rc"
+grep -qF -- '--log-opts' "$pc/args" || bad "push-checks: empty base did not call gitleaks"
+grep -qE -- '--log-opts=[0-9a-f]+ --not --remotes$' "$pc/args" || bad "push-checks: empty base log-opts is not head --not --remotes"
+pc_run env CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$b0" "$c_ok" ABC-123-main
+[ "$pc_rc" -eq 0 ] || bad "push-checks: missing main ref rc=$pc_rc"
+pc_has "skip main-branch: origin/main missing"
+pc_has "ok push-checks"
+git -C "$pc_repo" update-ref refs/remotes/origin/main "$b0"
+pc_run env CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$b0" "$c_ok" ABC-123-main
+[ "$pc_rc" -eq 0 ] || bad "push-checks: main-branch pass rc=$pc_rc"
+pc_has "ok push-checks"
+pc_lacks "fail main-branch"
+pc_lacks "skip main-branch"
+pc_run env CLIENT_SKIP_GITLEAKS=1 CLIENT_ALLOW_CONFIG=1 "$pc_bin" "$b0" "$c_cfg" ABC-123-main
+[ "$pc_rc" -ne 0 ] || bad "push-checks: main-branch still fails when only config is allowed"
+pc_has "warn config: appsettings.json"
+pc_has "fail main-branch: appsettings.json"
+pc_lacks "ok push-checks"
+pc_run env CLIENT_SKIP_GITLEAKS=1 "$pc_bin" "$c_cfg" "$c_cfg2" ABC-123-main
+[ "$pc_rc" -ne 0 ] || bad "push-checks: main-branch fail expected non-zero"
+pc_has "fail main-branch: appsettings.json"
+pc_lacks "fail config"
+pc_run env CLIENT_SKIP_GITLEAKS=1 CLIENT_ALLOW_MAIN_CONFIG=1 "$pc_bin" "$c_cfg" "$c_cfg2" ABC-123-main
+[ "$pc_rc" -eq 0 ] || bad "push-checks: main-branch override rc=$pc_rc"
+pc_has "warn main-branch: appsettings.json"
+pc_has "ok push-checks"
+pc_lacks "fail main-branch"
+z40=$(printf '%040d' 0)
+ph=$(mktemp -d)
+mkdir -p "$ph/Clients/app"
+git init -q "$ph/Clients/app/r"
+printf 'ok\n' > "$ph/Clients/app/r/readme.txt"
+git -C "$ph/Clients/app/r" add readme.txt
+git -C "$ph/Clients/app/r" -c user.name=Test -c user.email=user@example.com commit -q -m base
+ph_sha=$(git -C "$ph/Clients/app/r" rev-parse HEAD)
+ph_rc=0
+ph_out=$(printf '%s %s %s %s\n' refs/heads/noticket "$ph_sha" refs/heads/noticket "$z40" | (cd "$ph/Clients/app/r" && HOME=$ph CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan CLIENT_SKIP_GITLEAKS=1 "$pc_hook" origin git@bitbucket.org:client/x.git)) || ph_rc=$?
+[ "$ph_rc" -ne 0 ] || bad "pre-push: bad range expected non-zero"
+printf '%s\n' "$ph_out" | grep -qF 'fail branch: noticket' || bad "pre-push: bad range missing fail branch"
+if printf '%s\n' "$ph_out" | grep -qF 'push allowed'; then bad "pre-push: bad range printed the allow line"; fi
+ph_rc=0
+ph_out=$(printf '%s %s %s %s\n' refs/heads/ABC-123 "$ph_sha" refs/heads/ABC-123 "$z40" | (cd "$ph/Clients/app/r" && HOME=$ph CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan CLIENT_SKIP_GITLEAKS=1 "$pc_hook" origin git@bitbucket.org:client/x.git)) || ph_rc=$?
+[ "$ph_rc" -eq 0 ] || bad "pre-push: clean range rc=$ph_rc"
+printf '%s\n' "$ph_out" | grep -qF 'client-guard: push allowed by CLIENT_PUSH_OK=brayan' || bad "pre-push: clean range missing allow line"
+ph_rc=0
+ph_out=$(printf '%s %s %s %s\n' refs/heads/noticket "$z40" refs/heads/noticket "$z40" | (cd "$ph/Clients/app/r" && HOME=$ph CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan CLIENT_SKIP_GITLEAKS=1 "$pc_hook" origin git@bitbucket.org:client/x.git)) || ph_rc=$?
+[ "$ph_rc" -eq 0 ] || bad "pre-push: delete rc=$ph_rc"
+printf '%s\n' "$ph_out" | grep -qF 'client-guard: push allowed by CLIENT_PUSH_OK=brayan' || bad "pre-push: delete missing allow line"
+cp "$pc_hook" "$ph/pre-push"
+chmod +x "$ph/pre-push"
+ph_rc=0
+ph_out=$(printf '%s %s %s %s\n' refs/heads/noticket "$ph_sha" refs/heads/noticket "$z40" | (cd "$ph/Clients/app/r" && HOME=$ph CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan "$ph/pre-push" origin git@bitbucket.org:client/x.git)) || ph_rc=$?
+[ "$ph_rc" -eq 0 ] || bad "pre-push: missing push-checks rc=$ph_rc"
+printf '%s\n' "$ph_out" | grep -qF 'client-guard: push-checks not installed, content checks skipped' || bad "pre-push: missing push-checks skip line"
+printf '%s\n' "$ph_out" | grep -qF 'client-guard: push allowed by CLIENT_PUSH_OK=brayan' || bad "pre-push: missing push-checks allow line"
+git init -q "$ph/personal"
+ph_rc=0
+ph_out=$(printf '%s %s %s %s\n' refs/heads/noticket "$ph_sha" refs/heads/noticket "$z40" | (cd "$ph/personal" && HOME=$ph CLIENTS_ROOT='' "$pc_hook" origin https://github.com/Byevenes/x.git)) || ph_rc=$?
+[ "$ph_rc" -eq 0 ] || bad "pre-push: non-client with stdin rc=$ph_rc"
+if printf '%s\n' "$ph_out" | grep -qF 'fail '; then bad "pre-push: non-client ran content checks"; fi
+rm -rf "$pc" "$ph"
+
+repo=$PWD
+pc=
+pc_new() {
+  if [ -n "$pc" ]; then rm -rf "$pc"; fi
+  pc=$(mktemp -d)
+  git init -q -b main "$pc"
+  printf 'ok\n' >"$pc/README"
+  git -C "$pc" add README
+  git -C "$pc" -c user.name=tester -c user.email=tester@example.com commit -q -m base
+  pc_base=$(git -C "$pc" rev-parse HEAD)
+  pc_head=$pc_base
+}
+pc_commit() {
+  git -C "$pc" add -A
+  git -C "$pc" -c user.name=tester -c user.email=tester@example.com commit -q -m next
+  pc_head=$(git -C "$pc" rev-parse HEAD)
+}
+pc_run() {
+  pc_branch=$1
+  shift
+  (cd "$pc" && env CLIENT_SKIP_GITLEAKS=1 "$@" "$repo/hooks/client-guard/push-checks" "$pc_base" "$pc_head" "$pc_branch")
+}
+pc_new
+printf '{}\n' >"$pc/appsettings.json"
+pc_commit
+rc=0
+out=$(pc_run ABC-123 2>&1) || rc=$?
+[ "$rc" -eq 1 ] || bad "push-checks: config file exited $rc"
+printf '%s\n' "$out" | grep -qx 'fail config: appsettings.json' || bad "push-checks: config failure line missing"
+rc=0
+out=$(pc_run ABC-123 CLIENT_ALLOW_CONFIG=1 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: allow config exited $rc"
+printf '%s\n' "$out" | grep -qx 'warn config: appsettings.json' || bad "push-checks: allow config did not warn"
+if printf '%s\n' "$out" | grep -q '^fail '; then bad "push-checks: allow config still failed"; fi
+pc_new
+printf 'more\n' >>"$pc/README"
+pc_commit
+rc=0
+out=$(pc_run ABC-123 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: README change exited $rc"
+printf '%s\n' "$out" | grep -qx 'ok push-checks' || bad "push-checks: README change missing ok"
+printf '%s\n' "$out" | grep -qx 'skip tokens: CLIENT_SKIP_GITLEAKS' || bad "push-checks: gitleaks skip missing"
+if printf '%s\n' "$out" | grep -q '^fail '; then bad "push-checks: README change failed"; fi
+pc_new
+rut_dot=$(printf '%s.%s.%s-%s' '11' '111' '111' '1')
+printf 'id %s\n' "$rut_dot" >"$pc/notes.txt"
+pc_commit
+rc=0
+out=$(pc_run ABC-123 2>&1) || rc=$?
+[ "$rc" -eq 1 ] || bad "push-checks: dotted RUT exited $rc"
+printf '%s\n' "$out" | grep -qx 'fail sensitive: notes.txt 1' || bad "push-checks: dotted RUT failure line missing"
+if printf '%s\n' "$out" | grep -F -q -- "$rut_dot"; then bad "push-checks: sensitive output contains the RUT"; fi
+rc=0
+out=$(pc_run ABC-123 CLIENT_ALLOW_SENSITIVE=1 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: allow sensitive exited $rc"
+printf '%s\n' "$out" | grep -qx 'warn sensitive: notes.txt 1' || bad "push-checks: allow sensitive did not warn"
+if printf '%s\n' "$out" | grep -F -q -- "$rut_dot"; then bad "push-checks: sensitive warning contains the RUT"; fi
+if printf '%s\n' "$out" | grep -q '^fail '; then bad "push-checks: allow sensitive still failed"; fi
+pc_new
+rut_plain=$(printf '%s%s%s-%s' '11' '111' '111' '1')
+printf 'id %s\n' "$rut_plain" >"$pc/notes.txt"
+pc_commit
+rc=0
+out=$(pc_run ABC-123 2>&1) || rc=$?
+[ "$rc" -eq 1 ] || bad "push-checks: plain RUT exited $rc"
+printf '%s\n' "$out" | grep -qx 'fail sensitive: notes.txt 1' || bad "push-checks: plain RUT failure line missing"
+if printf '%s\n' "$out" | grep -F -q -- "$rut_plain"; then bad "push-checks: sensitive output contains the plain RUT"; fi
+pc_new
+bad_mail=$(printf '%s@%s' 'user' 'other.test')
+printf 'contact %s\n' "$bad_mail" >"$pc/notes.txt"
+pc_commit
+rc=0
+out=$(pc_run ABC-123 2>&1) || rc=$?
+[ "$rc" -eq 1 ] || bad "push-checks: disallowed email exited $rc"
+printf '%s\n' "$out" | grep -qx 'fail sensitive: notes.txt 1' || bad "push-checks: disallowed email failure line missing"
+if printf '%s\n' "$out" | grep -F -q -- "$bad_mail"; then bad "push-checks: sensitive output contains the email"; fi
+pc_new
+printf 'contact %s\n' 'user@example.com' >"$pc/notes.txt"
+pc_commit
+rc=0
+out=$(pc_run ABC-123 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: allowed email exited $rc"
+if printf '%s\n' "$out" | grep -q '^fail '; then bad "push-checks: allowed email failed"; fi
+if printf '%s\n' "$out" | grep -F -q -- 'user@example.com'; then bad "push-checks: output contains the allowed email"; fi
+pc_new
+bad_mail=$(printf '%s@%s' 'user' 'other.test')
+printf '%s %s\n' 'user@example.com' "$bad_mail" >"$pc/notes.txt"
+pc_commit
+rc=0
+out=$(pc_run ABC-123 2>&1) || rc=$?
+[ "$rc" -eq 1 ] || bad "push-checks: mixed email exited $rc"
+printf '%s\n' "$out" | grep -qx 'fail sensitive: notes.txt 1' || bad "push-checks: mixed email failure line missing"
+if printf '%s\n' "$out" | grep -F -q -- "$bad_mail"; then bad "push-checks: mixed email output contains the email"; fi
+pc_new
+rc=0
+out=$(pc_run ABC-123 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: branch ABC-123 exited $rc"
+if printf '%s\n' "$out" | grep -q '^fail '; then bad "push-checks: branch ABC-123 failed"; fi
+rc=0
+out=$(pc_run wip 2>&1) || rc=$?
+[ "$rc" -eq 1 ] || bad "push-checks: branch wip exited $rc"
+printf '%s\n' "$out" | grep -qx 'fail branch: wip' || bad "push-checks: branch failure line missing"
+rc=0
+out=$(pc_run wip CLIENT_ALLOW_BRANCH=1 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: allow branch exited $rc"
+printf '%s\n' "$out" | grep -qx 'warn branch: wip' || bad "push-checks: allow branch did not warn"
+if printf '%s\n' "$out" | grep -q '^fail '; then bad "push-checks: allow branch still failed"; fi
+pc_new
+git -C "$pc" update-ref refs/remotes/origin/main "$pc_base"
+printf '{}\n' >"$pc/appsettings.json"
+pc_commit
+rc=0
+out=$(pc_run ABC-123-main CLIENT_ALLOW_CONFIG=1 2>&1) || rc=$?
+[ "$rc" -eq 1 ] || bad "push-checks: main-branch config exited $rc"
+printf '%s\n' "$out" | grep -qx 'fail main-branch: appsettings.json' || bad "push-checks: main-branch failure line missing"
+printf '%s\n' "$out" | grep -qx 'warn config: appsettings.json' || bad "push-checks: main-branch range did not warn config"
+if printf '%s\n' "$out" | grep -qx 'fail config: appsettings.json'; then bad "push-checks: allow config failed on a main branch"; fi
+rc=0
+out=$(pc_run ABC-123-main CLIENT_ALLOW_CONFIG=1 CLIENT_ALLOW_MAIN_CONFIG=1 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: allow main config exited $rc"
+printf '%s\n' "$out" | grep -qx 'warn main-branch: appsettings.json' || bad "push-checks: allow main config did not warn"
+if printf '%s\n' "$out" | grep -q '^fail '; then bad "push-checks: allow main config still failed"; fi
+pc_new
+rc=0
+out=$(pc_run ABC-123-main CLIENT_MAIN_BASE=refs/missing-base 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: missing main base exited $rc"
+printf '%s\n' "$out" | grep -qx 'skip main-branch: refs/missing-base missing' || bad "push-checks: missing main base skip line missing"
+if printf '%s\n' "$out" | grep -q '^fail '; then bad "push-checks: missing main base failed a check"; fi
+if [ -n "$pc" ]; then rm -rf "$pc"; fi
+pp=$(mktemp -d)
+mkdir -p "$pp/Clients/c"
+pp_repo=$pp/Clients/c/r
+git init -q -b main "$pp_repo"
+printf 'ok\n' >"$pp_repo/README"
+git -C "$pp_repo" add README
+git -C "$pp_repo" -c user.name=tester -c user.email=tester@example.com commit -q -m base
+pp_clean=$(git -C "$pp_repo" rev-parse HEAD)
+printf '{}\n' >"$pp_repo/appsettings.json"
+git -C "$pp_repo" add appsettings.json
+git -C "$pp_repo" -c user.name=tester -c user.email=tester@example.com commit -q -m cfg
+pp_bad=$(git -C "$pp_repo" rev-parse HEAD)
+pp_zero=$(printf '%040d' 0)
+pp_hook() {
+  (cd "$pp_repo" && env HOME="$pp" CLIENTS_ROOT='' CLIENT_PUSH_OK=brayan CLIENT_SKIP_GITLEAKS=1 "$@" "$repo/hooks/client-guard/pre-push" origin "https://github.com/c/x.git")
+}
+rc=0
+out=$(printf 'refs/heads/ABC-123 %s refs/heads/ABC-123 %s\n' "$pp_bad" "$pp_clean" | pp_hook 2>&1) || rc=$?
+[ "$rc" -eq 1 ] || bad "push-checks: bad pre-push ref exited $rc"
+printf '%s\n' "$out" | grep -q 'fail ' || bad "push-checks: bad pre-push ref missing a failure"
+printf '%s\n' "$out" | grep -q 'client-guard: blocked push, content checks failed' || bad "push-checks: bad pre-push ref was not blocked"
+if printf '%s\n' "$out" | grep -q 'push allowed'; then bad "push-checks: bad pre-push ref printed the allow line"; fi
+rc=0
+out=$(printf 'refs/heads/ABC-123 %s refs/heads/ABC-123 %s\n' "$pp_clean" "$pp_zero" | pp_hook 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: clean pre-push ref exited $rc"
+printf '%s\n' "$out" | grep -q 'client-guard: push allowed by CLIENT_PUSH_OK=brayan' || bad "push-checks: clean pre-push ref missing the allow line"
+printf '%s\n' "$out" | grep -qx 'ok push-checks' || bad "push-checks: clean pre-push ref missing ok"
+rc=0
+out=$(pp_hook CLIENT_GUARD_CHECKS="$pp/missing-push-checks" </dev/null 2>&1) || rc=$?
+[ "$rc" -eq 0 ] || bad "push-checks: missing checker exited $rc"
+printf '%s\n' "$out" | grep -qx 'client-guard: push-checks not installed, content checks skipped' || bad "push-checks: missing checker skip line missing"
+printf '%s\n' "$out" | grep -q 'client-guard: push allowed by CLIENT_PUSH_OK=brayan' || bad "push-checks: missing checker missing the allow line"
+rm -rf "$pp"
 
 cr=$(mktemp -d)
 mk() { git init -q "$cr/$1"; }

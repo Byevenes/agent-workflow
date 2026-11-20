@@ -2,17 +2,19 @@
 
 Each zStack role has one preferred model and a quota fallback. The fallback runs only when that preferred model's quota is exhausted. Client repos do not load this page.
 
-The live pstack override stays in the user rule file pstack-models.mdc, outside this repo. This change does not edit that file.
+The live pstack override stays in the user rule file pstack-models.mdc, outside this repo. It uses the same default slugs.
 
 ## Roles
 
-| Role | Agent | Preferred | Quota fallback |
-| --- | --- | --- | --- |
-| implement | zninja | `grok-4.7-medium` | `inherit-parent` |
-| spec | zgrill, zspec, ztickets | `grok-4.7-medium` | `inherit-parent` |
-| review | zsensei | `claude-opus-5-5-medium` | none |
+| Role | Agent | Preferred | Large or Critical | Quota fallback |
+| --- | --- | --- | --- | --- |
+| implement | zninja | `grok-4.7-high` | `grok-4.7-xhigh` | `inherit-parent` |
+| spec | zgrill, zspec, ztickets | `grok-4.7-high` | `grok-4.7-xhigh` | `inherit-parent` |
+| review | zsensei | `claude-opus-5-5-medium` | `claude-opus-5-5-high`, also before a client push | none |
 
-The review role is Claude Opus fixed (`claude-opus-5-5-medium`). It has no quota fallback that downgrades judgment. When that slug's quota is exhausted, stop and ask the owner. Only an explicit owner decision may leave Opus.
+No `-fast` variant in background work (delegated runs, subagents, routines). A `-fast` slug is only for interactive work the owner is waiting on live.
+
+The review role is Claude Opus fixed (`claude-opus-5-5-medium`, or `claude-opus-5-5-high` on Large, Critical, or before a client push). It has no quota fallback that downgrades judgment. When that slug's quota is exhausted, stop and ask the owner. Only an explicit owner decision may leave Opus.
 
 `inherit-parent` is the quota fallback for implement and spec. It is already a valid pstack value. It does not apply to the review role.
 

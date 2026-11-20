@@ -35,4 +35,4 @@ Sisyphus, Hephaestus, Prometheus, Atlas, and Gentleman stay. This repo only adds
 
 ## Models
 
-pstack's default slugs `grok-4.7-xhigh-fast` and `claude-opus-5-5-xhigh` were not in the model list detected for this session. The user rule uses `grok-4.7-medium` and `claude-opus-5-5-medium`, which were detected. `inherit-parent` and `auto` stay valid.
+pstack's default slugs `grok-4.7-xhigh-fast` and `claude-opus-5-5-xhigh` were not in the model list detected for this session. The user rule uses `grok-4.7-high` and `claude-opus-5-5-medium` by default (see `docs/model-matrix.md`), which were detected. `inherit-parent` and `auto` stay valid.

@@ -10,7 +10,7 @@ Read `~/.agents/skills/pr/SKILL.md` and follow it (Summary visual, Evidence, Mer
 1. `## Why` first: what changes and why, in 2 or 3 sentences, in the user's goal words.
 2. `## Summary`: Matt's smallest visual. Use Mermaid when a flow or the architecture changes.
 3. `## Files`: one table, rows grouped by intent (for example hooks, docs, scripts), one line per file.
-4. `## Evidence`: only checks that actually ran, each with its real output or result. Say what was not verified.
+4. `## Evidence`: only checks that actually ran, each with its real output or result. Say what was not verified. For a UI, TUI, or visible-flow change, attach a screenshot, a terminal recording or trace, or a Mermaid diagram, since the diff alone is not the review.
 5. `## Merge Danger`: door, blast radius, and how to roll back.
 6. `## Left out`: follow-ups and known gaps.
 

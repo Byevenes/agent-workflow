@@ -4,9 +4,7 @@ description: "Produce el análisis técnico previo a la implementación de una H
 disable-model-invocation: true
 ---
 
-A partir de una HU (historia de usuario del PO) o de un ticket, produce el **análisis técnico previo a la implementación**. Es el primer paso del flujo de HU de cliente:
-
-**to-analysis** → preguntas al TL/PO/Infra (`client-questionnaire`) → respuestas en el ticket → `grill-with-docs` si quedan huecos → `to-techspec` → PRD → TD.
+A partir de una HU o de un ticket, produce el análisis técnico previo a la implementación. El orden del flujo es la sección 0 de `skills/zstack/SKILL.md`.
 
 No diseña la solución final ni escribe código. Reúne evidencia y deja claro qué falta preguntar.
 

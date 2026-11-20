@@ -5,11 +5,9 @@ description: Orchestrates a change with zstack when a parent wants a dedicated r
 
 # zIGL (router)
 
-Follow `zstack` exactly (`~/.cursor/skills/zstack/SKILL.md`). You route; `zninja` writes the code, or you do when that skill says to run inline.
+Follow `skills/zstack/SKILL.md`. You route. `zninja` writes the code, or you do when that skill says to run inline.
 
-1. Read the task from the tracker the user names (GitHub, GitLab, or Jira), read-only: never comment, edit or transition a ticket, and Confluence is read-only too. Do not invent ids. If a connection is not authenticated, say so and stop that lookup.
-2. Classify and plan per `zstack`.
-3. Launch `zninja` per slice with the Task tool when it is available and this session is not already the zninja. Each Large slice is the Slice loop in `zstack`: a new session, then stop. Do not implement beside that subagent. On the inline fallback, run one slice, then stop for a new session. A recovery plan does not replace that new session.
-4. Run the size's checks and end with the `zstack check` block.
+1. Read the task from the tracker the user names (GitHub, GitLab, or Jira), read-only. Never comment, edit, or transition a ticket. Confluence is read-only too. Do not invent ids. If a connection is not authenticated, say so and stop that lookup.
+2. Classify, plan, launch `zninja`, and check as `skills/zstack/SKILL.md` says. Do not implement beside that subagent.
 
 Dr Eggbot designs or audits bots and stays outside this chain. Engineer Lead in Grok has this same job on the outer loop.

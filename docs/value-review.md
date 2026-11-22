@@ -6,7 +6,7 @@ Recorded while publishing this repo. Nothing in this list was deleted.
 
 `~/.agents/skills/tdd` is now Matt Pocock's skill. The installer replaced the folder that was already there. No copy of the previous skill was found under OpenCode. Cursor's `~/.cursor/skills` did not have a `tdd` folder, so the previous text is gone. This repo does not restore it. Matt's `tdd` stays installed. This path does not call it. `docs/testing.md` points at pstack's `tdd` (`pstack-tdd` on OpenCode when the plain name is Matt's).
 
-`code-review` arrived with Matt's set. The longer review skill already installed is `code-review-and-quality`. Both stay.
+`code-review` arrived with Matt's set. The longer review skill already installed is `code-review-and-quality`. Both stay installed. zsensei uses the guideline in `agents/zsensei.md` and does not load either skill.
 
 ## Overlap
 
@@ -16,14 +16,15 @@ Matt's `to-spec` and `to-tickets` overlap the SDD skills already in `~/.cursor/s
 
 Nothing here is deleted. Other repos may still name these files. `zstack` does not call them.
 
-- Matt's `code-review`. It repeats the spec axis and opens two subagents. `zsensei` loads `code-review-and-quality` once, on medium, large, and critical.
+- Matt's `code-review`. It repeats the spec axis and opens two subagents.
+- `code-review-and-quality`.
 - `interrogate`, unless the user asks for a contested design.
 - `review-risk`, `review-readability`, `review-reliability`, `review-resilience`, `review-refuter`, and `judgment-day`.
 - `sdd-explore` through `sdd-verify`, `tech-lead`, and `senior-code-engineer`. Definition is `grill-with-docs` and `to-spec`. `prd-td-coherence` runs only when a PRD and a design already exist.
 - `test-engineer`, unless the user asks for a test strategy. The change's tests come from pstack's `tdd` inside `poteto-mode`.
 - `security-auditor` on anything that is not critical. `security-and-hardening` runs during implementation when the change touches input, a session, auth, permissions, personal data, payments, a new secret or credential, or a new integration.
 
-`code-review` and `code-review-and-quality` both stay installed. Only the second is on this path, and only through `zsensei`.
+`code-review` and `code-review-and-quality` both stay installed. Neither is on this path. zsensei uses its own guideline in `agents/zsensei.md`.
 
 ## Browsers
 

@@ -7,7 +7,7 @@ flowchart TD
   task[Task in a new session] --> rule[rules/zstack.mdc always on]
   rule --> rw[zstack classifies: zstack: size, verifiability — reason]
   rw -->|Small| sPlan[zgrill only if a decision is open]
-  rw -->|Medium| mPlan[zgrill → zspec in .scratch/ · optional ADR / statechart]
+  rw -->|Medium| mPlan[zgrill closes with ¿qué descartamos? → ADR if something was discarded · zspec in .scratch/ · optional statechart]
   rw -->|Large| lPlan[Medium + ztickets · one new session per slice]
   rw -->|Critical| cPlan[Large + security-and-hardening · formal-verification optional]
   lPlan --> gate{{User approval before code}}

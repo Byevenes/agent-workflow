@@ -8,6 +8,7 @@ description: "zStack wrapper for Matt Pocock's grill-me / grill-with-docs. Use w
 Small: read `~/.agents/skills/grill-me/SKILL.md`. Medium, Large, Critical: read `~/.agents/skills/grill-with-docs/SKILL.md`. Follow it exactly, with these overrides:
 
 - Write every output to `.scratch/` in the current worktree.
+- Close every grill with the fixed question "¿qué descartamos y por qué?". If the answer names a discarded option and its reason, write a short ADR in `docs/adr/` (next number; `# ADR NNNN: <title>`, then the decision and what was discarded and why, in short prose). That ADR is the exception to writing every output to `.scratch/`, and only outside client repos. In a client repo, keep the ADR draft in `.scratch/` and do not commit it. If the answer is empty, write no ADR.
 - Never publish or create issues in Jira, GitLab, GitHub or any tracker without the user's explicit ok. In client repos, never.
 - If not already covered, ask "where does the state live?" for every piece of state the change touches, and "how do we measure progress and success?".
 

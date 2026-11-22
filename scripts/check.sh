@@ -194,7 +194,7 @@ fi
 git_dir_unset=$(printf '%s' 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_PREFIX')
 for f in scripts/*.sh; do
   case "$(basename "$f")" in
-    mcp-gitlab.sh|mcp-postgres.sh|route-audit.sh) continue ;;
+    mcp-gitlab.sh|mcp-postgres.sh|route-audit.sh|check-repo-paths.sh) continue ;;
   esac
   [ -f "$f" ] || continue
   sed -n 3p "$f" | grep -qx "$git_dir_unset" || bad "$f: line 3 must unset the GIT_* hook env (GIT_DIR leak sets core.bare=true on the parent repo)"
@@ -276,6 +276,9 @@ done
 for p in .cursor/skills/zstack/scripts/route-audit.sh .config/opencode/skills/zstack/scripts/route-audit.sh; do
   [ -x "$tmp/$p" ] || bad "link.sh smoke: $p not executable through the zstack link"
 done
+for p in .cursor/skills/zspec/scripts/check-repo-paths.sh .config/opencode/skills/zspec/scripts/check-repo-paths.sh; do
+  [ -x "$tmp/$p" ] || bad "link.sh smoke: $p not executable through the zspec link"
+done
 for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/skills/blast-radius .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/skills/blast-radius .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done
@@ -329,7 +332,7 @@ HOME=$h LINK_SKILL_VERSIONS=$vf scripts/link.sh >/dev/null
 want=$(mktemp)
 git show "$old:skills/to-techspec/SKILL.md" >"$want"
 cmp -s "$want" "$h/.cursor/skills/to-techspec/SKILL.md" || bad "link.sh: override pin text differs from $old"
-if grep -q 'scripts/check-repo-paths.sh' "$h/.cursor/skills/to-techspec/SKILL.md"; then bad "link.sh: override pin still has the checkout marker"; fi
+if grep -qE '(^|[^/])scripts/check-repo-paths\.sh' "$h/.cursor/skills/to-techspec/SKILL.md"; then bad "link.sh: override pin still has the checkout marker"; fi
 [ "$(readlink "$h/.cursor/skills/zgrill")" = "$repo_root/skills/zgrill" ] || bad "link.sh: zgrill left the checkout"
 rm -rf "$h"
 rm -f "$want"
@@ -956,6 +959,14 @@ sh scripts/check-delivery-note.sh "$clean" >/dev/null || bad "delivery-note: cle
 if sh scripts/check-delivery-note.sh "$dirty" >/dev/null 2>&1; then bad "delivery-note: dirty fixture passed"; fi
 if sh scripts/check-delivery-note.sh "$tmpl" >/dev/null 2>&1; then bad "delivery-note: template still sendable"; fi
 
+rp_tl=$(printf '\176')
+for f in skills/zspec/SKILL.md skills/to-techspec/SKILL.md; do
+  if grep -qE '(^|[^/])scripts/check-repo-paths\.sh' "$f"; then
+    bad "repo-paths: $f tells the agent to run scripts/check-repo-paths.sh"
+  fi
+  grep -qF "$rp_tl/.cursor/skills/zspec/scripts/check-repo-paths.sh" "$f" || bad "repo-paths: $f missing the Cursor path to check-repo-paths.sh"
+  grep -qF "$rp_tl/.config/opencode/skills/zspec/scripts/check-repo-paths.sh" "$f" || bad "repo-paths: $f missing the OpenCode path to check-repo-paths.sh"
+done
 rp_root=docs/examples/repo-path-fixtures/root
 rp_clean=docs/examples/repo-path-fixtures/clean.md
 rp_dirty=docs/examples/repo-path-fixtures/dirty.md
@@ -975,6 +986,9 @@ rp_has "absolute path" "C:/src/Foo.cs"
 rp_has "not a repo-root path" "./src/Foo/Bar.cs"
 rp_has "not a repo-root path" "src/../src/Foo/Bar.cs"
 rp_has "not a repo-root path" 'src\Foo\Bar.cs'
+rp_has "does not exist from the repo root" "appsettings.Development.json"
+rp_has "does not exist from the repo root" "src/appsettings.Development.json"
+rp_has "does not exist from the repo root" "src/Foo.CS"
 if sh scripts/check-repo-paths.sh >/dev/null 2>&1; then bad "repo-paths: usage without args passed"; fi
 
 rp_anchors=docs/examples/repo-path-fixtures/anchors.md
@@ -997,6 +1011,21 @@ rp_anch_lacks "mailto:"
 rp_anch_lacks "#section"
 rp_anch_lacks "src/Missing.cs#"
 rp_anch_lacks "src/LinkMissing.cs:"
+
+rp_fence=docs/examples/repo-path-fixtures/fence-dirty.md
+rp_fence_status=0
+rp_fence_out=$(sh scripts/check-repo-paths.sh "$rp_fence" "$rp_root" 2>&1) || rp_fence_status=$?
+[ "$rp_fence_status" -ne 0 ] || bad "repo-paths: fence dirty fixture passed"
+printf '%s\n' "$rp_fence_out" | grep -qF 'absolute path: /Users/x/secret.cs' || bad "repo-paths: fence dirty fixture did not report absolute path: /Users/x/secret.cs"
+rp_fence_n=$(printf '%s\n' "$rp_fence_out" | grep -cF 'absolute path: /Users/x/secret.cs' || true)
+[ "$rp_fence_n" -eq 1 ] || bad "repo-paths: fence dirty fixture reported absolute path: /Users/x/secret.cs ${rp_fence_n} times"
+if printf '%s\n' "$rp_fence_out" | grep -qF 'unclosed fence'; then bad "repo-paths: fence dirty fixture reported an unclosed fence"; fi
+rp_open=docs/examples/repo-path-fixtures/fence-unclosed.md
+rp_open_status=0
+rp_open_out=$(sh scripts/check-repo-paths.sh "$rp_open" "$rp_root" 2>&1) || rp_open_status=$?
+[ "$rp_open_status" -ne 0 ] || bad "repo-paths: unclosed fence fixture passed"
+printf '%s\n' "$rp_open_out" | grep -qF 'fail repo-paths: unclosed fence' || bad "repo-paths: unclosed fence fixture did not report fail repo-paths: unclosed fence"
+if printf '%s\n' "$rp_open_out" | grep -qF 'ok repo-paths'; then bad "repo-paths: unclosed fence fixture printed ok repo-paths"; fi
 
 sec=docs/security-scan.md
 if [ ! -f "$sec" ]; then

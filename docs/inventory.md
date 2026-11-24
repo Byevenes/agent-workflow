@@ -14,6 +14,10 @@ Oh My OpenAgent is configured. Agents present include Sisyphus, Hephaestus, Prom
 
 MCP already configured: Atlassian, codegraph, context7, engram, Figma Desktop, stitch, agent-browser. Figma cloud is not in this OpenCode config.
 
+## Repo skills
+
+`scripts/link.sh` points the skills in `skills/` at Cursor and OpenCode. `ts-effect-codebase` is the TypeScript/Effect baseline and the review bar `zsensei` uses on those repos.
+
 ## Shared skills folder
 
 `~/.agents/skills` is read by more than one tool. Matt Pocock's skills were installed there and mirrored into Cursor and OpenCode when the name was free. See `docs/value-review.md` for the `tdd` name collision.

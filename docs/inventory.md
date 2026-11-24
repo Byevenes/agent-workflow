@@ -10,9 +10,13 @@ MCP already configured: Figma, Figma Desktop, Atlassian, codegraph, context7, en
 
 ## OpenCode
 
-Oh My OpenAgent is configured. Agents present include Sisyphus, Hephaestus, Prometheus, Atlas, and Gentleman, plus the shared engineering agents. This repo adds `zigl`, `zninja` and `zsensei` by symlink. It does not remove the others.
+Oh My OpenAgent is configured. Agents present include Sisyphus, Hephaestus, Prometheus, Atlas, and Gentleman, plus the shared engineering agents. This repo adds `zigl`, `zninja`, `zsensei` and `zsecurity` by symlink. It does not remove the others.
 
 MCP already configured: Atlassian, codegraph, context7, engram, Figma Desktop, stitch, agent-browser. Figma cloud is not in this OpenCode config.
+
+## Repo skills
+
+`scripts/link.sh` points the skills in `skills/` at Cursor and OpenCode. `ts-effect-codebase` is the TypeScript/Effect baseline and the review bar `zsensei` uses on those repos.
 
 ## Shared skills folder
 

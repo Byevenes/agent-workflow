@@ -11,6 +11,7 @@
 - **zIGL**: the router role that classifies, plans and checks (`agents/zigl.md`, and the zstack skill itself).
 - **zNinja**: the implementer subagent (`agents/zninja.md`).
 - **zSensei**: the reviewer subagent (`agents/zsensei.md`).
+- **zSecurity**: the security reviewer subagent (`agents/zsecurity.md`). Read-only, diff-only. Not on the Critical path until `docs/zsecurity-bench.md` passes.
 - **Inline without Cursor**: the mode in `### Inline without Cursor` under section 3 of `skills/zstack/SKILL.md`, for a host that is not Cursor.
 - **zHunter, zGuard**: reserved names, no role yet.
 - **Clients root**: where client repos live. Non-empty `CLIENTS_ROOT`, otherwise `clients_root` in the client map, otherwise `$HOME/Clients`.

@@ -8,7 +8,7 @@ flowchart TD
   rule --> rw[zstack classifies: zstack: size, verifiability — reason]
   rw -->|Small| sPlan[zgrill only if a decision is open]
   rw -->|Medium| mPlan[zgrill closes with ¿qué descartamos? → ADR if something was discarded · zspec in .scratch/ · optional statechart]
-  rw -->|Large| lPlan[Medium + ztickets · one new session per slice]
+  rw -->|Large| lPlan[Medium + ztickets · zwayfinder if the way is still foggy · one new session per slice]
   rw -->|Critical| cPlan[Large + security-and-hardening · formal-verification optional]
   lPlan --> gate{{User approval before code}}
   cPlan --> gate

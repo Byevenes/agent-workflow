@@ -107,7 +107,7 @@ link_new "$skill_src" "$HOME_DIR/.agents/skills/zstack"
 resolve_skill route-work
 route_src="$skill_src"
 link_force "$route_src" "$HOME_DIR/.cursor/skills/route-work"
-for w in zgrill zspec ztickets zpr zretro zwrite to-techspec blast-radius to-analysis client-questionnaire; do
+for w in zgrill zspec ztickets zpr zretro zwrite zwayfinder to-techspec blast-radius to-analysis client-questionnaire; do
   resolve_skill "$w"
   for dest in "$HOME_DIR/.cursor/skills/$w" "$HOME_DIR/.config/opencode/skills/$w"; do
     if [ -d "$dest" ] && [ ! -L "$dest" ]; then

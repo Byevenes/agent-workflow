@@ -9,7 +9,7 @@ fi
 
 note=$1
 home_short=$(printf '\176/')
-tools='zstack|zninja|zsensei|zigl|zgrill|zspec|ztickets|zretro|poteto-mode|poteto|opencode|obsidian|agent-workflow|grok-|gpt-|claude-|sonnet'
+tools='zstack|zninja|zsensei|zigl|zgrill|zspec|ztickets|zwayfinder|zretro|poteto-mode|poteto|opencode|obsidian|agent-workflow|grok-|gpt-|claude-|sonnet'
 words='(^|[^A-Za-z0-9_])(cursor|kdb|zpr)([^A-Za-z0-9_]|$)'
 paths="${home_short}|/Users/|/home/|[.]scratch/|[.]atl/|[.]cursor/|BORRAR ANTES DE ENVIAR"
 

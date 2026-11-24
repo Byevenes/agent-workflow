@@ -136,9 +136,25 @@ for f in skills/zstack/SKILL.md skills/zpr/SKILL.md; do
   grep -qF 'the diff alone is not the review' "$f" || bad "$f: the diff alone is not the review"
 done
 grep -qF '## Evidence' skills/zpr/SKILL.md || bad "zpr: ## Evidence section missing"
-for f in skills/zgrill/SKILL.md skills/zspec/SKILL.md skills/ztickets/SKILL.md; do
+for f in skills/zgrill/SKILL.md skills/zspec/SKILL.md skills/ztickets/SKILL.md skills/zwayfinder/SKILL.md; do
   grep -qF 'In client repos, never' "$f" || bad "$f: client repos must not publish to a tracker"
 done
+zw=skills/zwayfinder/SKILL.md
+for s in \
+  '.scratch/' \
+  "without the user's explicit ok" \
+  'already ready' \
+  'already clear' \
+  'run `/wayfinder` manually (I can'"'"'t invoke it)'
+do
+  grep -qF -- "$s" "$zw" || bad "zwayfinder missing phrase: $s"
+done
+if grep -q '^disable-model-invocation:' "$zw"; then bad "zwayfinder: must stay model-invocable"; fi
+grep -qF 'zwayfinder' scripts/check-delivery-note.sh || bad "delivery-note: zwayfinder missing from the tool pattern"
+grep -qF 'zwayfinder' scripts/link.sh || bad "link.sh: zwayfinder missing from the wrapper loop"
+grep -qF 'zwayfinder:wayfinder' scripts/setup-check.sh || bad "setup-check: zwayfinder:wayfinder pair missing"
+grep -qF 'Use `zwayfinder` when the plan does not fit one session' skills/zstack/SKILL.md || bad "zstack: zwayfinder large-path trigger missing"
+grep -qF 'Do not start a map when the spec is already ready or the way is already clear' skills/zstack/SKILL.md || bad "zstack: zwayfinder already-ready guard missing"
 cal='.scratch/<slug>/calibracion.md'
 grep -qF "$cal" skills/zretro/SKILL.md || bad "zretro: calibration log path missing"
 mm=docs/model-matrix.md
@@ -282,7 +298,7 @@ done
 for p in .cursor/skills/zspec/scripts/check-repo-paths.sh .config/opencode/skills/zspec/scripts/check-repo-paths.sh; do
   [ -x "$tmp/$p" ] || bad "link.sh smoke: $p not executable through the zspec link"
 done
-for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zpr .cursor/skills/blast-radius .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/skills/blast-radius .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
+for p in .cursor/skills/zstack .cursor/skills/zgrill .cursor/skills/zwayfinder .cursor/skills/zpr .cursor/skills/blast-radius .cursor/rules/zstack.mdc .cursor/agents/zninja.md .config/opencode/skills/zstack .config/opencode/skills/blast-radius .config/opencode/zstack.md .config/opencode/agents/zstack.md; do
   if [ ! -L "$tmp/$p" ] || [ ! -e "$tmp/$p" ]; then bad "link.sh smoke: $p not linked"; fi
 done
 plug="$tmp/.cursor/plugins/local/zstack-agents"

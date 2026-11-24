@@ -4,7 +4,7 @@ Names only. No client urls and no tokens.
 
 ## Cursor
 
-User skills live in `~/.cursor/skills`. User agents live in `~/.cursor/agents`. The pstack plugin is installed from the Cursor marketplace, version `0.15.15`. `cursor-team-kit` `1.2.0` is in the local plugins folder.
+User skills live in `~/.cursor/skills`. User agents live in `~/.cursor/agents`. The pstack plugin is installed from the Cursor marketplace, version `0.15.46`. `cursor-team-kit` `1.2.0` is in the local plugins folder.
 
 MCP already configured: Figma, Figma Desktop, Atlassian, codegraph, context7, engram, stitch, agent-browser.
 

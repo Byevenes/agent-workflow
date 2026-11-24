@@ -1,0 +1,17 @@
+diff --git a/scripts/clean-worktree.sh b/scripts/clean-worktree.sh
+new file mode 100644
+index 0000000..d4fd968
+--- /dev/null
++++ b/scripts/clean-worktree.sh
+@@ -0,0 +1,11 @@
++#!/bin/sh
++# usage: scripts/clean-worktree.sh <name>
++# Removes a finished worktree under $WT_ROOT.
++set -eu
++WT_ROOT=${WT_ROOT:-$HOME/worktrees}
++name=$1
++target="$WT_ROOT/$name"
++if [ -d "$target" ]; then
++  rm -rf "$target"
++  echo "removed $target"
++fi

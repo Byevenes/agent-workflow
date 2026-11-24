@@ -12,7 +12,7 @@ flowchart LR
     sk[skills/zstack, route-work alias]
     wr[skills/zgrill, zspec, ztickets, zpr, zretro, zwayfinder]
     ru[rules/zstack.mdc]
-    ag[agents/zigl, zninja, zsensei]
+    ag[agents/zigl, zninja, zsensei, zsecurity]
     pa[.cursor/agents relative symlinks]
     oc[agents/opencode/zstack.md]
   end
@@ -51,7 +51,7 @@ flowchart TD
   rev -->|Small| ck
   rev -->|Medium| light[light review]
   rev -->|Medium escalated| zs
-  rev -->|Large or Critical| zs[zSensei review; Critical adds security-auditor]
+  rev -->|Large or Critical| zs[zSensei review; Critical adds security-auditor until zsecurity passes its bench]
   light --> retro[zretro]
   zs --> retro
   retro --> bar[barrier: hook, lint, test, type, check.sh guard]

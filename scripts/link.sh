@@ -146,7 +146,7 @@ git -C "$ROOT" config core.hooksPath .githooks
 link_force "$ROOT/rules/zstack.mdc" "$HOME_DIR/.cursor/rules/zstack.mdc"
 link_force "$ROOT/rules/zstack.mdc" "$HOME_DIR/.config/opencode/zstack.md"
 
-for agent in zigl zninja zsensei; do
+for agent in zigl zninja zsensei zsecurity; do
   src="$ROOT/agents/$agent.md"
   for dest in \
     "$HOME_DIR/.cursor/agents/$agent.md" \
@@ -162,7 +162,7 @@ for agent in zigl zninja zsensei; do
   done
 done
 
-for agent in zigl zninja zsensei; do
+for agent in zigl zninja zsensei zsecurity; do
   dest="$ROOT/.cursor/agents/$agent.md"
   rel="../../agents/$agent.md"
   if [ -L "$dest" ] || [ ! -e "$dest" ]; then
@@ -180,11 +180,11 @@ cat > "$plugin_root/.cursor-plugin/plugin.json" <<'EOF'
 {
   "name": "zstack-agents",
   "version": "0.1.0",
-  "description": "zStack subagents zigl, zninja, and zsensei.",
+  "description": "zStack subagents zigl, zninja, zsensei, and zsecurity.",
   "agents": "./agents/"
 }
 EOF
-for agent in zigl zninja zsensei; do
+for agent in zigl zninja zsensei zsecurity; do
   src="$ROOT/agents/$agent.md"
   dest="$plugin_root/agents/$agent.md"
   if [ -L "$dest" ]; then

@@ -59,8 +59,10 @@ check_link "$HOME/.cursor/rules/zstack.mdc"
 check_link "$HOME/.cursor/agents/zninja.md"
 check_link "$HOME/.cursor/agents/zsensei.md"
 check_link "$HOME/.config/opencode/agents/zsensei.md"
+check_link "$HOME/.cursor/agents/zsecurity.md"
+check_link "$HOME/.config/opencode/agents/zsecurity.md"
 check_link "$HOME/.config/opencode/agents/zstack.md"
-for agent in zigl zninja zsensei; do
+for agent in zigl zninja zsensei zsecurity; do
   p="$ROOT/.cursor/agents/$agent.md"
   target=$(readlink "$p" 2>/dev/null || true)
   if [ -L "$p" ] && [ -e "$p" ] && [ "$target" = "../../agents/$agent.md" ]; then
@@ -80,7 +82,7 @@ elif ! grep -q '"name": "zstack-agents"' "$manifest" || ! grep -q '"agents": "./
 else
   echo "ok plugin manifest"
 fi
-for agent in zigl zninja zsensei; do
+for agent in zigl zninja zsensei zsecurity; do
   dest="$HOME/.cursor/plugins/local/zstack-agents/agents/$agent.md"
   src="$ROOT/agents/$agent.md"
   if [ -L "$dest" ]; then
@@ -96,7 +98,20 @@ for agent in zigl zninja zsensei; do
     echo "ok plugin agent $agent"
   fi
 done
-for a in zstack zninja zsensei; do
+sh_pin=$(sed -n 's/^pin_sha=//p' "$ROOT/scripts/install-security-hardening.sh")
+sh_dir="$HOME/.agents/skills/security-and-hardening"
+if ! grep -qx "sha $sh_pin" "$sh_dir/.upstream" 2>/dev/null; then
+  echo "fail security-and-hardening: not at pin $sh_pin (run scripts/install-security-hardening.sh)"; fail=1
+elif [ ! -f "$sh_dir/references/security-checklist.md" ] || [ ! -f "$sh_dir/references/hardening-patterns.md" ]; then
+  echo "fail security-and-hardening: references/ incomplete (run scripts/install-security-hardening.sh)"; fail=1
+else
+  echo "ok security-and-hardening at pin $sh_pin"
+fi
+for d in "$HOME/.cursor/skills" "$HOME/.config/opencode/skills"; do
+  if [ "$(readlink "$d/security-and-hardening" 2>/dev/null || true)" = "$sh_dir" ]; then echo "ok security-and-hardening link in $d"
+  else echo "fail security-and-hardening in $d is not a symlink to $sh_dir (run scripts/install-security-hardening.sh)"; fail=1; fi
+done
+for a in zstack zninja zsensei zsecurity; do
   f="$HOME/.config/opencode/agents/$a.md"
   if [ -f "$f" ] && grep -Eq '^model: *"?opencode/' "$f"; then echo "fail opencode $a: model opencode/* (Zen); client code must not go to Zen"; fail=1
   elif [ -f "$f" ]; then echo "ok opencode $a: no opencode/* model"; fi

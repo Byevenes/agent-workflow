@@ -5,7 +5,7 @@ Measured when this repo was first published.
 | Piece | Pin |
 | --- | --- |
 | Matt Pocock skills | `mattpocock/skills` @ `49dd158d1076134a641b33efb035946536778336` |
-| pstack | Cursor plugin `0.15.15`, already installed. Not forked. |
+| pstack | Cursor plugin `0.15.46` (installed plugin cache, bumped from `0.15.15`). Not forked. |
 | cursor-team-kit | `1.2.0`, copied into the local Cursor plugins folder from `cursor/plugins`. |
 
 Install Matt again with:

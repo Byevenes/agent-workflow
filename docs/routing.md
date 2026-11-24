@@ -9,6 +9,17 @@ Which host runs which kind of work. This is the only host map. It does not copy 
 | OpenCode | Exploration and second opinions on non-client work | Any client project (`$CLIENTS_ROOT/**`) |
 | Cloud Agents | Only on an explicit order from the owner | Default host for anything |
 
+## Home repo
+
+`agent-workflow` is the home repo. Shared skills, steering files and the wiki live here. Project-specific context does not.
+
+- Each project repo keeps a minimal `AGENTS.md` at its root, with that repo's own context (commands, map, conventions).
+- This home only points at those repos. It never copies their project context into this tree.
+- Worktrees live inside each clone, not in the home.
+- Issues that cross repos are filed in this home.
+
+The first personal-repo pointer is `Byevenes/zwt` (`AGENTS.md` at the repo root). An agent starting from this home should read that file for zwt context instead of duplicating it here.
+
 ## Where the rest lives
 
 - Models per role and quota fallback: `docs/model-matrix.md`.

@@ -82,7 +82,32 @@ function extract_links(line,    rest, lb, rel, rb, lp, relp, rp) {
     rest = substr(rest, rp + 1)
   }
 }
-function fence_parse(line,    i, n, c, ch, len) {
+function strip_blockquote(line,    i, n) {
+  n = length(line)
+  i = 1
+  while (i <= n && substr(line, i, 1) ~ /[[:space:]]/) i++
+  if (i > n || substr(line, i, 1) != ">") return line
+  while (i <= n && substr(line, i, 1) == ">") {
+    i++
+    if (i <= n && substr(line, i, 1) == " ") i++
+  }
+  return substr(line, i)
+}
+function has_run(s, ch, need,    i, n, run) {
+  n = length(s)
+  run = 0
+  for (i = 1; i <= n; i++) {
+    if (substr(s, i, 1) == ch) {
+      run++
+      if (run >= need) return 1
+    } else {
+      run = 0
+    }
+  }
+  return 0
+}
+function fence_parse(line,    i, n, c, ch, len, rest) {
+  line = strip_blockquote(line)
   n = length(line)
   i = 1
   while (i <= n) {
@@ -99,9 +124,11 @@ function fence_parse(line,    i, n, c, ch, len) {
     i++
   }
   if (len < 3) return 0
+  rest = substr(line, i)
+  if (has_run(rest, ch, len)) return 0
   fence_seen_ch = ch
   fence_seen_len = len
-  fence_seen_rest = substr(line, i)
+  fence_seen_rest = rest
   return 1
 }
 function rest_blank(s,    i, n, c) {

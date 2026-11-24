@@ -165,6 +165,8 @@ check_questionnaire() {
   fi
   while IFS= read -r line || [ -n "$line" ]; do
     case $line in
+      '## Ronda actual')
+        ;;
       '## '*)
         if ! printf '%s\n' "$headings" | grep -qxF -- "$line"; then
           printf '%s\n' "fail questionnaire: extra heading $line; put the owner at line end as dueño:<rol>" >&2
@@ -195,7 +197,12 @@ check_questionnaire() {
       fi
     fi
   done < "$file"
-  if [ "$(awk -v m="$max" 'BEGIN { print (m + 0 == 0) }')" -eq 0 ]; then
+  frontier=0
+  if grep -qxF -- '## Ronda actual' "$file"; then
+    frontier=1
+  fi
+  check_frontier "$file" "$frontier" || badq=1
+  if [ "$frontier" -eq 0 ] && [ "$(awk -v m="$max" 'BEGIN { print (m + 0 == 0) }')" -eq 0 ]; then
     if ! awk -v max="$max" '
       NF { c[$0]++ }
       END {
@@ -214,6 +221,123 @@ check_questionnaire() {
   fi
   rm -rf "$qdir"
   return "$badq"
+}
+
+check_frontier() {
+  awk -v max="$max" -v frontier="$2" '
+    function fail(msg) { printf "fail questionnaire: %s\n", msg; bad = 1 }
+    function ready(id,   n, i, ds) {
+      if (est[id] != "pendiente") return 0
+      if (dep[id] == "-") return 1
+      n = split(dep[id], ds, ",")
+      for (i = 1; i <= n; i++) if (est[ds[i]] != "respondida") return 0
+      return 1
+    }
+    BEGIN { bad = 0; nq = 0; nr = 0; last = ""; sec = "" }
+    /^## / { sec = $0; last = ""; next }
+    /^Q[0-9]+\. / {
+      id = $0
+      sub(/\. .*/, "", id)
+      if (!(id in q)) order[++nq] = id
+      q[id] = 1
+      o = $0
+      if (o ~ / dueño:[A-Za-z]+$/) { sub(/.* dueño:/, "", o); owner[id] = o }
+      last = id
+      next
+    }
+    /^[ \t]+estado:/ {
+      if (last == "") { fail("estado line without a question above; put it right under its Qn line"); next }
+      m = $0
+      sub(/^[ \t]+/, "", m)
+      if (m !~ /^estado:[a-z]+ bloqueante:(sí|no) depende de:(-|Q[0-9]+(,Q[0-9]+)*)$/) {
+        fail(last " estado line must read: estado:<pendiente|respondida|obsoleta> bloqueante:<sí|no> depende de:<Qn,Qm|->")
+        last = ""
+        next
+      }
+      split(m, parts, " ")
+      st = substr(parts[1], 8)
+      if (st != "pendiente" && st != "respondida" && st != "obsoleta") {
+        fail(last " has estado:" st "; use pendiente, respondida or obsoleta")
+      }
+      meta[last] = 1
+      est[last] = st
+      blk[last] = substr(parts[2], 12)
+      dep[last] = substr(parts[4], 4)
+      last = ""
+      next
+    }
+    sec == "## Ronda actual" && NF {
+      if ($0 ~ /^- Q[0-9]+$/) {
+        r = substr($0, 3)
+        if (r in inr) fail("## Ronda actual lists " r " twice")
+        else { inr[r] = 1; ronda[++nr] = r }
+      } else {
+        fail("## Ronda actual takes one \"- Qn\" per line")
+      }
+      last = ""
+      next
+    }
+    { last = "" }
+    END {
+      for (i = 1; i <= nq; i++) {
+        id = order[i]
+        if (!(id in meta)) {
+          if (frontier) fail(id " has no estado line; add estado:<...> bloqueante:<sí|no> depende de:<Qn|-> under it")
+          continue
+        }
+        if (dep[id] == "-") continue
+        n = split(dep[id], ds, ",")
+        for (j = 1; j <= n; j++) {
+          if (ds[j] == id) fail(id " depends on itself")
+          else if (!(ds[j] in q)) fail(id " depends on " ds[j] ", which is not a question")
+        }
+      }
+      if (!frontier) exit bad
+      open = 0; nready = 0; block = 0
+      for (i = 1; i <= nq; i++) {
+        id = order[i]
+        if (!(id in meta)) continue
+        if (est[id] == "pendiente") {
+          open++
+          if (id in owner) per[owner[id]]++
+        }
+        if (ready(id)) { nready++; if (blk[id] == "sí") block++ }
+      }
+      for (i = 1; i <= nr; i++) {
+        r = ronda[i]
+        if (!(r in q)) { fail("## Ronda actual lists " r ", which is not a question"); continue }
+        if (!(r in meta)) continue
+        if (est[r] != "pendiente") { fail(r " in ## Ronda actual is " est[r] "; only pendiente questions go out"); continue }
+        if (!ready(r)) {
+          n = split(dep[r], ds, ",")
+          for (j = 1; j <= n; j++) {
+            d = ds[j]
+            if ((d in q) && est[d] != "respondida") {
+              s = (d in est) ? est[d] : "sin estado"
+              fail(r " in ## Ronda actual depends on " d " (" s "); ask " d " first and hold " r " for a later round")
+            }
+          }
+          continue
+        }
+        if (block > 0 && blk[r] == "no") fail(r " in ## Ronda actual is not bloqueante while bloqueante questions are open; hold it for a later round")
+      }
+      for (i = 1; i <= nq; i++) {
+        id = order[i]
+        if ((id in meta) && ready(id) && blk[id] == "sí" && !(id in inr)) fail(id " is on the frontier (bloqueante, dependencies respondida) but missing from ## Ronda actual")
+      }
+      if (open > 0 && nready == 0) fail("no pendiente question is ready; check depende de for a cycle or a dependency marked obsoleta")
+      if (nready > 0 && nr == 0) fail("## Ronda actual is empty; list the frontier")
+      if (max + 0 > 0) {
+        for (o in per) {
+          if (per[o] > max + 0) {
+            printf "fail questionnaire: dueño:%s has %d pendiente questions, max %d (set ZSTACK_MAX_QUESTIONS_PER_OWNER)\n", o, per[o], max + 0
+            bad = 1
+          }
+        }
+      }
+      exit bad
+    }
+  ' "$1" >&2
 }
 
 known_kind() {

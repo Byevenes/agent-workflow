@@ -425,6 +425,45 @@ grep -qF 'fail questionnaire: extra heading ## QA; put the owner at line end as 
 printf '%s\n' '## Preguntas' 'Q1. falta el rol' '## Prioridad' '## Bloqueantes' > "$d/nodueno.md"
 if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/nodueno.md" >/dev/null 2>"$err"; then bad "questionnaire: missing dueño should fail"; fi
 grep -qF 'has no dueño; add dueño:<rol> at line end' "$err" || bad "questionnaire: dueño stderr"
+qfx=docs/examples/questionnaire-frontier-fixtures
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$qfx/ronda-1.md" >/dev/null || bad "questionnaire frontier: ronda 1 with only ready bloqueantes should pass"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$qfx/dependiente-colada.md" >/dev/null 2>"$err"; then bad "questionnaire frontier: a question whose dependency is pendiente should fail"; fi
+grep -qF 'fail questionnaire: Q2 in ## Ronda actual depends on Q1 (pendiente); ask Q1 first and hold Q2 for a later round' "$err" || bad "questionnaire frontier: dependency stderr"
+awk '/^## Preguntas$/,0' "$qfile" > "$d/qtpl.md"
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/qtpl.md" >/dev/null || bad "client-questionnaire: the template must pass check-draft-sections"
+grep -qF 'depende de:' "$qfile" || bad "client-questionnaire: document depende de"
+grep -qF '## Ronda actual' "$qfile" || bad "client-questionnaire: document ## Ronda actual"
+sed -e 's/^- Q5$/- Q5\
+- Q8/' "$qfx/ronda-1.md" > "$d/nobloq.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/nobloq.md" >/dev/null 2>"$err"; then bad "questionnaire frontier: a non-bloqueante question before the bloqueantes should fail"; fi
+grep -qF 'Q8 in ## Ronda actual is not bloqueante' "$err" || bad "questionnaire frontier: non-bloqueante stderr"
+grep -vxF -- '- Q3' "$qfx/ronda-1.md" > "$d/falta.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/falta.md" >/dev/null 2>"$err"; then bad "questionnaire frontier: a missing frontier question should fail"; fi
+grep -qF 'Q3 is on the frontier' "$err" || bad "questionnaire frontier: missing frontier stderr"
+sed -e 's/^- Q5$/- Q5\
+- Q4/' "$qfx/ronda-1.md" > "$d/resp.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/resp.md" >/dev/null 2>"$err"; then bad "questionnaire frontier: a respondida question in the round should fail"; fi
+grep -qF 'Q4 in ## Ronda actual is respondida' "$err" || bad "questionnaire frontier: respondida stderr"
+awk '
+  $0 == "Q1. ¿El reporte mensual se exporta en CSV o en XLSX? dueño:PO" { print; getline; print "  estado:respondida bloqueante:sí depende de:-"; next }
+  $0 == "Q3. ¿El reporte incluye filas sin categoría? dueño:PO" { print; getline; print "  estado:respondida bloqueante:sí depende de:-"; next }
+  $0 == "Q5. ¿La exportación corre en el mismo job nocturno que hoy? dueño:Infra" { print; getline; print "  estado:respondida bloqueante:sí depende de:Q4"; next }
+  $0 == "## Ronda actual" { print; print "- Q2"; r = 1; next }
+  r && /^- Q/ { next }
+  { r = 0; print }
+' "$qfx/ronda-1.md" > "$d/ronda-2.md"
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/ronda-2.md" >/dev/null 2>"$err" || bad "questionnaire frontier: ronda 2 after Q1 respondida should pass: $(cat "$err")"
+grep -vF '  estado:pendiente bloqueante:sí depende de:Q4' "$qfx/ronda-1.md" > "$d/sinestado.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/sinestado.md" >/dev/null 2>"$err"; then bad "questionnaire frontier: a question without estado line should fail"; fi
+grep -qF 'Q5 has no estado line' "$err" || bad "questionnaire frontier: estado line stderr"
+sed -e 's/depende de:Q1$/depende de:Q9/' "$qfx/ronda-1.md" > "$d/q9.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/q9.md" >/dev/null 2>"$err"; then bad "questionnaire frontier: an unknown dependency should fail"; fi
+grep -qF 'Q2 depends on Q9, which is not a question' "$err" || bad "questionnaire frontier: unknown dependency stderr"
+awk 'BEGIN{print "## Preguntas"; for(i=1;i<=16;i++) { printf "Q%d. item %d dueño:QA\n", i, i; print "  estado:" (i == 1 ? "pendiente" : "respondida") " bloqueante:sí depende de:-" } print "## Ronda actual"; print "- Q1"; print "## Prioridad"; print "## Bloqueantes"}' > "$d/f16.md"
+env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/f16.md" >/dev/null || bad "questionnaire frontier: the cap counts only pendiente questions"
+awk 'BEGIN{print "## Preguntas"; for(i=1;i<=16;i++) { printf "Q%d. item %d dueño:QA\n", i, i; print "  estado:pendiente bloqueante:sí depende de:-" } print "## Ronda actual"; for(i=1;i<=16;i++) printf "- Q%d\n", i; print "## Prioridad"; print "## Bloqueantes"}' > "$d/p16.md"
+if env -u ZSTACK_MAX_QUESTIONS_PER_OWNER sh scripts/check-draft-sections.sh questionnaire "$d/p16.md" >/dev/null 2>"$err"; then bad "questionnaire frontier: 16 pendiente for one owner should fail"; fi
+grep -qF 'fail questionnaire: dueño:QA has 16 pendiente questions, max 15 (set ZSTACK_MAX_QUESTIONS_PER_OWNER)' "$err" || bad "questionnaire frontier: cap stderr"
 printf '%s\n' "$section0" | grep -qF 'the parent runs scripts/prestage-handoff.sh' || bad "zstack section 0: parent runs prestage-handoff"
 root=$(pwd)
 trap 'rm -rf "$d"' EXIT

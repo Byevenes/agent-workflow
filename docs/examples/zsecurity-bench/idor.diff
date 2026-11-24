@@ -1,0 +1,19 @@
+diff --git a/src/invoices.js b/src/invoices.js
+new file mode 100644
+index 0000000..148dc72
+--- /dev/null
++++ b/src/invoices.js
+@@ -0,0 +1,13 @@
++// GET /invoices/:id for the signed-in user.
++export function registerInvoices(app, db) {
++  app.get('/invoices/:id', requireSession, async (req, res) => {
++    const invoice = await db.invoices.findById(req.params.id);
++    if (!invoice) return res.status(404).end();
++    res.json(invoice);
++  });
++}
++
++function requireSession(req, res, next) {
++  if (!req.session?.userId) return res.status(401).end();
++  next();
++}

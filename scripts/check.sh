@@ -32,7 +32,7 @@ argv_secret_hit() {
 }
 
 check_project_agents() {
-  for agent in zigl zninja zsensei; do
+  for agent in zigl zninja zsensei zsecurity; do
     p=".cursor/agents/$agent.md"
     if [ ! -L "$p" ]; then
       bad "project agent $p is not a symlink"
@@ -127,6 +127,24 @@ if printf '%s\n' "$zn_front" | grep -q -- '-fast'; then bad "zninja: must not se
 zs_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agents/zsensei.md)
 if ! printf '%s\n' "$zs_front" | grep -qx 'model: claude-opus-5-5-medium'; then bad "zsensei: model must be claude-opus-5-5-medium"; fi
 if ! printf '%s\n' "$zs_front" | grep -qx 'readonly: true'; then bad "zsensei: readonly must be true"; fi
+zsec_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agents/zsecurity.md)
+if ! printf '%s\n' "$zsec_front" | grep -qx 'name: zsecurity'; then bad "zsecurity: name must be zsecurity"; fi
+if ! printf '%s\n' "$zsec_front" | grep -qx 'model: grok-4.7-high'; then bad "zsecurity: model must be grok-4.7-high"; fi
+if ! printf '%s\n' "$zsec_front" | grep -qx 'readonly: true'; then bad "zsecurity: readonly must be true"; fi
+for s in \
+  'git diff BASE_SHA HEAD_SHA' \
+  'Review only changed lines and their consequences' \
+  'Trust boundaries first' \
+  'STRIDE on those boundaries only' \
+  'Agreeing with the doc, or with the code, is not enough to drop a finding' \
+  '`dropped:` (required' \
+  'one-way door:' \
+  'Fable models have no ZDR' \
+  'No "positive observations" section' \
+  'references/security-checklist.md'
+do
+  grep -qF -- "$s" agents/zsecurity.md || bad "zsecurity: missing phrase: $s"
+done
 check_project_agents
 nmerge=$(grep -rliF 'Never merge' --exclude-dir=.git --exclude-dir=.scratch --exclude-dir=retros --exclude=check.sh . | wc -l | tr -d ' ')
 [ "$nmerge" -eq 1 ] || bad "Never merge must live only in skills/zstack/SKILL.md (found in $nmerge files)"
@@ -309,7 +327,7 @@ else
   grep -q '"name": "zstack-agents"' "$manifest" || bad "link.sh: plugin manifest name missing"
   grep -q '"agents": "./agents/"' "$manifest" || bad "link.sh: plugin manifest agents path missing"
 fi
-for agent in zigl zninja zsensei; do
+for agent in zigl zninja zsensei zsecurity; do
   p="$plug/agents/$agent.md"
   if [ -L "$p" ] || [ ! -f "$p" ]; then bad "link.sh: plugin agent $agent is not a regular file"; fi
   cmp -s "agents/$agent.md" "$p" || bad "link.sh: plugin agent $agent differs from the repo"
@@ -321,7 +339,7 @@ cmp -s "$tmp/.cursor/plugins/local/other-plugin/marker" - <<'EOF' || bad "link.s
 marker
 EOF
 HOME=$tmp scripts/link.sh >/dev/null
-for agent in zigl zninja zsensei; do
+for agent in zigl zninja zsensei zsecurity; do
   p="$plug/agents/$agent.md"
   if [ -L "$p" ] || [ ! -f "$p" ]; then bad "link.sh: second run plugin agent $agent is not a regular file"; fi
   cmp -s "agents/$agent.md" "$p" || bad "link.sh: second run plugin agent $agent differs from the repo"
@@ -1542,5 +1560,47 @@ grep -qF 'scripts/revert-rate.sh' skills/zretro/SKILL.md || bad "zretro: revert-
 if grep -q 'git fetch' scripts/revert-rate.sh; then bad "revert-rate: git fetch"; fi
 if grep -F -q 'gh ' scripts/revert-rate.sh; then bad "revert-rate: gh"; fi
 
+
+ish_sha=$(sed -n 's/^pin_sha=//p' scripts/install-security-hardening.sh)
+ish_tag=$(sed -n 's/^pin_tag=//p' scripts/install-security-hardening.sh)
+grep -qF "$ish_sha" docs/upstream.md || bad "upstream.md: security-and-hardening pin $ish_sha missing"
+grep -qF "\`$ish_tag\`" docs/upstream.md || bad "upstream.md: security-and-hardening tag $ish_tag missing"
+grep -qF 'scripts/install-security-hardening.sh' docs/scripts.md || bad "scripts.md: install-security-hardening missing"
+ish=$(mktemp -d)
+mkdir -p "$ish/up/skills/security-and-hardening/references" "$ish/up/references" "$ish/home/.config/opencode/skills/security-and-hardening"
+printf '%s\n' 'see [p](references/hardening-patterns.md)' 'walk `../../references/security-checklist.md`' >"$ish/up/skills/security-and-hardening/SKILL.md"
+printf 'patterns\n' >"$ish/up/skills/security-and-hardening/references/hardening-patterns.md"
+printf 'checklist\n' >"$ish/up/references/security-checklist.md"
+printf 'loose opencode copy\n' >"$ish/home/.config/opencode/skills/security-and-hardening/SKILL.md"
+git -C "$ish/up" init -q
+git -C "$ish/up" add -A
+git -C "$ish/up" -c user.name=check -c user.email=check@example.invalid -c commit.gpgsign=false commit -q -m fixture
+git -C "$ish/up" tag 9.9.9
+ish_up=$(git -C "$ish/up" rev-parse HEAD)
+ish_dest="$ish/home/.agents/skills/security-and-hardening"
+st=0
+HOME="$ish/home" SECURITY_UPSTREAM_REPO="file://$ish/up" SECURITY_UPSTREAM_TAG=9.9.9 SECURITY_UPSTREAM_SHA=0000000000000000000000000000000000000000 scripts/install-security-hardening.sh >/dev/null 2>&1 || st=$?
+[ "$st" -ne 0 ] || bad "install-security-hardening: passes when the tag does not match the pinned sha"
+[ ! -e "$ish_dest" ] || bad "install-security-hardening: installed after a sha mismatch"
+HOME="$ish/home" SECURITY_UPSTREAM_REPO="file://$ish/up" SECURITY_UPSTREAM_TAG=9.9.9 SECURITY_UPSTREAM_SHA="$ish_up" scripts/install-security-hardening.sh >/dev/null || bad "install-security-hardening: fixture install failed"
+[ -f "$ish_dest/references/security-checklist.md" ] || bad "install-security-hardening: checklist not vendored into references/"
+[ -f "$ish_dest/references/hardening-patterns.md" ] || bad "install-security-hardening: hardening-patterns missing"
+if grep -q '\.\./\.\./references/' "$ish_dest/SKILL.md" 2>/dev/null; then bad "install-security-hardening: SKILL.md still points at ../../references"; fi
+grep -qx "sha $ish_up" "$ish_dest/.upstream" 2>/dev/null || bad "install-security-hardening: .upstream does not record the sha"
+for p in .cursor/skills/security-and-hardening .config/opencode/skills/security-and-hardening; do
+  if [ ! -L "$ish/home/$p" ] || [ "$(readlink "$ish/home/$p")" != "$ish_dest" ]; then bad "install-security-hardening: $p is not a symlink to ~/.agents/skills"; fi
+done
+grep -rqx 'loose opencode copy' "$ish/home/.cache/agent-workflow/replaced-skills" 2>/dev/null || bad "install-security-hardening: loose opencode copy deleted instead of moved aside"
+ish_n=$(find "$ish/home/.cache/agent-workflow/replaced-skills" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')
+HOME="$ish/home" SECURITY_UPSTREAM_REPO="file://$ish/up" SECURITY_UPSTREAM_TAG=9.9.9 SECURITY_UPSTREAM_SHA="$ish_up" scripts/install-security-hardening.sh >/dev/null || bad "install-security-hardening: second run failed"
+ish_n2=$(find "$ish/home/.cache/agent-workflow/replaced-skills" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')
+[ "$ish_n" = "$ish_n2" ] || bad "install-security-hardening: second run at the same pin moved a copy aside"
+rm -rf "$ish"
+
+for f in docs/examples/zsecurity-bench/idor.diff docs/examples/zsecurity-bench/ssrf-webhook.diff docs/examples/zsecurity-bench/derived-path-delete.diff; do
+  [ -f "$f" ] || { bad "zsecurity bench: $f missing"; continue; }
+  git apply --stat "$f" >/dev/null 2>&1 || bad "zsecurity bench: $f is not a valid diff"
+done
+grep -qF 'agents/zsecurity.md' docs/zsecurity-bench.md || bad "zsecurity-bench.md: agent path missing"
 [ "$fail" -eq 0 ] && echo "check ok"
 exit "$fail"

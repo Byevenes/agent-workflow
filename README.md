@@ -35,7 +35,7 @@ Grok bots sit on the outer loop: Engineer Lead splits work, Dr Eggbot designs bo
 | Grok Bot | delegates code to the Cursor `agent` CLI, so the Cursor rule applies |
 | Any other harness | read `rules/zstack.mdc` first |
 
-Subagents: `zninja` (loads `poteto-mode`) and `zsensei` (checks the spec still matches the diff). The OpenCode agents default to free OpenCode Zen models.
+Subagents: `zninja` (loads `poteto-mode`), `zsensei` (checks the spec still matches the diff), and `zsecurity` (diff-only security review, pending its bench in `docs/zsecurity-bench.md`). The OpenCode agents default to free OpenCode Zen models.
 
 ## Checks
 

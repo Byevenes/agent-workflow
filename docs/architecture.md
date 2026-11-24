@@ -10,7 +10,7 @@ Project agent registration (issue #58, symlinks, the plugin copy, and the zsense
 flowchart LR
   subgraph repo[agent-workflow repo]
     sk[skills/zstack, route-work alias]
-    wr[skills/zgrill, zspec, ztickets, zpr, zretro]
+    wr[skills/zgrill, zspec, ztickets, zpr, zretro, zwayfinder]
     ru[rules/zstack.mdc]
     ag[agents/zigl, zninja, zsensei]
     pa[.cursor/agents relative symlinks]
@@ -42,7 +42,7 @@ flowchart TD
   task[task] --> zigl[zIGL classifies]
   zigl -->|Small| s[zgrill only if a decision is open]
   zigl -->|Medium| m[zgrill, then zspec in .scratch/]
-  zigl -->|Large| l[zgrill or wayfinder, zspec, ztickets, human gate, one session per slice]
+  zigl -->|Large| l[zgrill or zwayfinder, zspec, ztickets, human gate, one session per slice]
   zigl -->|Critical| c[Large path plus security-and-hardening]
   s & m & l & c --> impl{Task tool lists zninja?}
   impl -->|yes| zn[zNinja subagent, poteto-mode]

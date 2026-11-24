@@ -118,6 +118,9 @@ fixline=$(grep -n 'fix: keep the empty input on the existing path' agents/zninja
 featline=$(grep -n "feat: add the ticket's slice" agents/zninja.md | head -1 | cut -d: -f1)
 if [ -z "$fixline" ] || [ -z "$featline" ] || [ "$fixline" -ge "$featline" ]; then bad "zninja: fix: example is not before the feature example"; fi
 grep -q 'that `fix:` commit is an ancestor of the feature commit' agents/zsensei.md || bad "zsensei: out-of-scope history checklist missing"
+grep -qF 'Agreeing with the doc, or with the code, is not enough to drop a finding' agents/zsensei.md || bad "zsensei: doc or code agreement is not a disproof"
+grep -qF 'If the previous round reviewed uncommitted work, it had no HEAD_SHA' agents/zsensei.md || bad "zsensei: re-review without a previous HEAD_SHA missing"
+grep -qF 'one line per item that is outside this diff or deferred' agents/zsensei.md || bad "zsensei: follow-ups format missing"
 zn_front=$(awk 'BEGIN{n=0} /^---$/{n++; if (n==2) exit; next} n==1 {print}' agents/zninja.md)
 if printf '%s\n' "$zn_front" | grep -q '^model:'; then bad "zninja: model must stay unset so the subagent inherits"; fi
 if printf '%s\n' "$zn_front" | grep -q -- '-fast'; then bad "zninja: must not set a -fast model"; fi
@@ -214,7 +217,7 @@ fi
 
 if [ "$(date +%Y%m%d)" -ge 20261201 ] && { [ -e skills/route-work ] || grep -q route-work scripts/link.sh; }; then bad "route-work alias expired 2026-12-01: delete skills/route-work and its link.sh lines"; fi
 
-grep -qF 'to-techspec 7ce3d36805ad176911be8262a6e2dd3429cfd47b' skills/versions || bad "skills/versions: to-techspec pin missing"
+grep -qF 'to-techspec cd39260d948a3a300902272aaf9417d48b68ec54' skills/versions || bad "skills/versions: to-techspec pin missing"
 pin_back='delete the line or set the rev to `main` or `HEAD`, then run `scripts/link.sh` again'
 grep -qF "$pin_back" docs/scripts.md || bad "scripts.md: return to main missing"
 grep -qF "$pin_back" README.md || bad "README: return to main missing"
@@ -307,7 +310,7 @@ for agent in zigl zninja zsensei; do
   if [ -L "$p" ] || [ ! -f "$p" ]; then bad "link.sh: second run plugin agent $agent is not a regular file"; fi
   cmp -s "agents/$agent.md" "$p" || bad "link.sh: second run plugin agent $agent differs from the repo"
 done
-pin=7ce3d36805ad176911be8262a6e2dd3429cfd47b
+pin=cd39260d948a3a300902272aaf9417d48b68ec54
 repo_root=$(CDPATH='' pwd)
 want=$(mktemp)
 git show "$pin:skills/to-techspec/SKILL.md" >"$want"
@@ -1026,6 +1029,36 @@ rp_open_out=$(sh scripts/check-repo-paths.sh "$rp_open" "$rp_root" 2>&1) || rp_o
 [ "$rp_open_status" -ne 0 ] || bad "repo-paths: unclosed fence fixture passed"
 printf '%s\n' "$rp_open_out" | grep -qF 'fail repo-paths: unclosed fence' || bad "repo-paths: unclosed fence fixture did not report fail repo-paths: unclosed fence"
 if printf '%s\n' "$rp_open_out" | grep -qF 'ok repo-paths'; then bad "repo-paths: unclosed fence fixture printed ok repo-paths"; fi
+rp_quote=docs/examples/repo-path-fixtures/fence-quote.md
+rp_quote_status=0
+rp_quote_out=$(sh scripts/check-repo-paths.sh "$rp_quote" "$rp_root" 2>&1) || rp_quote_status=$?
+[ "$rp_quote_status" -ne 0 ] || bad "repo-paths: quoted fence fixture passed"
+rp_quote_has() {
+  printf '%s\n' "$rp_quote_out" | grep -qF -- "$1" || bad "repo-paths: quoted fence fixture did not report $1"
+}
+rp_quote_lacks() {
+  if printf '%s\n' "$rp_quote_out" | grep -qF -- "$1"; then bad "repo-paths: quoted fence fixture reported $1"; fi
+}
+rp_quote_lacks "src/QuoteMissing.cs"
+rp_quote_lacks "src/NestedMissing.cs"
+rp_quote_lacks "src/CalloutMissing.cs"
+rp_quote_lacks "src/TildeMissing.cs"
+rp_quote_lacks "unclosed fence"
+rp_quote_has "does not exist from the repo root: src/AfterQuoteMissing.cs"
+rp_quote_has "does not exist from the repo root: src/AfterCalloutMissing.cs"
+rp_quote_has "does not exist from the repo root: src/QuoteBareMissing.cs"
+rp_quote_has "does not exist from the repo root: src/QuoteInlineMissing.cs"
+rp_inline=docs/examples/repo-path-fixtures/fence-inline.md
+rp_inline_status=0
+rp_inline_out=$(sh scripts/check-repo-paths.sh "$rp_inline" "$rp_root" 2>&1) || rp_inline_status=$?
+[ "$rp_inline_status" -ne 0 ] || bad "repo-paths: inline fence fixture passed"
+if printf '%s\n' "$rp_inline_out" | grep -qF 'unclosed fence'; then bad "repo-paths: inline fence fixture reported an unclosed fence"; fi
+rp_inline_has() {
+  printf '%s\n' "$rp_inline_out" | grep -qF -- "$1" || bad "repo-paths: inline fence fixture did not report $1"
+}
+rp_inline_has "does not exist from the repo root: src/InlineMissing.cs"
+rp_inline_has "does not exist from the repo root: src/AfterInlineMissing.cs"
+rp_inline_has "does not exist from the repo root: src/MidlineMissing.cs"
 
 sec=docs/security-scan.md
 if [ ! -f "$sec" ]; then
